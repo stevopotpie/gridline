@@ -70,6 +70,35 @@ def model_vs_vegas():
                  "mt": None if pd.isna(r.m_total) else round(float(r.m_total), 1)} for r in u.itertuples()]
     return {"weeks": weeks, "total": tot, "upcoming": upcoming}
 
+def players():
+    """Player props for the next two weeks, 2026 raw stats, weather splits and the player backtest."""
+    out = {}
+    if os.path.exists(J("player_props_2026.csv")):
+        p = pd.read_csv(J("player_props_2026.csv"))
+        r = lambda v, n=1: None if pd.isna(v) else round(float(v), n)
+        out["props"] = [dict(g=x.game_id, n=x.display_name, t=x.team, pos=x.position, inj=x.injury if isinstance(x.injury, str) else "",
+                             py=r(x.proj_pass_yds, 0), ptd=r(x.proj_pass_td, 2), p300=r(x.p_pass300, 3), ptd2=r(x.p_ptd2, 3), ptd3=r(x.p_ptd3, 3),
+                             ry=r(x.proj_rush_yds, 0), r100=r(x.p_rush100, 3), cy=r(x.proj_rec_yds, 0), c100=r(x.p_rec100, 3),
+                             rec=r(x.proj_receptions, 1), td=r(x.proj_tds, 2), td1=r(x.p_td1, 3), td2=r(x.p_td2, 3),
+                             wx=x.wx_source, wind=r(x.wx_wind, 0), temp=r(x.wx_temp, 0), roof=x.wx_roof, lines=x.lines) for x in p.itertuples()]
+    if os.path.exists(J("player_season_2026.csv")):
+        s = pd.read_csv(J("player_season_2026.csv"))
+        cols = ["games", "completions", "pass_att", "pass_yds", "pass_td", "ints", "carries", "rush_yds", "rush_td", "targets", "receptions", "rec_yds", "rec_td", "tds"]
+        out["pstats"] = [dict(id=x.player_id, n=x.display_name, t=x.team, pos=x.position, **{c: int(getattr(x, c)) for c in cols}) for x in s.itertuples()]
+    if os.path.exists(J("player_weather_splits.csv")):
+        w = pd.read_csv(J("player_weather_splits.csv"))
+        sp = {}
+        for x in w.itertuples():
+            sp.setdefault(x.player_id, []).append([x.weather, int(x.g), round(x.pass_yds, 1), round(x.rush_yds, 1), round(x.rec_yds, 1), round(x.tds, 2)])
+        out["splits"] = sp
+    if os.path.exists(J("player_backtest.json")):
+        out["pbt"] = json.load(open(J("player_backtest.json")))
+    if os.path.exists(J("q4_data.json")):
+        q = json.load(open(J("q4_data.json")))
+        out["q4"] = {"league": q["league"], "team": q["team"]}
+    return out
+
+
 def blowouts():
     f = J("blowouts_2026.csv")
     if not os.path.exists(f): return {}
@@ -166,8 +195,9 @@ elif MODE == "season":
         if r.game_id in fc.index and e["hs"] is None:
             f = fc.loc[r.game_id]
             e.update(fcT=float(f.temp_f), fcW=float(f.wind_mph), fcRoof=int(f.roof_closed), fcAsOf=str(f.as_of))
+        e["id"] = r.game_id
         games.append(e)
-    data = {"games": games, "proj": p.round(3).to_dict("records"), "grade": gr, "blowouts": blowouts(), "avoid": settings().get("avoid", []), "trust": settings().get("trust", []), "vsVegas": vs_vegas(), "vol": volatility(), "mvv": model_vs_vegas(),
+    data = {"games": games, "proj": p.round(3).to_dict("records"), "grade": gr, "blowouts": blowouts(), "avoid": settings().get("avoid", []), "trust": settings().get("trust", []), "vsVegas": vs_vegas(), "vol": volatility(), "mvv": model_vs_vegas(), **players(),
             "updated": pd.Timestamp.now(tz="America/New_York").strftime("%a %b %d, %I:%M %p ET")}
     json.dump(data, open(J("season_data.json"), "w"))
     html = open(template("season_template.html")).read().replace("__DATA__", json.dumps(data))

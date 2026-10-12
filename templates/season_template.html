@@ -100,6 +100,24 @@ th.sort[aria-sort]{color:var(--ink)}
 #conf button{border:1px solid var(--line);color:var(--ink);font:600 .85rem var(--f-body)}
 #conf button[aria-pressed="true"]{background:var(--accent);color:var(--accent-ink);border-color:var(--accent)}
 .bar{display:inline-block;width:36px;height:6px;border-radius:3px;margin-right:6px;vertical-align:middle;background:linear-gradient(90deg,var(--accent) calc(var(--p)*100%),var(--chip) 0)}
+details.props{border-top:1px solid var(--line);padding-top:8px}
+details.props summary{cursor:pointer;font:600 .85rem var(--f-body);color:var(--accent);list-style:none}
+details.props summary::-webkit-details-marker{display:none}
+details.props summary::before{content:"▸ ";}
+details.props[open] summary::before{content:"▾ ";}
+.ph{font:600 .68rem var(--f-body);letter-spacing:.08em;text-transform:uppercase;color:var(--muted);margin:10px 0 2px}
+table.pt{width:100%;border-collapse:collapse;font:400 .8rem var(--f-mono);font-variant-numeric:tabular-nums}
+.pt td,.pt th{padding:4px 6px;border-top:1px solid var(--line);text-align:right;white-space:nowrap}
+.pt td:first-child,.pt th:first-child{text-align:left;white-space:normal}
+.pt th{font:600 .66rem var(--f-body);letter-spacing:.05em;text-transform:uppercase;color:var(--muted)}
+.tm{color:var(--muted);font-size:.74rem}
+.search{width:100%;box-sizing:border-box;font:500 .95rem var(--f-body);padding:8px 10px;border:1px solid var(--line);border-radius:8px;background:var(--bg);color:var(--ink)}
+tr.click{cursor:pointer}
+tr.click:hover td{background:color-mix(in srgb,var(--accent) 6%,transparent)}
+tr.split td{background:var(--bg);font-size:.76rem;white-space:normal;text-align:left}
+.wrap>*,section.panel,.game,details.props{min-width:0}
+.wrap,section.panel,.game{grid-template-columns:minmax(0,1fr)}
+.pscroll{overflow-x:auto}
 </style>
 
 <div class="wrap">
@@ -138,6 +156,23 @@ th.sort[aria-sort]{color:var(--ink)}
     <div class="scroll"><table class="bt" id="atn"></table></div>
     <p class="note" id="vol-note"></p>
     <p class="note">Points vs spread is each team's final margin minus the Vegas line: +10 means they did 10 points better than Vegas expected. Points vs total is the game's combined score minus the posted over/under. Tap a column to sort. Since 2015, early-season results against the line have not carried over to the rest of the season.</p>
+  </section>
+
+  <section class="panel">
+    <h2>Player stats, 2026</h2>
+    <div class="slate" id="ptabs"></div>
+    <input class="search" id="psearch" type="search" placeholder="Search a player or team" aria-label="Search players">
+    <div class="scroll"><table class="bt" id="pstats"></table></div>
+    <p class="note">Regular season totals from play by play. Tap a player to see his per game averages by weather since 2021: domes, outdoors, cold below 40°F, and wind of 15 mph or more.</p>
+  </section>
+
+  <section class="panel">
+    <h2>Fourth quarter vs point differential</h2>
+    <p class="note">Average 4th quarter points by the margin after three quarters, every game since 2015 (overtime excluded).</p>
+    <div class="scroll"><table class="bt" id="q4l"></table></div>
+    <div class="label">2026 by team</div>
+    <div class="scroll"><table class="bt" id="q4t"></table></div>
+    <p class="note" id="q4note"></p>
   </section>
 
   <section class="panel">
@@ -208,7 +243,7 @@ function card(g){
   return `<article class="game"><div class="top"><div class="teams">${g.a} <span class="at">@</span> ${g.h}</div>${score}</div>
     <div class="qbs">${g.aq || "QB TBD"} vs ${g.hq || "QB TBD"}${!done && g.wk === firstOpen && (g.aqb || g.hqb) ? ` <span class="badge lean">QB change: ${[g.aqb ? g.aq : null, g.hqb ? g.hq : null].filter(Boolean).join(", ")} starting</span>` : ""}</div>
     <div class="proj">Projected score: ${(() => { const [ps_a, ps_h] = projScore(g.pm, g.mt ?? g.pt); return `${g.a} ${ps_a}, ${g.h} ${ps_h}`; })()}${done ? ` <span class="note" style="display:inline">· final ${g.a} ${g.as_}, ${g.h} ${g.hs}</span>` : ""}</div>
-    <div class="row3">${rows.join("")}</div>${vs}${tags.length ? `<div class="tags">${tags.join("")}</div>` : ""}</article>`;
+    <div class="row3">${rows.join("")}</div>${vs}${tags.length ? `<div class="tags">${tags.join("")}</div>` : ""}${propsBlock(g)}</article>`;
 }
 function renderWeek(){
   document.querySelectorAll("#weeks button").forEach(b => b.setAttribute("aria-pressed", +b.dataset.w === wk));
@@ -263,5 +298,80 @@ function renderMVV(){
   $("mvv-up").innerHTML = `<tr><th>Game</th><th>Model</th><th>Vegas</th><th>Gap</th><th>Model total</th><th>Vegas total</th></tr>` +
     M.upcoming.map(g => `<tr><td>Wk ${g.wk} ${g.a} @ ${g.h}</td><td>${fv(g, g.pm)}</td><td>${fv(g, g.sl)}</td><td>${Math.abs(g.diff).toFixed(1)} toward ${g.diff > 0 ? g.h : g.a}</td><td>${g.pt.toFixed(1)}</td><td>${g.tl}</td></tr>`).join("");
 }
-renderWeek(); renderStand(); renderATN(); renderMVV();
+
+const odds = p => p == null || p < 0.02 || p >= 1 ? "" : p >= 0.5 ? "−" + Math.round(100*p/(1-p)) : "+" + Math.round(100*(1-p)/p);
+const pp = p => p == null ? "–" : pct(p);
+function propsBlock(g){
+  const P = (D.props || []).filter(p => p.g === g.id);
+  if (!P.length || g.hs != null) return "";
+  const nm = p => `${p.n} <span class="tm">${p.t} ${p.pos}${p.inj ? " · " + p.inj : ""}</span>`;
+  const td = P.filter(p => p.td1 != null).sort((a,b) => b.td1 - a.td1).slice(0, 8);
+  const qb = P.filter(p => p.py != null);
+  const ru = P.filter(p => p.ry != null && p.ry >= 20).sort((a,b) => b.ry - a.ry);
+  const re = P.filter(p => p.cy != null && p.cy >= 20).sort((a,b) => b.cy - a.cy).slice(0, 8);
+  const w = P[0];
+  const wxNote = w.roof !== "outdoors" ? "Indoors." : `${w.wx === "forecast" ? "Forecast" : "Typical"} weather: ${w.temp}°F, wind ${w.wind} mph${w.wind >= 15 ? " (passing projections lowered for wind)" : ""}.`;
+  return `<details class="props"><summary>Player props (${P.length} players)</summary>
+    <div class="ph">Likely scorers</div>
+    <div class="pscroll"><table class="pt"><tr><th>Player</th><th>Proj TDs</th><th>Anytime</th><th>Fair</th><th>2+ TDs</th><th>Fair</th></tr>
+    ${td.map(p => `<tr><td>${nm(p)}</td><td>${p.td.toFixed(2)}</td><td>${pp(p.td1)}</td><td>${odds(p.td1)}</td><td>${pp(p.td2)}</td><td>${odds(p.td2)}</td></tr>`).join("")}</table></div>
+    <div class="ph">Passing</div>
+    <div class="pscroll"><table class="pt"><tr><th>QB</th><th>Yds</th><th>300+</th><th>Pass TDs</th><th>2+ TD</th><th>3+ TD</th></tr>
+    ${qb.map(p => `<tr><td>${nm(p)}</td><td>${p.py}</td><td>${pp(p.p300)}</td><td>${p.ptd.toFixed(1)}</td><td>${pp(p.ptd2)}</td><td>${pp(p.ptd3)}</td></tr>`).join("")}</table></div>
+    <div class="ph">Rushing</div>
+    <div class="pscroll"><table class="pt"><tr><th>Player</th><th>Yds</th><th>100+</th><th>Fair</th></tr>
+    ${ru.map(p => `<tr><td>${nm(p)}</td><td>${p.ry}</td><td>${pp(p.r100)}</td><td>${odds(p.r100)}</td></tr>`).join("")}</table></div>
+    <div class="ph">Receiving</div>
+    <div class="pscroll"><table class="pt"><tr><th>Player</th><th>Rec</th><th>Yds</th><th>100+</th><th>Fair</th></tr>
+    ${re.map(p => `<tr><td>${nm(p)}</td><td>${p.rec.toFixed(1)}</td><td>${p.cy}</td><td>${pp(p.c100)}</td><td>${odds(p.c100)}</td></tr>`).join("")}</table></div>
+    <p class="note">${wxNote} Projections use ${w.lines === "market" ? "the posted Vegas lines" : "Gridline's line (Vegas not posted yet)"} for game script. Fair odds have no vig: a book's price needs to beat them to be worth a look.</p></details>`;
+}
+
+const PTABS = {
+  Passing: {f: p => p.pass_att >= 10, cols: [["n","Player"],["t","Team"],["games","G"],["completions","Cmp"],["pass_att","Att"],["pass_yds","Yds"],["pass_td","TD"],["ints","Int"],["rush_yds","Rush yds"]], key: "pass_yds"},
+  Rushing: {f: p => p.carries >= 5, cols: [["n","Player"],["t","Team"],["games","G"],["carries","Car"],["rush_yds","Yds"],["ypc","Avg"],["rush_td","TD"],["receptions","Rec"],["rec_yds","Rec yds"]], key: "rush_yds"},
+  Receiving: {f: p => p.targets >= 5, cols: [["n","Player"],["t","Team"],["pos","Pos"],["games","G"],["targets","Tgt"],["receptions","Rec"],["rec_yds","Yds"],["ypr","Avg"],["rec_td","TD"]], key: "rec_yds"},
+  Touchdowns: {f: p => p.tds >= 1, cols: [["n","Player"],["t","Team"],["pos","Pos"],["games","G"],["rush_td","Rush TD"],["rec_td","Rec TD"],["tds","Total TD"],["pass_td","Pass TD"]], key: "tds"},
+};
+let ptab = "Passing", pkey = "pass_yds", pdir = -1, popen = null;
+(D.pstats || []).forEach(p => { p.ypc = p.carries ? +(p.rush_yds / p.carries).toFixed(1) : 0; p.ypr = p.receptions ? +(p.rec_yds / p.receptions).toFixed(1) : 0; });
+$("ptabs").innerHTML = Object.keys(PTABS).map(k => `<button type="button" data-k="${k}" aria-pressed="${k===ptab}">${k}</button>`).join("");
+$("ptabs").addEventListener("click", e => { const b = e.target.closest("button"); if (!b) return; ptab = b.dataset.k; pkey = PTABS[ptab].key; pdir = -1; popen = null; renderPStats(); });
+$("psearch").addEventListener("input", () => renderPStats());
+function splitRow(id, span){
+  const S = (D.splits || {})[id]; if (!S) return `<tr class="split"><td colspan="${span}">No weather history since 2021.</td></tr>`;
+  const order = ["Dome","Outdoor","Cold <40F","Wind 15+"];
+  const col = ptab === "Passing" ? [2,"pass yds"] : ptab === "Rushing" ? [3,"rush yds"] : ptab === "Receiving" ? [4,"rec yds"] : [5,"TDs"];
+  return `<tr class="split"><td colspan="${span}"><b>Weather splits since 2021, ${col[1]} per game:</b> ` +
+    order.map(o => S.find(s => s[0] === o)).filter(Boolean).map(s => `${s[0]} ${s[col[0]]} <span class="tm">(${s[1]} g)</span>`).join(" · ") + `</td></tr>`;
+}
+function renderPStats(){
+  document.querySelectorAll("#ptabs button").forEach(b => b.setAttribute("aria-pressed", b.dataset.k === ptab));
+  const T = PTABS[ptab], q = $("psearch").value.trim().toLowerCase();
+  let rows = (D.pstats || []).filter(T.f).filter(p => !q || p.n.toLowerCase().includes(q) || p.t.toLowerCase() === q);
+  rows.sort((a,b) => typeof a[pkey] === "string" ? pdir * a[pkey].localeCompare(b[pkey]) : pdir * (a[pkey] - b[pkey]));
+  rows = rows.slice(0, q ? 200 : 40);
+  $("pstats").innerHTML = `<tr>${T.cols.map(([k,n]) => `<th class="sort" data-k="${k}"${k===pkey?` aria-sort="${pdir>0?"ascending":"descending"}"`:""}>${n}${k===pkey?(pdir>0?" ▲":" ▼"):""}</th>`).join("")}</tr>` +
+    rows.map(p => `<tr class="click" data-id="${p.id}">${T.cols.map(([k]) => `<td>${p[k]}</td>`).join("")}</tr>` + (popen === p.id ? splitRow(p.id, T.cols.length) : "")).join("");
+}
+$("pstats").addEventListener("click", e => {
+  const th = e.target.closest("th"); if (th) { const k = th.dataset.k; pdir = k === pkey ? -pdir : (k === "n" || k === "t" ? 1 : -1); pkey = k; renderPStats(); return; }
+  const tr = e.target.closest("tr.click"); if (tr) { popen = popen === tr.dataset.id ? null : tr.dataset.id; renderPStats(); }
+});
+
+let q4key = "vs_expected", q4dir = -1;
+function renderQ4(){
+  const Q = D.q4; if (!Q) return;
+  const sg = v => v == null ? "–" : (v > 0 ? "+" : "") + v.toFixed(1);
+  $("q4l").innerHTML = `<tr><th>Margin after 3 qtrs</th><th>Games</th><th>Q4 pts for</th><th>Q4 pts against</th><th>Q4 net</th><th>Scored in Q4</th></tr>` +
+    Q.league.map(r => `<tr><td>${r.margin}</td><td>${r.games}</td><td>${r.q4_for.toFixed(1)}</td><td>${r.q4_against.toFixed(1)}</td><td>${sg(r.q4_net)}</td><td>${pct(r.scored_any)}</td></tr>`).join("");
+  const cols = [["team","Team"],["games","G"],["q4_for","Q4 for"],["q4_against","Q4 against"],["q4_net","Q4 net"],["vs_expected","Vs expected"],["leading_net","Up 9+"],["close_net","Within 8"],["trailing_net","Down 9+"]];
+  const rows = [...Q.team].sort((a,b) => q4key === "team" ? q4dir*a.team.localeCompare(b.team) : q4dir*((a[q4key] ?? -99) - (b[q4key] ?? -99)));
+  const st = (r, s) => r[s + "_g"] ? `${sg(r[s + "_net"])} <span class="tm">(${r[s + "_g"]})</span>` : "–";
+  $("q4t").innerHTML = `<tr>${cols.map(([k,n]) => `<th class="sort" data-k="${k}">${n}${k===q4key?(q4dir>0?" ▲":" ▼"):""}</th>`).join("")}</tr>` +
+    rows.map(r => `<tr><td>${r.team}</td><td>${r.games}</td><td>${r.q4_for.toFixed(1)}</td><td>${r.q4_against.toFixed(1)}</td><td>${sg(r.q4_net)}</td><td>${sg(r.vs_expected)}</td><td>${st(r,"leading")}</td><td>${st(r,"close")}</td><td>${st(r,"trailing")}</td></tr>`).join("");
+  $("q4note").textContent = "Vs expected compares a team's 4th quarter net points with what the league averages from the same margin, per game. Trailing teams usually outscore leaders in the 4th quarter as leaders play it safe, which matters for live totals and backdoor covers. A team's 4th quarter edge carries over only modestly: from 2015 to 2025, its first 8 games correlated 0.22 with the rest of its season.";
+}
+$("q4t").addEventListener("click", e => { const th = e.target.closest("th"); if (!th) return; const k = th.dataset.k; q4dir = k === q4key ? -q4dir : (k === "team" ? 1 : -1); q4key = k; renderQ4(); });
+renderWeek(); renderStand(); renderATN(); renderMVV(); renderPStats(); renderQ4();
 </script>
