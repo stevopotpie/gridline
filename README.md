@@ -151,7 +151,7 @@ The first run downloads about 250 MB of nflverse data into `data/` and takes a f
 |---|---|
 | Top level `*.py` and `run_all.sh` | The weekly pipeline, in the order listed above |
 | `templates/` | The calculator, season board and bet log pages |
-| `site/index.html` | The landing page for the public site |
+| `site/` | The public site's landing page, and `assemble.py`, which adds the navigation bar, site map, sitemap.xml and robots.txt |
 | `odds/` | Sportsbook odds snapshots pulled several times a week from The Odds API |
 | `.github/workflows/pages.yml` | Rebuilds everything and publishes the site to GitHub Pages on a schedule and whenever new odds arrive |
 | `player_best_models.json` | The winning player model and features for each stat, from `research/player_experiments.py` |

@@ -49,14 +49,7 @@ jobs:
 
       - name: Assemble the site
         run: |
-          mkdir -p _site
-          cp site/index.html _site/index.html
-          # The built pages are fragments meant for an embedded viewer; give them a full document head for the web
-          for pair in "gridline_2026.html:season.html" "gridline_model.html:model.html" "gridline_bet_log.html:bet-log.html"; do
-            src="${pair%%:*}"; dst="${pair##*:}"
-            { printf '<!doctype html>\n<html lang="en">\n<meta charset="utf-8">\n<meta name="viewport" content="width=device-width, initial-scale=1">\n'; cat "$src"; } > "_site/$dst"
-          done
-          touch _site/.nojekyll
+          python3 -I site/assemble.py "$GITHUB_WORKSPACE" _site
           ls -la _site
 
       - uses: actions/upload-pages-artifact@v3
