@@ -2,6 +2,7 @@
 Usage:
   python3 -I build_pages.py calc   MODEL_DIR   -> page_data.json + gridline_model.html (the calculator)
   python3 -I build_pages.py season MODEL_DIR   -> season_data.json + gridline_2026.html (needs season.py output)
+  python3 -I build_pages.py betlog MODEL_DIR   -> gridline_bet_log.html (the bet log, with a snapshot of the model for its risk meter)
 Optional MODEL_DIR/forecasts.csv (game_id,temp_f,wind_mph,roof_closed,as_of) sets kickoff weather for upcoming games."""
 import sys, os, json
 import numpy as np
@@ -203,3 +204,48 @@ elif MODE == "season":
     html = open(template("season_template.html")).read().replace("__DATA__", json.dumps(data))
     open(J("gridline_2026.html"), "w").write(html)
     print("season page built:", len(games), "games |", gr["games"], "graded |", sum("fcT" in e for e in games), "with forecasts")
+
+elif MODE == "betlog":
+    # Snapshot of Gridline's numbers for the bet log's risk meter: every 2026 game, this slate's player props,
+    # and calibration factors fit on the 2018 to 2025 backtest so the meter never oversells a side.
+    from scipy import stats, optimize
+    coef = json.load(open(J("coefficients_final.json")))
+    sdM, sdT = coef["resid_sd_margin"], coef["resid_sd_total"]
+    # Probit slopes, each fit on 2018 to 2025 games the model had not seen:
+    #   veg: how well the Vegas spread alone predicts the winner; mod: the same for Gridline's margin alone
+    #   sp:  how much of Gridline's gap from the Vegas spread shows up in covers (heavily shrunk)
+    #   tot: the same for Gridline's gap from the Vegas total
+    k = {"veg": 1.13, "mod": 0.95, "sp": 0.22, "tot": 0.6}
+    if os.path.exists(J("backtest_games_final.csv")):
+        b = pd.read_csv(J("backtest_games_final.csv")); b = b[b.spread_line.notna() & b.total_line.notna()]
+        def fit(x, y):
+            f = lambda c: -np.sum(y * np.log(stats.norm.cdf(c * x).clip(1e-6)) + (1 - y) * np.log((1 - stats.norm.cdf(c * x)).clip(1e-6)))
+            return float(optimize.minimize_scalar(f, bounds=(0, 3), method="bounded").x)
+        w = b[b.result != 0]
+        k["veg"] = fit((w.spread_line / sdM).values, (w.result > 0).astype(int).values)
+        k["mod"] = fit((w.m_final / sdM).values, (w.result > 0).astype(int).values)
+        s_ = b[b.result != b.spread_line]
+        k["sp"] = fit(((s_.m_final - s_.spread_line) / sdM).values, (s_.result > s_.spread_line).astype(int).values)
+        t = b[b.total != b.total_line]
+        k["tot"] = fit(((t.tm_final - t.total_line) / sdT).values, (t.total > t.total_line).astype(int).values)
+    x = pd.read_csv(J("season_2026_games.csv"))
+    f1 = lambda v, n=2: None if pd.isna(v) else round(float(v), n)
+    games = [dict(wk=int(r.week), d=str(r.gameday), a=r.away_team, h=r.home_team, pm=f1(r.p_margin), sl=f1(r.spread_line, 1),
+                  tl=f1(r.total_line, 1), tot=f1(r.m_total if not pd.isna(r.m_total) else r.p_total), done=not pd.isna(r.home_score))
+             for r in x.itertuples()]
+    props, psd = [], {}
+    if os.path.exists(J("player_props_2026.csv")):
+        p = pd.read_csv(J("player_props_2026.csv"))
+        gk = {r.game_id: f"{r.away_team} @ {r.home_team}" for r in x.itertuples()}
+        for r in p.itertuples():
+            props.append(dict(g=gk.get(r.game_id), wk=int(r.week), n=r.display_name, t=r.team, pos=r.position,
+                              py=f1(r.proj_pass_yds, 1), ptd=f1(r.proj_pass_td), ry=f1(r.proj_rush_yds, 1), cy=f1(r.proj_rec_yds, 1),
+                              rec=f1(r.proj_receptions), td=f1(r.proj_tds), td1=f1(r.p_td1, 3), td2=f1(r.p_td2, 3), p300=f1(r.p_pass300, 3),
+                              ptd2=f1(r.p_ptd2, 3), ptd3=f1(r.p_ptd3, 3), r100=f1(r.p_rush100, 3), c100=f1(r.p_rec100, 3)))
+    if os.path.exists(J("player_backtest.json")):
+        psd = {m: v.get("sd") for m, v in json.load(open(J("player_backtest.json"))).items()}
+    model = {"asof": pd.Timestamp.now(tz="America/New_York").strftime("%a %b %d"), "sdM": round(sdM, 2), "sdT": round(sdT, 2),
+             "k": {kk: round(v, 3) for kk, v in k.items()}, "games": games, "props": props, "psd": psd}
+    html = open(template("bet_log.html")).read().replace("__MODEL__", json.dumps(model))
+    open(J("gridline_bet_log.html"), "w").write(html)
+    print("bet log built:", len(games), "games |", len(props), "player props | calibration", model["k"])

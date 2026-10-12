@@ -167,6 +167,7 @@ for m in MARKETS:
     f = ridge(d, cols, m)
     mu_all = f(d)
     sdf = sd_fit(d[m].values, mu_all)
+    bt["sd"] = [float(sdf[0]), float(sdf[1])]   # spread of outcomes = a + b x projection (used by the bet log meter)
     e = F.eligible(new, m)
     new.loc[e, f"proj_{m}"] = f(new[e])
     for name, k in MILE.get(m, []):

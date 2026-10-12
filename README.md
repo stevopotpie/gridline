@@ -116,8 +116,13 @@ One limit: the free data has no historical prop lines, so the backtest grades pr
 | Player projections and prop probabilities | `player_features.py`, `player_props.py` |
 | Fourth quarter scoring by margin | `fourth_quarter.py` |
 | Publish the calculator and season board | `build_pages.py` |
+| Bet log with a calibrated risk meter | `build_pages.py betlog`, `templates/bet_log.html` |
 
 Scheduled runs grade each weekend on Tuesday, pull in lines and final injury reports on Friday, and add kickoff weather forecasts on Saturday and Sunday mornings. The season board simulates the rest of the season 20,000 times for projected records and playoff odds.
+
+## Bet log and risk meter
+
+A private bet log tracks every bet, its result and its closing line value. As a bet is entered, a meter runs from red (long shot) to green (safe) showing its chance to win, and says whether Gridline's chance beats the price the odds imply. Spreads and totals start from the Vegas line and add only the share of Gridline's disagreement that has shown up in results: fit on the 2018 to 2025 backtest, a 3 point gap from the Vegas spread is worth about 52%, not the 59% a raw projection would suggest. Safe means likely, not good value.
 
 ## Run it yourself
 
@@ -145,7 +150,6 @@ Python (pandas, NumPy, scikit-learn, SciPy, PyArrow), with HTML and JavaScript f
 
 ## What I would do next
 
-- Track closing line value on every bet to measure skill faster than win and loss records can
 - Use the real distribution of final margins, which clusters on 3 and 7, for cover probabilities
 - Collect posted player prop lines each week to measure the player model against the market
 - Add historical rain and snow data to sharpen the weather adjustment

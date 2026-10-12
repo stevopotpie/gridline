@@ -66,6 +66,18 @@ table.bt{width:100%;border-collapse:collapse;font:400 .82rem var(--f-mono);font-
 .bt th:first-child,.bt td:first-child{text-align:left}
 .bt th{font:600 .7rem var(--f-body);letter-spacing:.06em;text-transform:uppercase;color:var(--muted)}
 .scroll{overflow-x:auto}
+.meter{display:grid;gap:6px;border:1px solid var(--line);border-radius:10px;padding:10px 12px;background:var(--bg)}
+.meter .head{display:flex;justify-content:space-between;align-items:baseline;gap:8px;flex-wrap:wrap}
+.meter .lvl{font:700 1.15rem var(--f-display);letter-spacing:.03em;text-transform:uppercase}
+.meter .pct{font:600 .95rem var(--f-mono);font-variant-numeric:tabular-nums}
+.track{height:10px;border-radius:999px;background:var(--chip);overflow:hidden}
+.track i{display:block;height:100%;border-radius:999px;transition:width .25s ease,background-color .25s ease}
+.scale{display:flex;justify-content:space-between;font:400 .7rem var(--f-body);color:var(--muted)}
+.meter .why{font:400 .8rem var(--f-mono);color:var(--muted);font-variant-numeric:tabular-nums}
+.val.pos{color:var(--good)} .val.neg{color:var(--bad)}
+.mini{display:flex;align-items:center;gap:8px;font:500 .78rem var(--f-mono);font-variant-numeric:tabular-nums}
+.mini .track{flex:0 0 90px;height:7px}
+[hidden]{display:none!important}
 .empty{border:1px dashed var(--line);border-radius:10px;padding:16px;color:var(--muted);text-align:center}
 </style>
 
@@ -88,9 +100,13 @@ table.bt{width:100%;border-collapse:collapse;font:400 .82rem var(--f-mono);font-
       <label class="field"><span>Date</span><input id="f-date" type="date"></label>
       <label class="field"><span>Game</span><input id="f-game" type="text" placeholder="SF @ SEA" autocomplete="off"></label>
       <label class="field"><span>Bet type</span><select id="f-market">
-        <option value="spread">Spread</option><option value="over">Total: over</option><option value="under">Total: under</option><option value="ml">Moneyline</option>
+        <option value="spread">Spread</option><option value="over">Total: over</option><option value="under">Total: under</option><option value="ml">Moneyline</option><option value="prop">Player prop</option>
       </select></label>
       <label class="field"><span id="f-pick-l">Team</span><input id="f-pick" type="text" placeholder="SF" autocomplete="off"></label>
+      <label class="field" id="f-prop-w" hidden><span>Prop</span><select id="f-prop">
+        <option value="td1">Anytime touchdown</option><option value="td2">2+ touchdowns</option><option value="pass_yds">Passing yards</option><option value="pass_td">Passing TDs</option>
+        <option value="rush_yds">Rushing yards</option><option value="rec_yds">Receiving yards</option><option value="receptions">Receptions</option></select></label>
+      <label class="field" id="f-side-w" hidden><span>Side</span><select id="f-side"><option value="over">Over</option><option value="under">Under</option></select></label>
       <label class="field" id="f-line-w"><span id="f-line-l">Line you got (your side, e.g. +3)</span><input id="f-line" type="number" step="0.5" inputmode="decimal"></label>
       <label class="field"><span>Odds (American)</span><input id="f-odds" type="number" step="1" inputmode="numeric" placeholder="-110"></label>
       <label class="field"><span>Stake ($)</span><input id="f-stake" type="number" step="1" min="0" inputmode="decimal"></label>
@@ -98,6 +114,7 @@ table.bt{width:100%;border-collapse:collapse;font:400 .82rem var(--f-mono);font-
       <label class="field"><span>Result</span><select id="f-result"><option value="pending">Pending</option><option value="win">Win</option><option value="loss">Loss</option><option value="push">Push</option></select></label>
       <label class="field"><span>Model edge (pts, optional)</span><input id="f-edge" type="number" step="0.1" inputmode="decimal"></label>
       <label class="field full"><span>Notes</span><input id="f-notes" type="text" autocomplete="off" placeholder="Why you liked it"></label>
+      <div class="meter full" id="meter" aria-live="polite"></div>
       <div class="row full"><button type="submit" class="primary" id="f-save">Save bet</button><button type="button" id="f-cancel" hidden>Cancel edit</button><span class="msg" id="f-msg"></span></div>
     </form>
   </section>
@@ -110,6 +127,8 @@ table.bt{width:100%;border-collapse:collapse;font:400 .82rem var(--f-mono);font-
 
 <script>
 const $ = id => document.getElementById(id);
+const esc = s => String(s).replace(/[&<>"]/g, c => ({"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;"}[c]));
+const num = id => { const v = $(id).value.trim(); return v === "" ? null : Number(v); };
 let db = null, bets = [], editing = null, canWrite = true;
 const today = () => { const d = new Date(); d.setMinutes(d.getMinutes() - d.getTimezoneOffset()); return d.toISOString().slice(0,10); };
 $("f-date").value = today();
@@ -124,26 +143,124 @@ function profit(b){
 }
 function clv(b){
   if (b.closing == null || b.closing === "") return null;
-  if (b.market === "ml") return b.odds ? (implied(b.closing) - implied(b.odds)) * 100 : null;  // percentage points of win chance
+  if (b.market === "ml" || isTdProp(b)) return b.odds ? (implied(b.closing) - implied(b.odds)) * 100 : null;  // percentage points of win chance
   if (b.line == null) return null;
+  if (b.market === "prop") return b.side === "under" ? b.closing - b.line : b.line - b.closing;
   if (b.market === "spread") return b.line - b.closing;
   if (b.market === "over") return b.closing - b.line;
   return b.line - b.closing;
 }
+const PROP_NAMES = {td1:"anytime TD", td2:"2+ TDs", pass_yds:"passing yds", pass_td:"passing TDs", rush_yds:"rushing yds", rec_yds:"receiving yds", receptions:"receptions"};
+const isTdProp = b => b.market === "prop" && (b.prop === "td1" || b.prop === "td2");
 function pickText(b){
+  if (b.market === "prop") return isTdProp(b) ? `${b.pick} ${PROP_NAMES[b.prop]}` : `${b.pick} ${b.side === "under" ? "under" : "over"} ${b.line ?? "?"} ${PROP_NAMES[b.prop] || ""}`;
   if (b.market === "ml") return `${b.pick} moneyline`;
   if (b.market === "over" || b.market === "under") return `${b.market === "over" ? "Over" : "Under"} ${b.line ?? "?"}`;
   const l = b.line; return `${b.pick} ${l == null ? "?" : (l > 0 ? "+" + l : l === 0 ? "PK" : l)}`;
 }
 
-function setMarketLabels(){
-  const m = $("f-market").value;
-  $("f-pick-l").textContent = m === "over" || m === "under" ? "Game note (optional)" : "Team";
-  $("f-line-w").hidden = m === "ml";
-  $("f-line-l").textContent = m === "spread" ? "Line you got (your side, e.g. +3)" : "Total you got";
-  $("f-close-l").textContent = m === "ml" ? "Closing odds (optional)" : "Closing line (optional)";
+
+// ---------- Gridline snapshot and the risk meter ----------
+const MODEL = __MODEL__;
+const erf = x => { const t = 1 / (1 + 0.3275911 * Math.abs(x)); const y = 1 - (((((1.061405429*t - 1.453152027)*t) + 1.421413741)*t - 0.284496736)*t + 0.254829592)*t*Math.exp(-x*x); return x >= 0 ? y : -y; };
+const PHI = z => 0.5 * (1 + erf(z / Math.SQRT2));
+const ALIAS = {LAR:"LA", WSH:"WAS", JAC:"JAX", ARZ:"ARI", LVR:"LV", OAK:"LV", SD:"LAC", STL:"LA", GNB:"GB", KAN:"KC", NWE:"NE", NOR:"NO", SFO:"SF", TAM:"TB", CLV:"CLE", BLT:"BAL", HST:"HOU"};
+const TEAMS = new Set(MODEL.games.flatMap(g => [g.a, g.h]));
+const teamsIn = s => (String(s || "").toUpperCase().match(/[A-Z]{2,3}/g) || []).map(t => ALIAS[t] || t).filter(t => TEAMS.has(t));
+function findGame(gameStr, date){
+  const ts = teamsIn(gameStr); if (ts.length < 2) return null;
+  const c = MODEL.games.filter(g => ts.includes(g.a) && ts.includes(g.h)); if (!c.length) return null;
+  const t = date ? Date.parse(date) : Date.now();
+  return c.sort((x, y) => Math.abs(Date.parse(x.d) - t) - Math.abs(Date.parse(y.d) - t))[0];
 }
-$("f-market").addEventListener("input", setMarketLabels); setMarketLabels();
+const norm = s => String(s || "").toLowerCase().replace(/[^a-z ]/g, "").trim();
+function findPlayer(name, g){
+  const n = norm(name); if (n.length < 3) return null;
+  let pool = MODEL.props; if (g) { const key = `${g.a} @ ${g.h}`; const inGame = pool.filter(p => p.g === key); if (inGame.length) pool = inGame; }
+  return pool.find(p => norm(p.n) === n) || pool.find(p => norm(p.n).includes(n)) || pool.find(p => n.split(" ").length > 1 && norm(p.n).split(" ").slice(-1)[0] === n.split(" ").slice(-1)[0]) || null;
+}
+const poisAtLeast = (mu, k) => { let p = 0, t = Math.exp(-mu); for (let i = 0; i < k; i++) { p += t; t *= mu / (i + 1); } return 1 - p; };
+function propProb(p, prop, side, line){
+  const sd = (m, mu) => { const s = MODEL.psd[m]; return Math.max(s ? s[0] + s[1] * mu : 0.5 * mu, 5); };
+  let over = null;
+  if (prop === "td1") return p.td1;
+  if (prop === "td2") return p.td2;
+  if (line == null) return null;
+  const k = Math.floor(line) + 1;          // over 1.5 means 2 or more
+  if (prop === "pass_yds" && p.py != null) over = (line === 299.5 && p.p300 != null) ? p.p300 : 1 - PHI((line - p.py) / sd("pass_yds", p.py));
+  if (prop === "rush_yds" && p.ry != null) over = (line === 99.5 && p.r100 != null) ? p.r100 : 1 - PHI((line - p.ry) / sd("rush_yds", p.ry));
+  if (prop === "rec_yds" && p.cy != null) over = (line === 99.5 && p.c100 != null) ? p.c100 : 1 - PHI((line - p.cy) / sd("rec_yds", p.cy));
+  if (prop === "pass_td" && p.ptd != null) over = k === 2 && p.ptd2 != null ? p.ptd2 : k === 3 && p.ptd3 != null ? p.ptd3 : poisAtLeast(p.ptd, k);
+  if (prop === "receptions" && p.rec != null) over = poisAtLeast(p.rec, k);
+  if (over == null) return null;
+  return side === "under" ? 1 - over : over;
+}
+// Chance the bet wins, from Gridline when it covers the game or player, otherwise from the book's price
+function winChance(b){
+  const book = b.odds ? implied(b.odds) : null;
+  const g = findGame(b.game, b.date), K = MODEL.k;
+  let p = null, note = "";
+  if (g && (b.market === "spread" || b.market === "ml")) {
+    const side = teamsIn(b.pick)[0];
+    if (side === g.a || side === g.h) {
+      const m = side === g.h ? g.pm : -g.pm, v = g.sl == null ? null : (side === g.h ? g.sl : -g.sl);
+      if (b.market === "ml") p = v == null ? PHI(K.mod * m / MODEL.sdM) : PHI(K.veg * v / MODEL.sdM + K.sp * (m - v) / MODEL.sdM);
+      else if (b.line != null) p = v == null ? PHI(K.mod * (m + b.line) / MODEL.sdM) : PHI((v + b.line) / MODEL.sdM + K.sp * (m - v) / MODEL.sdM);
+      const other = side === g.h ? g.a : g.h, fav = x => Math.abs(x) < 0.05 ? "even" : `${x > 0 ? side : other} by ${Math.abs(x).toFixed(1)}`;
+      if (p != null) note = `Gridline: ${fav(m)}${v != null ? ` · Vegas: ${fav(v)}` : " · Vegas line not posted yet"}`;
+    }
+  }
+  if (g && (b.market === "over" || b.market === "under") && b.line != null && g.tot != null) {
+    const vt = g.tl ?? g.tot, over = PHI((vt - b.line) / MODEL.sdT + K.tot * (g.tot - vt) / MODEL.sdT);
+    p = b.market === "over" ? over : 1 - over; note = `Gridline total ${g.tot.toFixed(1)}${g.tl != null ? `, Vegas ${g.tl}` : ""}`;
+  }
+  if (b.market === "prop") {
+    const pl = findPlayer(b.pick, g);
+    if (pl) { p = propProb(pl, b.prop, b.side, b.line); if (p != null) note = `Gridline projects ${pl.n} (${pl.t}): ${propProj(pl, b.prop)}`; }
+  }
+  if (p != null) return {p, src: "Gridline", book, note};
+  if (book != null) return {p: book, src: "book", book, note: "Gridline has no projection for this one, so this uses the book's price"};
+  return null;
+}
+function propProj(p, prop){
+  return {td1: `${p.td?.toFixed(2)} TDs`, td2: `${p.td?.toFixed(2)} TDs`, pass_yds: `${p.py} pass yds`, pass_td: `${p.ptd?.toFixed(1)} pass TDs`,
+          rush_yds: `${p.ry} rush yds`, rec_yds: `${p.cy} rec yds`, receptions: `${p.rec?.toFixed(1)} catches`}[prop] || "";
+}
+const LEVELS = [[0.70, "Safe"], [0.55, "Solid"], [0.45, "Coin flip"], [0.30, "Risky"], [0.15, "High risk"], [0, "Long shot"]];
+const level = p => LEVELS.find(([t]) => p >= t)[1];
+// Red at 15% or less, through amber, to green at 75% or more
+const meterColor = p => `hsl(${Math.round(Math.max(0, Math.min(1, (p - 0.15) / 0.6)) * 130)} 62% 44%)`;
+function meterHTML(r, full){
+  if (!r) return full ? `<div class="why">Enter the game, your pick and the odds to see how risky the bet is.</div>` : "";
+  const w = Math.round(Math.max(0.02, Math.min(0.98, r.p)) * 100);
+  const bar = `<div class="track" role="meter" aria-valuemin="0" aria-valuemax="100" aria-valuenow="${Math.round(r.p*100)}" aria-label="Chance to win"><i style="width:${w}%;background:${meterColor(r.p)}"></i></div>`;
+  if (!full) return `<div class="mini">${bar}<span>${level(r.p)} · ${pct(r.p)}${r.src === "book" ? " (book)" : ""}</span></div>`;
+  let val = "";
+  if (r.src === "Gridline" && r.book != null) {
+    const e = (r.p - r.book) * 100;
+    val = ` · <span class="val ${e > 0 ? "pos" : "neg"}">${e > 0 ? "Gridline sees value" : "Book price is steep"}: ${e > 0 ? "+" : "−"}${Math.abs(e).toFixed(1)} pts vs the ${pct(r.book)} the odds imply</span>`;
+  }
+  return `<div class="head"><span class="lvl" style="color:${meterColor(r.p)}">${level(r.p)}</span><span class="pct">${pct(r.p)} chance to win</span></div>${bar}
+    <div class="scale"><span>High risk</span><span>Coin flip</span><span>Safe</span></div>
+    <div class="why">${esc(r.note)}${val}</div>
+    <div class="why">Safe means likely, not good value: a −400 favorite can be a bad bet. Value is when Gridline's chance beats the price.${r.src === "Gridline" ? ` Model as of ${MODEL.asof}.` : ""}</div>`;
+}
+const pct = p => p >= 0.995 ? ">99%" : p < 0.005 ? "<1%" : Math.round(p * 100) + "%";
+function updateMeter(){ $("meter").innerHTML = meterHTML(winChance(readForm()), true); }
+
+function setMarketLabels(){
+  const m = $("f-market").value, prop = $("f-prop").value, tdProp = m === "prop" && (prop === "td1" || prop === "td2");
+  $("f-pick-l").textContent = m === "prop" ? "Player" : m === "over" || m === "under" ? "Game note (optional)" : "Team";
+  $("f-pick").placeholder = m === "prop" ? "Bijan Robinson" : "SF";
+  $("f-prop-w").hidden = m !== "prop";
+  $("f-side-w").hidden = m !== "prop" || tdProp;
+  $("f-line-w").hidden = m === "ml" || tdProp;
+  $("f-line-l").textContent = m === "spread" ? "Line you got (your side, e.g. +3)" : m === "prop" ? "Line you got (e.g. 74.5)" : "Total you got";
+  $("f-close-l").textContent = m === "ml" || tdProp ? "Closing odds (optional)" : "Closing line (optional)";
+  updateMeter();
+}
+$("f-market").addEventListener("input", setMarketLabels); $("f-prop").addEventListener("input", setMarketLabels);
+$("f").addEventListener("input", e => { if (e.target.id !== "f-market" && e.target.id !== "f-prop") updateMeter(); });
 
 function render(){
   const settled = bets.filter(b => b.result && b.result !== "pending");
@@ -158,7 +275,7 @@ function render(){
     ["Return", risked ? ((pl/risked)*100).toFixed(1) + "%" : "–", "profit ÷ risked"],
     ["Beat the close", withClv.length ? `${beat} of ${withClv.length}` : "–", ptsClv.length ? `avg ${(ptsClv.reduce((a,b)=>a+b,0)/ptsClv.length).toFixed(1)} pts` : "add closing lines"]
   ].map(([k,v,d]) => `<div class="kpi"><div class="k">${k}</div><div class="v">${v}</div><div class="d">${d}</div></div>`).join("");
-  const names = {spread:"Spread", over:"Total: over", under:"Total: under", ml:"Moneyline"};
+  const names = {spread:"Spread", over:"Total: over", under:"Total: under", ml:"Moneyline", prop:"Player prop"};
   const rows = Object.keys(names).map(m => {
     const s = bets.filter(b => b.market === m); if (!s.length) return "";
     const st = s.filter(b => b.result !== "pending"), ww = st.filter(b => b.result === "win").length, ll = st.filter(b => b.result === "loss").length;
@@ -170,10 +287,12 @@ function render(){
   if (!bets.length) { $("bets").innerHTML = `<div class="empty">No bets yet. Log your first one above and it will show up here, with its result and how your number compared to the close.</div>`; return; }
   $("bets").innerHTML = bets.map(b => {
     const c = clv(b), pr = profit(b);
-    const clvTxt = c == null ? "Add the closing number to see line value" : b.market === "ml" ? `Line value: ${c > 0 ? "+" : ""}${c.toFixed(1)} pct points of win chance` : `Line value: ${c > 0 ? "+" : ""}${c.toFixed(1)} pts vs close`;
+    const r = b.prob != null ? {p: b.prob, src: b.probSrc || "Gridline"} : winChance(b);
+    const clvTxt = c == null ? "Add the closing number to see line value" : b.market === "ml" || isTdProp(b) ? `Line value: ${c > 0 ? "+" : ""}${c.toFixed(1)} pct points of win chance` : `Line value: ${c > 0 ? "+" : ""}${c.toFixed(1)} pts vs close`;
     return `<article class="bet" data-id="${b.id}">
       <div class="top"><span class="pick">${esc(pickText(b))}</span><span class="chip ${b.result}">${b.result}</span></div>
       <div class="meta">${esc(b.date || "")} · ${esc(b.game || "")} · ${b.odds ? (b.odds > 0 ? "+" : "") + b.odds : "odds needed"} · $${(b.stake||0).toFixed(0)}${b.edge != null && b.edge !== "" ? ` · model edge ${b.edge}` : ""}</div>
+      ${meterHTML(r, false)}
       ${b.result !== "pending" ? `<div class="pl ${pr > 0 ? "pos" : pr < 0 ? "neg" : ""}">${money(pr)}</div>` : ""}
       <div class="clv ${c > 0 ? "pos" : c < 0 ? "neg" : ""}">${clvTxt}</div>
       ${b.notes ? `<div class="note">${esc(b.notes)}</div>` : ""}
@@ -181,19 +300,21 @@ function render(){
     </article>`;
   }).join("");
 }
-const esc = s => String(s).replace(/[&<>"]/g, c => ({"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;"}[c]));
-const num = id => { const v = $(id).value.trim(); return v === "" ? null : Number(v); };
 
 function readForm(){
-  const m = $("f-market").value;
-  return { date: $("f-date").value || today(), game: $("f-game").value.trim(), market: m, pick: $("f-pick").value.trim(),
-    line: m === "ml" ? null : num("f-line"), odds: num("f-odds") ?? (m === "ml" ? null : -110), stake: num("f-stake") ?? 0,
+  const m = $("f-market").value, prop = m === "prop" ? $("f-prop").value : null, tdProp = prop === "td1" || prop === "td2";
+  const b = { date: $("f-date").value || today(), game: $("f-game").value.trim(), market: m, pick: $("f-pick").value.trim(),
+    line: m === "ml" || tdProp ? null : num("f-line"), odds: num("f-odds") ?? (m === "ml" || tdProp ? null : -110), stake: num("f-stake") ?? 0,
     closing: num("f-close"), result: $("f-result").value, edge: num("f-edge"), notes: $("f-notes").value.trim() };
+  if (m === "prop") { b.prop = prop; b.side = tdProp ? "yes" : $("f-side").value; }
+  return b;
 }
 function fillForm(b){
   $("f-date").value = b.date || today(); $("f-game").value = b.game || ""; $("f-market").value = b.market; $("f-pick").value = b.pick || "";
   $("f-line").value = b.line ?? ""; $("f-odds").value = b.odds ?? ""; $("f-stake").value = b.stake ?? ""; $("f-close").value = b.closing ?? "";
-  $("f-result").value = b.result || "pending"; $("f-edge").value = b.edge ?? ""; $("f-notes").value = b.notes || ""; setMarketLabels();
+  $("f-result").value = b.result || "pending"; $("f-edge").value = b.edge ?? ""; $("f-notes").value = b.notes || "";
+  if (b.market === "prop") { $("f-prop").value = b.prop || "td1"; if (b.side && b.side !== "yes") $("f-side").value = b.side; }
+  setMarketLabels();
 }
 function resetForm(){ editing = null; $("f").reset(); $("f-date").value = today(); $("f-title").textContent = "Log a bet"; $("f-cancel").hidden = true; $("f-save").textContent = "Save bet"; setMarketLabels(); }
 function msg(t, err){ $("f-msg").textContent = t; $("f-msg").className = "msg" + (err ? " err" : ""); }
@@ -204,7 +325,9 @@ $("f").addEventListener("submit", async e => {
   const b = readForm();
   if (!b.game) { msg("Add the game, like SF @ SEA.", true); return; }
   if ((b.market === "spread" || b.market === "ml") && !b.pick) { msg("Add the team you bet.", true); return; }
-  if (b.market !== "ml" && b.line == null) { msg("Add the line you got.", true); return; }
+  if (b.market === "prop" && !b.pick) { msg("Add the player you bet.", true); return; }
+  if (b.market !== "ml" && !isTdProp(b) && b.line == null) { msg("Add the line you got.", true); return; }
+  const r = winChance(b); if (r) { b.prob = Math.round(r.p * 1000) / 1000; b.probSrc = r.src; }   // the meter reading when the bet was placed
   if (!b.stake) { msg("Add your stake.", true); return; }
   $("f-save").disabled = true;
   try {
