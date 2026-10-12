@@ -93,8 +93,8 @@ def meta(f):
     return (f'<meta name="description" content="{desc}">\n' if f != "index.html" else "") + (
         f'<meta property="og:type" content="website">\n<meta property="og:site_name" content="Gridline">\n'
         f'<meta property="og:title" content="{title}">\n<meta property="og:description" content="{desc}">\n'
-        f'<meta property="og:url" content="{url}">\n<meta property="og:image" content="{BASE}og.png">\n'
-        f'<meta property="og:image:width" content="1200">\n<meta property="og:image:height" content="627">\n'
+        f'<meta property="og:url" content="{url}">\n<meta property="og:image" content="{BASE}og.png?v=2">\n'
+        f'<meta property="og:image:width" content="2400">\n<meta property="og:image:height" content="1254">\n'
         f'<meta property="og:image:alt" content="Gridline: spreads, totals and player props, tested honestly against the betting market">\n'
         f'<meta name="twitter:card" content="summary_large_image">\n'
         f'<link rel="canonical" href="{url}">\n<link rel="icon" type="image/png" href="icon.png">\n<link rel="apple-touch-icon" href="icon.png">\n')
