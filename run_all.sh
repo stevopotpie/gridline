@@ -13,6 +13,8 @@ for y in $(seq 2015 2026); do
 done
 curl -sSLf -o "$D/players.csv" "$B/players/players.csv"
 cd "$W"
+# live sportsbook odds pulled on Steven's PC (github.com/stevopotpie/gridline odds/): patch unplayed games with the books' middle line
+if [ -f odds.py ]; then python3 -I -W ignore odds.py "$D" "$W" || echo "odds: step failed, using nflverse lines only"; else echo "odds: odds.py missing, using nflverse lines only"; fi
 python3 -I -W ignore features.py "$D" "$W/games_features.csv"
 python3 -I -W ignore special_teams.py "$D" "$W/games_features.csv" "$W/games_features_st.csv"
 python3 -I -W ignore candidates.py "$D" "$W/games_features_st.csv" "$W/games_features_all.csv"
