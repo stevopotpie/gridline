@@ -81,6 +81,25 @@ def sitemap_footer(current):
             f'</div></footer>')
 
 
+def meta(f):
+    """Link preview (LinkedIn, Slack, texts), search snippet and browser tab icon for one page."""
+    title = {"index.html": "Gridline: an NFL model tested against the betting market",
+             "season.html": "Gridline 2026 Season Board", "model.html": "Gridline Matchup Calculator",
+             "bet-log.html": "Gridline Bet Log"}[f]
+    desc = next(d for p, _, _, _, d in PAGES if p == f)
+    if f == "index.html":
+        desc = "NFL spreads, totals and player props from public play by play data, tested honestly against the betting market. Built by Steven Sutcliffe."
+    url = BASE + ("" if f == "index.html" else f)
+    return (f'<meta name="description" content="{desc}">\n' if f != "index.html" else "") + (
+        f'<meta property="og:type" content="website">\n<meta property="og:site_name" content="Gridline">\n'
+        f'<meta property="og:title" content="{title}">\n<meta property="og:description" content="{desc}">\n'
+        f'<meta property="og:url" content="{url}">\n<meta property="og:image" content="{BASE}og.png">\n'
+        f'<meta property="og:image:width" content="1200">\n<meta property="og:image:height" content="627">\n'
+        f'<meta property="og:image:alt" content="Gridline: spreads, totals and player props, tested honestly against the betting market">\n'
+        f'<meta name="twitter:card" content="summary_large_image">\n'
+        f'<link rel="canonical" href="{url}">\n<link rel="icon" type="image/png" href="icon.png">\n<link rel="apple-touch-icon" href="icon.png">\n')
+
+
 HEAD = ('<!doctype html>\n<html lang="en">\n<meta charset="utf-8">\n'
         '<meta name="viewport" content="width=device-width, initial-scale=1">\n')
 
@@ -88,7 +107,7 @@ os.makedirs(OUT, exist_ok=True)
 for f, src, *_ in PAGES:
     if src is None:
         html = open(os.path.join(REPO, "site", "index.html"), encoding="utf-8").read()
-        html = html.replace("</head>", STYLE + "\n</head>", 1)
+        html = html.replace("</head>", meta(f) + STYLE + "\n</head>", 1)
         html = html.replace("<!-- gridline:nav -->", nav(f), 1).replace("<!-- gridline:sitemap -->", sitemap_footer(f), 1)
     else:
         frag = open(os.path.join(REPO, src), encoding="utf-8").read()
@@ -96,7 +115,7 @@ for f, src, *_ in PAGES:
         if i < 0 or j < i:
             sys.exit(f"assemble: could not find the page layout in {src}")
         # nav goes right before the page content; the site map after it and before the page's script
-        html = HEAD + STYLE + "\n" + frag[:i] + nav(f) + "\n" + frag[i:j] + sitemap_footer(f) + "\n" + frag[j:]
+        html = HEAD + meta(f) + STYLE + "\n" + frag[:i] + nav(f) + "\n" + frag[i:j] + sitemap_footer(f) + "\n" + frag[j:]
     open(os.path.join(OUT, f), "w", encoding="utf-8").write(html)
 
 today = datetime.now(timezone.utc).strftime("%Y-%m-%d")
@@ -105,4 +124,6 @@ open(os.path.join(OUT, "sitemap.xml"), "w").write(
     f'<?xml version="1.0" encoding="UTF-8"?>\n<urlset xmlns="http://www.sitemaps.org/schemas/sitemap/0.9">\n{urls}</urlset>\n')
 open(os.path.join(OUT, "robots.txt"), "w").write(f"User-agent: *\nAllow: /\nSitemap: {BASE}sitemap.xml\n")
 open(os.path.join(OUT, ".nojekyll"), "w").close()
+for asset in ("og.png", "icon.png"):
+    shutil.copy(os.path.join(REPO, "site", asset), os.path.join(OUT, asset))
 print("site assembled:", ", ".join(f for f, *_ in PAGES), "+ sitemap.xml, robots.txt")
