@@ -1,0 +1,267 @@
+<title>Gridline 2026</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Barlow+Condensed:wght@600;700&family=IBM+Plex+Sans:wght@400;500;600&family=IBM+Plex+Mono:wght@400;500&display=swap">
+<style>
+/* Layout: one narrow column of input panels feeding a sticky scoreboard readout; phone first. */
+:root{
+  --bg:#eef1ee; --panel:#fbfcfb; --ink:#18201b; --muted:#5b665f; --line:#d5dcd7;
+  --accent:#1f6b45; --accent-ink:#ffffff; --board:#141a16; --board-ink:#f1f5f2; --amber:#c98a12;
+  --good:#1f7a4a; --bad:#b23b2e; --chip:#e3e9e5;
+  --f-display:"Barlow Condensed","Arial Narrow",system-ui,sans-serif;
+  --f-body:"IBM Plex Sans",system-ui,-apple-system,"Segoe UI",sans-serif;
+  --f-mono:"IBM Plex Mono",ui-monospace,Menlo,Consolas,monospace;
+  color-scheme:light;
+}
+@media (prefers-color-scheme: dark){:root:not([data-theme="light"]){
+  --bg:#101512; --panel:#171e1a; --ink:#e6ece8; --muted:#9aa7a0; --line:#2b352f;
+  --accent:#4fbf83; --accent-ink:#08130d; --board:#0a0e0c; --board-ink:#eef4f0; --amber:#e6a933;
+  --good:#5fd394; --bad:#ef7d6f; --chip:#222b26; color-scheme:dark}}
+:root[data-theme="dark"]{
+  --bg:#101512; --panel:#171e1a; --ink:#e6ece8; --muted:#9aa7a0; --line:#2b352f;
+  --accent:#4fbf83; --accent-ink:#08130d; --board:#0a0e0c; --board-ink:#eef4f0; --amber:#e6a933;
+  --good:#5fd394; --bad:#ef7d6f; --chip:#222b26; color-scheme:dark}
+body{background:var(--bg);color:var(--ink);font:15px/1.5 var(--f-body)}
+.wrap{max-width:720px;margin:0 auto;padding-inline:16px;padding-block:20px 48px;display:grid;gap:16px}
+h1{font:700 2.1rem/1 var(--f-display);letter-spacing:.01em;margin:0;text-transform:uppercase}
+.sub{color:var(--muted);margin:.35rem 0 0;max-width:60ch}
+.warn{border:1px solid var(--amber);border-radius:10px;padding:12px 14px;background:color-mix(in srgb,var(--amber) 9%,var(--panel));font-size:.92rem}
+.warn b{font-weight:600}
+.slate{display:flex;gap:8px;overflow-x:auto;padding-bottom:2px}
+.slate button{flex:0 0 auto;border:1px solid var(--line);background:var(--panel);color:var(--ink);border-radius:999px;padding:6px 12px;font:500 .85rem var(--f-body);cursor:pointer}
+.slate button[aria-pressed="true"]{background:var(--accent);color:var(--accent-ink);border-color:var(--accent)}
+.label{font:600 .72rem var(--f-body);letter-spacing:.08em;text-transform:uppercase;color:var(--muted)}
+section.panel{background:var(--panel);border:1px solid var(--line);border-radius:12px;padding:14px;display:grid;gap:12px}
+.panel h2{font:700 1.15rem var(--f-display);text-transform:uppercase;letter-spacing:.03em;margin:0}
+.grid2{display:grid;grid-template-columns:1fr 1fr;gap:10px}
+.field{display:grid;gap:4px;min-width:0}
+.field span{font-size:.8rem;color:var(--muted)}
+select,input[type=number]{width:100%;box-sizing:border-box;font:500 1rem var(--f-mono);padding:8px 10px;border:1px solid var(--line);border-radius:8px;background:var(--bg);color:var(--ink)}
+select:focus-visible,input:focus-visible,button:focus-visible{outline:2px solid var(--accent);outline-offset:2px}
+.form{font:400 .78rem var(--f-mono);color:var(--muted)}
+.toggles{display:flex;flex-wrap:wrap;gap:8px}
+.tog{display:flex;align-items:center;gap:6px;background:var(--chip);border-radius:8px;padding:6px 10px;font-size:.88rem;cursor:pointer}
+.tog input{accent-color:var(--accent)}
+table.inj{width:100%;border-collapse:collapse;font-size:.9rem}
+.inj th{font:600 .72rem var(--f-body);letter-spacing:.06em;text-transform:uppercase;color:var(--muted);text-align:center;padding:4px}
+.inj th:first-child,.inj td:first-child{text-align:left}
+.inj td{padding:4px;text-align:center;border-top:1px solid var(--line)}
+.step{display:inline-flex;align-items:center;gap:4px}
+.step button{width:28px;height:28px;border-radius:6px;border:1px solid var(--line);background:var(--bg);color:var(--ink);font:600 1rem var(--f-mono);cursor:pointer}
+.step output{min-width:1.2ch;font:500 .95rem var(--f-mono);font-variant-numeric:tabular-nums}
+.board{position:sticky;top:env(safe-area-inset-top,0px);z-index:2;background:var(--board);color:var(--board-ink);border-radius:12px;padding:14px;display:grid;gap:10px}
+.board .row{display:grid;grid-template-columns:repeat(3,1fr);gap:8px}
+.cell{min-width:0}
+.cell .k{font:600 .66rem var(--f-body);letter-spacing:.08em;text-transform:uppercase;opacity:.7}
+.cell .v{font:700 1.7rem/1.1 var(--f-display);font-variant-numeric:tabular-nums}
+.cell .d{font:400 .78rem var(--f-mono);opacity:.8}
+.verdict{display:flex;flex-wrap:wrap;gap:6px}
+.pill{font:600 .78rem var(--f-body);border-radius:999px;padding:3px 10px;background:rgba(255,255,255,.1)}
+.pill.lean{background:var(--amber);color:#1a1405}
+.pill.pass{background:rgba(255,255,255,.12)}
+table.bt{width:100%;border-collapse:collapse;font:400 .82rem var(--f-mono);font-variant-numeric:tabular-nums}
+.bt th,.bt td{padding:6px 8px;border-top:1px solid var(--line);text-align:right;white-space:nowrap}
+.bt th:first-child,.bt td:first-child{text-align:left}
+.bt th{font:600 .7rem var(--f-body);letter-spacing:.06em;text-transform:uppercase;color:var(--muted)}
+.scroll{overflow-x:auto}
+.weights{display:grid;grid-template-columns:1fr auto;gap:4px 12px;font-size:.9rem}
+.weights .n{font-family:var(--f-mono);font-variant-numeric:tabular-nums;text-align:right}
+.note{font-size:.82rem;color:var(--muted);margin:0}
+@media (max-width:420px){.board .row{grid-template-columns:repeat(3,minmax(0,1fr))}.cell .v{font-size:1.4rem}}
+
+.kpis{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:10px}
+@media (min-width:560px){.kpis{grid-template-columns:repeat(4,minmax(0,1fr))}}
+.kpi{background:var(--board);color:var(--board-ink);border-radius:10px;padding:10px 12px}
+.kpi .k{font:600 .66rem var(--f-body);letter-spacing:.08em;text-transform:uppercase;opacity:.75}
+.kpi .v{font:700 1.7rem/1.1 var(--f-display);font-variant-numeric:tabular-nums}
+.kpi .d{font:400 .78rem var(--f-mono);opacity:.8}
+.games{display:grid;gap:10px}
+.game{border:1px solid var(--line);border-radius:10px;padding:12px;display:grid;gap:8px;background:var(--bg)}
+.game .top{display:flex;justify-content:space-between;align-items:baseline;gap:8px;flex-wrap:wrap}
+.teams{font:700 1.3rem var(--f-display);letter-spacing:.02em}
+.at{color:var(--muted);font-weight:600}
+.score{font:700 1.3rem var(--f-display);font-variant-numeric:tabular-nums}
+.when{font:400 .8rem var(--f-mono);color:var(--muted)}
+.qbs{font-size:.82rem;color:var(--muted)}
+.proj{font:600 .9rem var(--f-mono);font-variant-numeric:tabular-nums}
+.row3{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:8px}
+.row3 .k{font:600 .64rem var(--f-body);letter-spacing:.08em;text-transform:uppercase;color:var(--muted)}
+.row3 .v{font:600 1rem var(--f-mono);font-variant-numeric:tabular-nums}
+.row3 .d{font-size:.76rem;color:var(--muted)}
+.volhi{display:inline-block;font:600 .66rem var(--f-body);text-transform:uppercase;letter-spacing:.04em;background:var(--amber);color:#1a1405;border-radius:4px;padding:0 5px}
+.vs{display:flex;flex-wrap:wrap;gap:4px 14px;font:500 .82rem var(--f-mono);font-variant-numeric:tabular-nums}
+th.sort{cursor:pointer}
+th.sort[aria-sort]{color:var(--ink)}
+.tags{display:flex;flex-wrap:wrap;gap:6px}
+.badge{font:600 .74rem var(--f-body);border-radius:999px;padding:2px 9px;background:var(--chip);color:var(--ink)}
+.badge.win{background:color-mix(in srgb,var(--good) 18%,var(--panel));color:var(--good)}
+.badge.loss{background:color-mix(in srgb,var(--bad) 15%,var(--panel));color:var(--bad)}
+.badge.lean{background:var(--amber);color:#1a1405}
+.badge.muted{color:var(--muted)}
+#conf button{border:1px solid var(--line);color:var(--ink);font:600 .85rem var(--f-body)}
+#conf button[aria-pressed="true"]{background:var(--accent);color:var(--accent-ink);border-color:var(--accent)}
+.bar{display:inline-block;width:36px;height:6px;border-radius:3px;margin-right:6px;vertical-align:middle;background:linear-gradient(90deg,var(--accent) calc(var(--p)*100%),var(--chip) 0)}
+</style>
+
+<div class="wrap">
+  <header>
+    <h1>Gridline 2026</h1>
+    <p class="sub"><span id="upd"></span> Every 2026 regular season game: graded where it has been played, projected where it hasn't, with a projected final score for each. Projected scores split the projected total by the projected margin; the total uses the Vegas total plus the model's adjustments when a line is posted. The model was trained on 2015 to 2025 only, so nothing here has seen the 2026 results it is graded on.</p>
+  </header>
+
+  <section class="panel">
+    <h2>Record so far</h2>
+    <div class="kpis" id="kpis"></div>
+    <p class="note" id="grade-note"></p>
+  </section>
+
+  <div>
+    <div class="label" style="margin-bottom:6px">Week</div>
+    <div class="slate" id="weeks"></div>
+  </div>
+  <section class="panel">
+    <h2 id="wk-title">Week</h2>
+    <div class="games" id="games"></div>
+    <p class="note" id="wk-note"></p>
+  </section>
+
+  <section class="panel">
+    <h2>Model vs Vegas</h2>
+    <div class="kpis" id="mvv-kpis"></div>
+    <div class="scroll"><table class="bt" id="mvv-weeks"></table></div>
+    <div class="label">Biggest disagreements still to play</div>
+    <div class="scroll"><table class="bt" id="mvv-up"></table></div>
+    <p class="note">"Closer" counts the games where each side's number landed nearer the final result. Margin uses the projected point spread; totals use the projected combined score. Disagreeing with Vegas is not the same as having an edge: in 2018 to 2025 the spread model went about 52% when it differed by 3+ points.</p>
+  </section>
+
+  <section class="panel">
+    <h2>Against the numbers, 2026</h2>
+    <div class="scroll"><table class="bt" id="atn"></table></div>
+    <p class="note" id="vol-note"></p>
+    <p class="note">Points vs spread is each team's final margin minus the Vegas line: +10 means they did 10 points better than Vegas expected. Points vs total is the game's combined score minus the posted over/under. Tap a column to sort. Since 2015, early-season results against the line have not carried over to the rest of the season.</p>
+  </section>
+
+  <section class="panel">
+    <h2>Projected standings</h2>
+    <div class="toggles" id="conf"></div>
+    <div class="scroll"><table class="bt" id="stand"></table></div>
+    <p class="note">From 20,000 simulations of the remaining games, using each team's current form plus uncertainty about how good each team really is. Playoff odds break ties at random rather than with real NFL tiebreakers. Range is the 10th to 90th percentile of final wins.</p>
+  </section>
+</div>
+<script>
+const D = __DATA__;
+const $ = id => document.getElementById(id);
+const pct = p => p >= 0.995 ? ">99%" : p < 0.005 ? "<1%" : Math.round(p*100) + "%";
+const line = (team, homeMargin, isHome) => { const v = isHome ? -homeMargin : homeMargin; return `${team} ${v > 0 ? "+" : v < 0 ? "−" : ""}${v === 0 ? "PK" : Math.abs(v).toFixed(1)}`; };
+const fav = (g, m) => m >= 0 ? `${g.h} −${Math.abs(m).toFixed(1)}` : `${g.a} −${Math.abs(m).toFixed(1)}`;
+const rec = ([w, l]) => `${w}-${l}`;
+const share = ([w, l]) => w + l ? ` (${Math.round(100*w/(w+l))}%)` : "";
+
+const G = D.grade;
+$("kpis").innerHTML = [["Picked winner", G.su], ["Against the spread", G.ats], ["Over/under, stats model", G.ou], ["Total leans, 1.5+ edge", G.ou_lean]]
+  .map(([k, v]) => `<div class="kpi"><div class="k">${k}</div><div class="v">${rec(v)}</div><div class="d">${share(v)}</div></div>`).join("");
+$("grade-note").textContent = `${G.games} games graded through ${G.through}. Average miss on the margin: model ${G.mae_model} pts, Vegas ${G.mae_vegas}. On totals: model ${G.mae_total_model}, Vegas ${G.mae_total_vegas}. Small samples swing a lot: over the first four weeks of past seasons, this model ranged from 41% to 60% against the spread.`;
+
+const weeks = [...new Set(D.games.map(g => g.wk))];
+const firstOpen = (D.games.find(g => g.hs == null) || D.games[D.games.length-1]).wk;
+let wk = firstOpen;
+$("weeks").innerHTML = weeks.map(w => `<button type="button" data-w="${w}" aria-pressed="false">Wk ${w}</button>`).join("");
+$("weeks").addEventListener("click", e => { const b = e.target.closest("button"); if (b) { wk = +b.dataset.w; renderWeek(); } });
+
+
+function projScore(margin, total){
+  let h = Math.round((total + margin) / 2), a = Math.round((total - margin) / 2);
+  if (h === a && Math.abs(margin) >= 0.5) { if (margin > 0) h += 1; else a += 1; }     // keep the projected winner when rounding ties it
+  if (margin > 0 && h < a) [h, a] = [a, h];
+  if (margin < 0 && a < h) [h, a] = [a, h];
+  return [Math.max(0, a), Math.max(0, h)];
+}
+function badge(ok, push, label){ return `<span class="badge ${push ? "push" : ok ? "win" : "loss"}">${label} ${push ? "push" : ok ? "✓" : "✗"}</span>`; }
+function card(g){
+  const done = g.hs != null, res = done ? g.hs - g.as_ : null, tot = done ? g.hs + g.as_ : null;
+  const winP = g.hw >= 0.5 ? `${g.h} ${pct(g.hw)}` : `${g.a} ${pct(1-g.hw)}`;
+  const rows = [];
+  rows.push(`<div class="cell"><div class="k">Model</div><div class="v">${fav(g, g.pm)}</div><div class="d">Win: ${winP}</div></div>`);
+  rows.push(`<div class="cell"><div class="k">Vegas</div><div class="v">${g.sl == null ? "—" : fav(g, g.sl)}</div><div class="d">${g.tl == null ? "Total not posted" : "Total " + g.tl}</div></div>`);
+  rows.push(`<div class="cell"><div class="k">Model total</div><div class="v">${g.pt.toFixed(1)}</div><div class="d">${g.mt == null ? "Lean shows once Vegas posts" : "Vegas + adj " + g.mt.toFixed(1)}</div></div>`);
+  const tags = [];
+  if (g.mt != null && Math.abs(g.mt - g.tl) >= 1.5) tags.push(`<span class="badge lean">Total lean: ${g.mt > g.tl ? "Over" : "Under"} ${g.tl}</span>`);
+  if (done && g.sl != null) {
+    const ats = g.pm > g.sl ? res > g.sl : res < g.sl;
+    tags.push(badge(ats, res === g.sl, "ATS"), badge((g.pm > 0) === (res > 0), res === 0, "Winner"));
+    const ou = g.pt > g.tl ? tot > g.tl : tot < g.tl; tags.push(badge(ou, tot === g.tl, "O/U"));
+  }
+  let vs = "";
+  if (done && g.sl != null) {
+    const hv = res - g.sl, ov = tot - g.tl;
+    const sp = hv === 0 ? "Spread: push" : `Spread: ${hv > 0 ? g.h : g.a} beat it by ${Math.abs(hv).toFixed(1)}`;
+    const tt = ov === 0 ? "Total: push" : `Total: ${tot} went ${ov > 0 ? "over" : "under"} by ${Math.abs(ov).toFixed(1)}`;
+    vs = `<div class="vs"><span>${sp}</span><span>${tt}</span></div>`;
+  }
+  const av = (D.avoid || []).filter(t => t === g.a || t === g.h);
+  if (av.length) tags.unshift(`<span class="badge lean">Your avoid list: ${av.join(", ")}</span>`);
+  const tr = (D.trust || []).filter(t => t === g.a || t === g.h);
+  if (tr.length) tags.unshift(`<span class="badge win">Your trust list: ${tr.join(", ")}</span>`);
+  if (!done) for (const tm of [g.a, g.h]) { const b = (D.blowouts || {})[tm]; if (b && b.flag) tags.push(`<span class="badge loss">${tm}: blowout repeat offender (${b.last5} of last 5)</span>`); }
+  if (!done && g.fcT != null) tags.push(`<span class="badge ${g.fcW >= 15 && !g.fcRoof ? "lean" : "muted"}">${g.fcRoof ? "Roof closed" : `Forecast ${Math.round(g.fcT)}°F, wind ${Math.round(g.fcW)} mph`} · ${g.fcAsOf}</span>`);
+  else if (!done && g.est) tags.push(`<span class="badge muted">${g.dome >= 0.99 ? "Indoors" : g.dome > 0.01 ? "Retractable roof, typical weather" : "Typical weather for this stadium and month"}</span>`);
+  const score = done ? `<span class="score">${g.as_}–${g.hs}</span>` : `<span class="when">${g.day} · ${g.time}</span>`;
+  return `<article class="game"><div class="top"><div class="teams">${g.a} <span class="at">@</span> ${g.h}</div>${score}</div>
+    <div class="qbs">${g.aq || "QB TBD"} vs ${g.hq || "QB TBD"}${!done && g.wk === firstOpen && (g.aqb || g.hqb) ? ` <span class="badge lean">QB change: ${[g.aqb ? g.aq : null, g.hqb ? g.hq : null].filter(Boolean).join(", ")} starting</span>` : ""}</div>
+    <div class="proj">Projected score: ${(() => { const [ps_a, ps_h] = projScore(g.pm, g.mt ?? g.pt); return `${g.a} ${ps_a}, ${g.h} ${ps_h}`; })()}${done ? ` <span class="note" style="display:inline">· final ${g.a} ${g.as_}, ${g.h} ${g.hs}</span>` : ""}</div>
+    <div class="row3">${rows.join("")}</div>${vs}${tags.length ? `<div class="tags">${tags.join("")}</div>` : ""}</article>`;
+}
+function renderWeek(){
+  document.querySelectorAll("#weeks button").forEach(b => b.setAttribute("aria-pressed", +b.dataset.w === wk));
+  const gs = D.games.filter(g => g.wk === wk);
+  $("wk-title").textContent = `Week ${wk}`;
+  $("games").innerHTML = gs.map(card).join("");
+  const anyFuture = gs.some(g => g.hs == null);
+  $("wk-note").textContent = wk > firstOpen ? "Future weeks use each team's current form and its current starting QB, assume no injuries, and use typical weather. These lines will move as the season unfolds; the Vegas columns fill in once books post lines."
+    : anyFuture ? "Games without a score have not been finalized in the data yet." : "Final scores from nflverse.";
+}
+
+const DIVS = ["AFC East","AFC North","AFC South","AFC West","NFC East","NFC North","NFC South","NFC West"];
+let conf = "AFC";
+$("conf").innerHTML = ["AFC","NFC"].map(c => `<button type="button" class="tog" data-c="${c}" aria-pressed="${c===conf}">${c}</button>`).join("");
+$("conf").addEventListener("click", e => { const b = e.target.closest("button"); if (b) { conf = b.dataset.c; renderStand(); } });
+function renderStand(){
+  document.querySelectorAll("#conf button").forEach(b => b.setAttribute("aria-pressed", b.dataset.c === conf));
+  let html = `<tr><th>Team</th><th>Now</th><th>Proj W</th><th>Range</th><th>Div</th><th>Playoffs</th><th>#1 seed</th></tr>`;
+  for (const dv of DIVS.filter(d => d.startsWith(conf))) {
+    html += `<tr><td colspan="7" class="label" style="padding-top:12px">${dv}</td></tr>`;
+    D.proj.filter(t => t.div === dv).sort((a,b) => b.exp_wins - a.exp_wins).forEach(t => {
+      html += `<tr><td>${t.team}</td><td>${t.w}-${t.l}${t.t ? "-" + t.t : ""}</td><td>${t.exp_wins.toFixed(1)}</td><td>${t.w10}–${t.w90}</td><td>${pct(t.p_div)}</td><td><span class="bar" style="--p:${t.p_playoffs}"></span>${pct(t.p_playoffs)}</td><td>${pct(t.p_seed1)}</td></tr>`; });
+  }
+  $("stand").innerHTML = html;
+}
+$("upd").textContent = `Updated ${D.updated}.`;
+
+const ATN_COLS = [["team","Team"],["ats","ATS"],["sum","Pts vs spread"],["net","Per game"],["vol","Game volatility"],["miss","Line volatility"],["ou","O/U"],["ou_sum","Pts vs total"],["ou_net","Per game"]];
+let atnKey = "sum", atnDir = -1;
+function renderATN(){
+  const V = D.vsVegas || {}, sg = v => (v > 0 ? "+" : "") + v.toFixed(1);
+  const vals = Object.values(V), lgVol = vals.length ? vals.reduce((a,b) => a + b.miss, 0) / vals.length : 0;
+  $("vol-note").textContent = `Game volatility is how much a team's own results swing from game to game: points scored and allowed, offense and defense EPA per play, and yards gained and allowed; ±x/±y is the typical swing in points scored and allowed. Line volatility is how far the final margin has landed from the Vegas spread on average, in either direction (league ${lgVol.toFixed(1)} pts; high is 3+ above that, steady 3+ below). A team can be steady on the field but volatile against the line when Vegas keeps misjudging it. From 2015 to 2025, a team's volatility in weeks 1 to 6 had almost no relationship to its volatility later in the season (correlation 0.04), so treat it as a description of the season so far.`;
+  const VO = D.vol || {};
+  const volCell = t => { const o = VO[t]; if (!o) return "–"; return `${o.label === "High" ? '<span class="volhi">high</span>' : o.label === "Steady" ? '<span class="note" style="display:inline">steady</span>' : "normal"} <span class="note" style="display:inline">pts ±${o.pf.toFixed(0)}/±${o.pa.toFixed(0)}</span>`; };
+  const rows = Object.entries(V).map(([team, v]) => ({team, ...v, ats:v.covers - v.fails, ou:v.overs - v.unders, vol:(VO[team] || {index:0}).index}));
+  rows.sort((a,b) => atnKey === "team" ? atnDir*a.team.localeCompare(b.team) : atnDir*(a[atnKey]-b[atnKey]));
+  $("atn").innerHTML = `<tr>${ATN_COLS.map(([k,n]) => `<th class="sort" data-k="${k}"${k===atnKey?` aria-sort="${atnDir>0?"ascending":"descending"}"`:""}>${n}${k===atnKey?(atnDir>0?" ▲":" ▼"):""}</th>`).join("")}</tr>` +
+    rows.map(r => `<tr><td>${r.team}${(D.avoid||[]).includes(r.team)?' <span class="note" style="display:inline">avoid</span>':""}${(D.trust||[]).includes(r.team)?' <span class="note" style="display:inline;color:var(--good)">trust</span>':""}</td><td>${r.covers}-${r.fails}${r.pushes?"-"+r.pushes:""}</td><td>${sg(r.sum)}</td><td>${volCell(r.team)}</td><td>${r.miss >= lgVol + 3 ? '<span class="volhi">high</span>' : r.miss <= lgVol - 3 ? '<span class="note" style="display:inline">steady</span>' : "normal"} <span class="note" style="display:inline">${r.miss.toFixed(1)} pts</span></td><td>${r.overs}-${r.unders}${r.ou_push?"-"+r.ou_push:""}</td><td>${sg(r.ou_sum)}</td><td>${sg(r.ou_net)}</td></tr>`).join("");
+}
+$("atn").addEventListener("click", e => { const th = e.target.closest("th"); if (!th) return; const k = th.dataset.k;
+  atnDir = k === atnKey ? -atnDir : (k === "team" ? 1 : -1); atnKey = k; renderATN(); });
+
+function renderMVV(){
+  const M = D.mvv; if (!M || !M.total || !M.total.n) return;
+  const T = M.total;
+  $("mvv-kpis").innerHTML = [["Margin: closer", `${T.mc}-${T.vc}`, `model ${T.m} vs Vegas ${T.v} avg miss`], ["Totals: closer", `${T.mtc}-${T.vtc}`, `model ${T.mt} vs Vegas ${T.vt} avg miss`]]
+    .map(([k,v,d]) => `<div class="kpi"><div class="k">${k}</div><div class="v">${v}</div><div class="d">${d}</div></div>`).join("");
+  $("mvv-weeks").innerHTML = `<tr><th>Week</th><th>Games</th><th>Margin miss, model / Vegas</th><th>Closer</th><th>Total miss, model / Vegas</th><th>Closer</th></tr>` +
+    M.weeks.map(w => `<tr><td>${w.wk}</td><td>${w.n}</td><td>${w.m} / ${w.v}</td><td>${w.mc}-${w.vc}</td><td>${w.mt} / ${w.vt}</td><td>${w.mtc}-${w.vtc}</td></tr>`).join("");
+  const fv = (g, m) => Math.abs(m) < 0.05 ? "PK" : (m > 0 ? g.h : g.a) + " −" + Math.abs(m).toFixed(1);
+  $("mvv-up").innerHTML = `<tr><th>Game</th><th>Model</th><th>Vegas</th><th>Gap</th><th>Model total</th><th>Vegas total</th></tr>` +
+    M.upcoming.map(g => `<tr><td>Wk ${g.wk} ${g.a} @ ${g.h}</td><td>${fv(g, g.pm)}</td><td>${fv(g, g.sl)}</td><td>${Math.abs(g.diff).toFixed(1)} toward ${g.diff > 0 ? g.h : g.a}</td><td>${g.pt.toFixed(1)}</td><td>${g.tl}</td></tr>`).join("");
+}
+renderWeek(); renderStand(); renderATN(); renderMVV();
+</script>

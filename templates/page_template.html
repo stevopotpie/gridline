@@ -1,0 +1,433 @@
+<title>Gridline Model</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Barlow+Condensed:wght@600;700&family=IBM+Plex+Sans:wght@400;500;600&family=IBM+Plex+Mono:wght@400;500&display=swap">
+<style>
+/* Layout: one narrow column of input panels feeding a sticky scoreboard readout; phone first. */
+:root{
+  --bg:#eef1ee; --panel:#fbfcfb; --ink:#18201b; --muted:#5b665f; --line:#d5dcd7;
+  --accent:#1f6b45; --accent-ink:#ffffff; --board:#141a16; --board-ink:#f1f5f2; --amber:#c98a12;
+  --good:#1f7a4a; --bad:#b23b2e; --chip:#e3e9e5;
+  --f-display:"Barlow Condensed","Arial Narrow",system-ui,sans-serif;
+  --f-body:"IBM Plex Sans",system-ui,-apple-system,"Segoe UI",sans-serif;
+  --f-mono:"IBM Plex Mono",ui-monospace,Menlo,Consolas,monospace;
+  color-scheme:light;
+}
+@media (prefers-color-scheme: dark){:root:not([data-theme="light"]){
+  --bg:#101512; --panel:#171e1a; --ink:#e6ece8; --muted:#9aa7a0; --line:#2b352f;
+  --accent:#4fbf83; --accent-ink:#08130d; --board:#0a0e0c; --board-ink:#eef4f0; --amber:#e6a933;
+  --good:#5fd394; --bad:#ef7d6f; --chip:#222b26; color-scheme:dark}}
+:root[data-theme="dark"]{
+  --bg:#101512; --panel:#171e1a; --ink:#e6ece8; --muted:#9aa7a0; --line:#2b352f;
+  --accent:#4fbf83; --accent-ink:#08130d; --board:#0a0e0c; --board-ink:#eef4f0; --amber:#e6a933;
+  --good:#5fd394; --bad:#ef7d6f; --chip:#222b26; color-scheme:dark}
+body{background:var(--bg);color:var(--ink);font:15px/1.5 var(--f-body)}
+.wrap{max-width:720px;margin:0 auto;padding-inline:16px;padding-block:20px 48px;display:grid;gap:16px}
+h1{font:700 2.1rem/1 var(--f-display);letter-spacing:.01em;margin:0;text-transform:uppercase}
+.sub{color:var(--muted);margin:.35rem 0 0;max-width:60ch}
+.warn{border:1px solid var(--amber);border-radius:10px;padding:12px 14px;background:color-mix(in srgb,var(--amber) 9%,var(--panel));font-size:.92rem}
+.warn b{font-weight:600}
+.slate{display:flex;gap:8px;overflow-x:auto;padding-bottom:2px}
+.slate button{flex:0 0 auto;border:1px solid var(--line);background:var(--panel);color:var(--ink);border-radius:999px;padding:6px 12px;font:500 .85rem var(--f-body);cursor:pointer}
+.slate button[aria-pressed="true"]{background:var(--accent);color:var(--accent-ink);border-color:var(--accent)}
+.label{font:600 .72rem var(--f-body);letter-spacing:.08em;text-transform:uppercase;color:var(--muted)}
+section.panel{background:var(--panel);border:1px solid var(--line);border-radius:12px;padding:14px;display:grid;gap:12px}
+.panel h2{font:700 1.15rem var(--f-display);text-transform:uppercase;letter-spacing:.03em;margin:0}
+.grid2{display:grid;grid-template-columns:1fr 1fr;gap:10px}
+.field{display:grid;gap:4px;min-width:0}
+.field span{font-size:.8rem;color:var(--muted)}
+select,input[type=number]{width:100%;box-sizing:border-box;font:500 1rem var(--f-mono);padding:8px 10px;border:1px solid var(--line);border-radius:8px;background:var(--bg);color:var(--ink)}
+select:focus-visible,input:focus-visible,button:focus-visible{outline:2px solid var(--accent);outline-offset:2px}
+.form{font:400 .78rem var(--f-mono);color:var(--muted)}
+.toggles{display:flex;flex-wrap:wrap;gap:8px}
+.tog{display:flex;align-items:center;gap:6px;background:var(--chip);border-radius:8px;padding:6px 10px;font-size:.88rem;cursor:pointer}
+.tog input{accent-color:var(--accent)}
+table.inj{width:100%;border-collapse:collapse;font-size:.9rem}
+.inj th{font:600 .72rem var(--f-body);letter-spacing:.06em;text-transform:uppercase;color:var(--muted);text-align:center;padding:4px}
+.inj th:first-child,.inj td:first-child{text-align:left}
+.inj td{padding:4px;text-align:center;border-top:1px solid var(--line)}
+.step{display:inline-flex;align-items:center;gap:4px}
+.step button{width:28px;height:28px;border-radius:6px;border:1px solid var(--line);background:var(--bg);color:var(--ink);font:600 1rem var(--f-mono);cursor:pointer}
+.step output{min-width:1.2ch;font:500 .95rem var(--f-mono);font-variant-numeric:tabular-nums}
+.board{position:sticky;top:env(safe-area-inset-top,0px);z-index:2;background:var(--board);color:var(--board-ink);border-radius:12px;padding:14px;display:grid;gap:10px}
+.board .row{display:grid;grid-template-columns:repeat(3,1fr);gap:8px}
+.cell{min-width:0}
+.cell .k{font:600 .66rem var(--f-body);letter-spacing:.08em;text-transform:uppercase;opacity:.7}
+.cell .v{font:700 1.7rem/1.1 var(--f-display);font-variant-numeric:tabular-nums}
+.cell .d{font:400 .78rem var(--f-mono);opacity:.8}
+.pscore{font:700 1.15rem var(--f-display);letter-spacing:.02em;font-variant-numeric:tabular-nums}
+.verdict{display:flex;flex-wrap:wrap;gap:6px}
+.pill{font:600 .78rem var(--f-body);border-radius:999px;padding:3px 10px;background:rgba(255,255,255,.1)}
+.pill.lean{background:var(--amber);color:#1a1405}
+.pill.trust{background:var(--good);color:var(--panel)}
+.pill.pass{background:rgba(255,255,255,.12)}
+table.bt{width:100%;border-collapse:collapse;font:400 .82rem var(--f-mono);font-variant-numeric:tabular-nums}
+.bt th,.bt td{padding:6px 8px;border-top:1px solid var(--line);text-align:right;white-space:nowrap}
+.bt th:first-child,.bt td:first-child{text-align:left}
+.bt th{font:600 .7rem var(--f-body);letter-spacing:.06em;text-transform:uppercase;color:var(--muted)}
+.scroll{overflow-x:auto}
+.weights{display:grid;grid-template-columns:1fr auto;gap:4px 12px;font-size:.9rem}
+.weights .n{font-family:var(--f-mono);font-variant-numeric:tabular-nums;text-align:right}
+.note{font-size:.82rem;color:var(--muted);margin:0}
+.flag{display:inline-block;font:600 .68rem var(--f-body);letter-spacing:.04em;text-transform:uppercase;background:var(--bad);color:var(--panel);border-radius:4px;padding:1px 6px;margin-left:4px}
+.kpis{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:10px}
+.kpi{background:var(--board);color:var(--board-ink);border-radius:10px;padding:10px 12px;min-width:0}
+.kpi .k{font:600 .64rem var(--f-body);letter-spacing:.08em;text-transform:uppercase;opacity:.75}
+.kpi .v{font:700 1.6rem/1.1 var(--f-display);font-variant-numeric:tabular-nums}
+.kpi .d{font:400 .74rem var(--f-mono);opacity:.8}
+@media (max-width:420px){.board .row{grid-template-columns:repeat(3,minmax(0,1fr))}.cell .v{font-size:1.4rem}}
+</style>
+
+<div class="wrap">
+  <header>
+    <h1>Gridline Model</h1>
+    <p class="sub">NFL spread and over/under projections from team scoring form, starting QB rating, efficiency, pace, return units, weather and starters ruled out. Trained on 2015 to 2025 games.</p>
+  </header>
+
+  <div class="warn"><b>Read this first.</b> Tested on 2018 to 2025 games it had not seen, the spread model never beat the 52.4% you need at -110. The over/under version that starts from the Vegas total and adjusts for QBs, weather, pace and explosives went <b id="w-ats"></b> when it disagreed by 1.5+ points: promising, not proven. Use this to understand a number before you bet it.</div>
+
+  <div>
+    <div class="label" style="margin-bottom:6px" id="slate-label">This week's games</div>
+    <div class="slate" id="slate"></div>
+  </div>
+
+  <div class="board" aria-live="polite">
+    <div class="row">
+      <div class="cell"><div class="k">Model line</div><div class="v" id="o-line">–</div><div class="d" id="o-line-d"></div></div>
+      <div class="cell"><div class="k">Model total</div><div class="v" id="o-total">–</div><div class="d" id="o-total-d"></div></div>
+      <div class="cell"><div class="k">Vegas + adj total</div><div class="v" id="o-mtotal">–</div><div class="d" id="o-mtotal-d"></div></div>
+    </div>
+    <div class="pscore" id="o-score"></div>
+    <div class="verdict" id="verdict"></div>
+  </div>
+
+  <section class="panel">
+    <h2>Matchup</h2>
+    <div class="grid2">
+      <label class="field"><span>Away team</span><select id="away"></select><div class="form" id="away-form"></div></label>
+      <label class="field"><span>Home team</span><select id="home"></select><div class="form" id="home-form"></div></label>
+      <label class="field"><span>Vegas line, home team</span><input id="vline" type="number" step="0.5" inputmode="decimal"></label>
+      <label class="field"><span>Vegas total</span><input id="vtotal" type="number" step="0.5" inputmode="decimal"></label>
+      <label class="field"><span>Rest days, home minus away</span><input id="rest" type="number" step="1" inputmode="numeric"></label>
+    </div>
+    <div class="toggles">
+      <label class="tog"><input type="checkbox" id="div"> Division game</label>
+      <label class="tog"><input type="checkbox" id="neutral"> Neutral site</label>
+    </div>
+    <p class="note">Enter the line the way a sportsbook shows it for the home team: -3 means home favored by 3.</p>
+  </section>
+
+  <section class="panel">
+    <h2>Weather</h2>
+    <div class="toggles"><label class="tog"><input type="checkbox" id="dome"> Indoors (dome or roof closed)</label></div>
+    <div class="grid2">
+      <label class="field"><span>Kickoff temp, °F</span><input id="temp" type="number" step="1" inputmode="numeric"></label>
+      <label class="field"><span>Wind, mph</span><input id="wind" type="number" step="1" inputmode="numeric"></label>
+    </div>
+    <p class="note" id="wx-note">Enter the kickoff forecast. Wind only starts to matter above 15 mph; cold matters below 45°F.</p>
+  </section>
+
+  <section class="panel">
+    <h2>Quarterbacks and injuries</h2>
+    <div class="grid2">
+      <label class="field"><span id="aqb-l">Away starting QB</span><select id="aqbsel"></select><div class="form" id="aqb-form"></div></label>
+      <label class="field"><span id="hqb-l">Home starting QB</span><select id="hqbsel"></select><div class="form" id="hqb-form"></div></label>
+    </div>
+    <p class="note">QB rating is EPA per dropback, weighted toward his last 12 starts. A typical NFL starter is about +0.07; a typical backup about −0.06.</p>
+    <div class="label">Regular starters ruled Out or Doubtful</div>
+    <div class="scroll"><table class="inj" id="inj"></table></div>
+  </section>
+
+  <section class="panel">
+    <h2>Team profiles</h2>
+    <div class="scroll"><table class="bt" id="prof"></table></div>
+    <p class="note" id="st-impact"></p>
+    <p class="note">Ranks are out of 32, from recent form weighted toward the last 8 games. Lower is better for defense stats and for seconds per snap. Punting and kicking rows are shown for reference; the model found they do not move scores. "2026 against Vegas" rows describe the season so far only. Game to game volatility combines swings in points, EPA per play and yards; ±x/±y is the typical swing in points scored and allowed. Neither volatility nor early results against the line have carried over in past seasons; since 2015, early-season results against the line have not carried over to the rest of the season. A repeat offender has lost by 17+ in 2 of its last 5 games or 3+ times this season. Since 2015 those teams got blown out again 19% of the time (others 11%), but Vegas lines already account for it: they covered 49%.</p>
+  </section>
+
+  <section class="panel">
+    <h2>Live comeback check</h2>
+    <p class="note" style="color:var(--ink)">For when one team falls behind by 17 or more in the second half. Uses the teams, quarterbacks and Vegas line above.</p>
+    <div class="grid2">
+      <label class="field"><span>Team that is behind</span><select id="cb-trail"><option value="away">Away</option><option value="home">Home</option></select></label>
+      <label class="field"><span>Points behind</span><input id="cb-def" type="number" min="17" max="35" step="1" value="17" inputmode="numeric"></label>
+      <label class="field"><span>Quarter</span><select id="cb-q"><option value="3">3rd</option><option value="4">4th</option></select></label>
+      <label class="field"><span>Clock left in quarter (min)</span><input id="cb-min" type="number" min="0" max="15" step="0.5" value="15" inputmode="decimal"></label>
+    </div>
+    <div class="toggles"><label class="tog"><input type="checkbox" id="cb-ball" checked> Team that is behind has the ball</label></div>
+    <div class="kpis" id="cb-out"></div>
+    <p class="note" id="cb-note"></p>
+    <div class="label">2026 comeback profiles: down 17 at halftime of a pick'em game</div>
+    <div class="scroll"><table class="bt" id="cb-rank"></table></div>
+    <p class="note">"Gets within one score" means cutting the deficit to 8 or fewer at any point, which is when live spreads and second half bets on the trailing team cash. "Lets teams back" is how often an average team down 17 gets within one score against this team. From 1,239 second half deficits of 17+ points, 2015 to 2026.</p>
+  </section>
+
+  <section class="panel">
+    <h2>Biggest needle movers</h2>
+    <div class="weights" id="weights"></div>
+    <p class="note">Points for a one standard deviation gap between teams (about the gap between an average team and a top 6 to 8 team), holding everything else equal. Factors are correlated, so QB rating and passing efficiency share credit.</p>
+  </section>
+
+  <section class="panel">
+    <h2>Factors that did not help</h2>
+    <p class="note" style="color:var(--ink)">Turnover margin, red zone TD rate, rushing efficiency, sack rates, bye weeks and short weeks, punter pinning inside the 10, net punting and kicker accuracy. Each made the projections slightly worse or no better on unseen seasons, usually because they swing week to week more than they repeat.</p>
+  </section>
+
+  <section class="panel">
+    <h2>Backtest, 2018 to 2025</h2>
+    <div class="scroll"><table class="bt" id="bt"></table></div>
+    <p class="note">Each season was predicted by a model trained only on earlier seasons. "Before" is the PPG, weather, injury and returns model; "after" adds QB rating, success rate, passing efficiency, explosive plays, pace and penalties. Records count bets where the model and Vegas differed by at least the edge shown; pushes excluded. The added factors were picked by testing on these same seasons, so treat the "after" records as a best case.</p>
+  </section>
+</div>
+
+<script>
+const D = __DATA__;
+const C = D.coef, POS = ["OL","WR","RB","DL","LB","DB"], POSL = {OL:"O-line",WR:"WR/TE",RB:"RB",DL:"D-line",LB:"LB",DB:"DB"};
+const T = Object.fromEntries(D.teams.map(t => [t.team, t]));
+const S = Object.fromEntries(D.st.map(t => [t.team, t]));
+const K = Object.fromEntries(D.cand.map(t => [t.team, t]));
+const R = C.returns_scale;
+const $ = id => document.getElementById(id);
+const inj = {home:{}, away:{}}; POS.forEach(p => { inj.home[p] = 0; inj.away[p] = 0; });
+
+const teams = D.teams.map(t => t.team).sort();
+for (const s of ["away","home"]) $(s).innerHTML = teams.map(t => `<option>${t}</option>`).join("");
+
+function normCdf(z){ const t = 1/(1+0.2316419*Math.abs(z)); const d = 0.3989423*Math.exp(-z*z/2);
+  const p = d*t*(0.3193815+t*(-0.3565638+t*(1.781478+t*(-1.821256+t*1.330274)))); return z > 0 ? 1-p : p; }
+
+const returns = s => 0.7*(s.ko_ret_start-R.kr_m)/R.kr_s + 0.3*(s.pr_avg-R.pr_m)/R.pr_s;
+
+function project(x){
+  const h = T[x.home], a = T[x.away], s = C.spread, t = C.total, m = C.total_mkt;
+  const H = K[x.home], A = K[x.away];
+  const SX = { home_field:x.neutral?0:1, home_field_2021:x.neutral?0:1, home_net:h.ppg-h.papg, away_net:a.ppg-a.papg, rest_diff:x.rest, div_game:x.div,
+    home_backup_qb:x.hqb, away_backup_qb:x.aqb, diff_returns:returns(S[x.home])-returns(S[x.away]),
+    diff_sr_off:H.off_sr-A.off_sr, diff_sr_def:H.def_sr-A.def_sr, diff_qb:x.hqbEpa-x.aqbEpa,
+    diff_pass_off:H.off_pass_epa-A.off_pass_epa, diff_pass_def:H.def_pass_epa-A.def_pass_epa,
+    mkt_diff:((D.mkt||{})[x.home]||0)-((D.mkt||{})[x.away]||0),
+    d_prev_off_snaps:(((D.snaps||{})[x.home]||[62,62])[0])-(((D.snaps||{})[x.away]||[62,62])[0]),
+    d_prev_def_snaps:(((D.snaps||{})[x.home]||[62,62])[1])-(((D.snaps||{})[x.away]||[62,62])[1]) };
+  POS.forEach(p => SX["diff_out_"+p] = x.inj.home[p]-x.inj.away[p]);
+  let margin = C.spread_intercept; for (const k in s) margin += s[k]*SX[k];
+  const st = s.diff_returns*SX.diff_returns;
+  const temp = x.dome ? 70 : x.temp, wind = x.dome ? 0 : x.wind;
+  const X = { home_exp_pts:(h.ppg+a.papg)/2, away_exp_pts:(a.ppg+h.papg)/2, dome:x.dome, cold:Math.max(45-temp,0),
+    wind15:Math.max(wind-15,0), backup_qbs:x.hqb+x.aqb,
+    out_offense:["OL","WR","RB"].reduce((q,p)=>q+x.inj.home[p]+x.inj.away[p],0),
+    out_defense:["DL","LB","DB"].reduce((q,p)=>q+x.inj.home[p]+x.inj.away[p],0), div_game:x.div,
+    sum_qb:x.hqbEpa+x.aqbEpa, sum_pass_off:H.off_pass_epa+A.off_pass_epa, sum_pass_def:H.def_pass_epa+A.def_pass_epa,
+    sum_ex_off:H.off_expl+A.off_expl, sum_ex_def:H.def_expl+A.def_expl, sum_pace:H.pace+A.pace, sum_pen:H.pen_yds_pg+A.pen_yds_pg };
+  let total = C.total_intercept; for (const k in t) total += t[k]*X[k];
+  let mtotal = x.vtotal + C.total_mkt_intercept + m.total_line*x.vtotal; for (const k in t) mtotal += m[k]*X[k];
+  const qbPts = s.diff_qb*SX.diff_qb + s.home_backup_qb*x.hqb + s.away_backup_qb*x.aqb;
+  return {margin, total, mtotal, st, qbPts};
+}
+
+
+function projScore(margin, total){
+  let h = Math.round((total + margin) / 2), a = Math.round((total - margin) / 2);
+  if (h === a && Math.abs(margin) >= 0.5) { if (margin > 0) h += 1; else a += 1; }     // keep the projected winner when rounding ties it
+  if (margin > 0 && h < a) [h, a] = [a, h];
+  if (margin < 0 && a < h) [h, a] = [a, h];
+  return [Math.max(0, a), Math.max(0, h)];
+}
+const fmtLine = (team, v) => `${team} ${v > 0 ? "-" : "+"}${Math.abs(v).toFixed(1)}`;
+const pct = p => (p*100).toFixed(0) + "%";
+const sgn = (v, d=3) => (v > 0 ? "+" : "") + v.toFixed(d);
+
+function fillQBs(side, preferId){
+  const team = $(side).value, info = D.qbs[team], sel = $(side === "home" ? "hqbsel" : "aqbsel");
+  const opts = (info ? info.qbs : []).map(q => `<option value="${q.id}">${q.name} (${sgn(q.epa)})</option>`);
+  opts.push(`<option value="backup">Typical backup (${sgn(D.backup_epa)})</option>`);
+  sel.innerHTML = opts.join("");
+  sel.value = preferId && [...sel.options].some(o => o.value === preferId) ? preferId : (info ? info.recent : "backup");
+}
+function qbState(side){
+  const team = $(side).value, info = D.qbs[team], v = $(side === "home" ? "hqbsel" : "aqbsel").value;
+  if (v === "backup" || !info) return {epa: D.backup_epa, backup: 1, name: "Typical backup"};
+  const q = info.qbs.find(q => q.id === v), most = Math.max(...info.qbs.map(q => q.starts26));
+  return {epa: q.epa, backup: q.starts26 < most ? 1 : 0, name: q.name};
+}
+
+function read(){
+  const hq = qbState("home"), aq = qbState("away");
+  return { home:$("home").value, away:$("away").value, vline:+$("vline").value, vtotal:+$("vtotal").value,
+    rest:+$("rest").value||0, div:+$("div").checked, neutral:+$("neutral").checked, dome:+$("dome").checked,
+    temp:+$("temp").value, wind:+$("wind").value, hqb:hq.backup, aqb:aq.backup, hqbEpa:hq.epa, aqbEpa:aq.epa, inj };
+}
+
+function render(){
+  const x = read(), r = project(x);
+  for (const s of ["home","away"]) { const t = T[x[s]]; $(s+"-form").textContent = `${t.ppg.toFixed(1)} scored · ${t.papg.toFixed(1)} allowed`; }
+  $("hqb-l").textContent = `${x.home} starting QB`; $("aqb-l").textContent = `${x.away} starting QB`;
+  $("hqb-form").textContent = x.hqb ? "Counted as a backup start" : "Counted as the regular starter";
+  $("aqb-form").textContent = x.aqb ? "Counted as a backup start" : "Counted as the regular starter";
+  $("temp").disabled = $("wind").disabled = !!x.dome;
+  const fav = r.margin >= 0 ? x.home : x.away;
+  $("o-line").textContent = fmtLine(fav, Math.abs(r.margin));
+  const vegasMargin = -x.vline, edgeS = r.margin - vegasMargin;
+  const pHome = normCdf(edgeS / C.resid_sd_margin);
+  const side = edgeS >= 0 ? x.home : x.away, pSide = edgeS >= 0 ? pHome : 1-pHome;
+  $("o-line-d").textContent = `${side} covers ${pct(pSide)}`;
+  $("o-total").textContent = r.total.toFixed(1);
+  const pOver = normCdf((r.total - x.vtotal)/C.resid_sd_total);
+  $("o-total-d").textContent = r.total >= x.vtotal ? `Over ${pct(pOver)}` : `Under ${pct(1-pOver)}`;
+  $("o-mtotal").textContent = r.mtotal.toFixed(1);
+  { const [sa, sh] = projScore(r.margin, x.vtotal ? r.mtotal : r.total); $("o-score").textContent = `Projected score: ${x.away} ${sa}, ${x.home} ${sh}`; }
+  const dm = r.mtotal - x.vtotal;
+  $("o-mtotal-d").textContent = `${dm >= 0 ? "+" : ""}${dm.toFixed(1)} vs Vegas`;
+  const pills = [];
+  pills.push(`<span class="pill pass">Spread: model differs from Vegas by ${Math.abs(edgeS).toFixed(1)} pts toward ${side}. No proven spread edge.</span>`);
+  pills.push(Math.abs(dm) >= 1.5 ? `<span class="pill lean">Total lean: ${dm > 0 ? "Over" : "Under"} ${x.vtotal} (${Math.abs(dm).toFixed(1)} pt edge)</span>` : `<span class="pill pass">Total: no edge (${Math.abs(dm).toFixed(1)} pts)</span>`);
+  if (!x.dome && x.wind >= 10) { const b = D.wind.find(w => x.wind >= w.lo && x.wind <= w.hi);
+    pills.push(`<span class="pill ${b.under >= 0.53 ? "lean" : "pass"}">Wind ${b.lo}${b.hi < 99 ? "–" + Math.floor(b.hi) : "+"} mph: unders hit ${pct(b.under)} vs closing total (${b.n} games)</span>`); }
+  for (const side of ["away","home"]) {
+    const team = x[side], info = D.qbs[team]; if (!info) continue;
+    const q = qbState(side), reg = info.qbs.reduce((a,b) => b.starts26 > a.starts26 ? b : a, info.qbs[0]);
+    if (q.backup && reg && q.name !== reg.name) pills.unshift(`<span class="pill lean">QB change: ${q.name} starting for ${team}, not ${reg.name}</span>`);
+  }
+  const AV = (D.avoid || []).filter(t => t === x.away || t === x.home);
+  if (AV.length) pills.unshift(`<span class="pill lean">On your avoid list: ${AV.join(" and ")}</span>`);
+  for (const [team, side] of [[x.away,"away"],[x.home,"home"]]) {
+    if (!(D.trust || []).includes(team)) continue;
+    const q = qbState(side);
+    pills.unshift(q.backup ? `<span class="pill lean">On your trust list: ${team}, but ${q.name} is starting, not the regular QB. Trust with caution.</span>`
+                           : `<span class="pill trust">On your trust list: ${team} with ${q.name} at QB</span>`);
+  }
+  const BL = D.blowouts || {};
+  for (const [team, side] of [[x.away,"away"],[x.home,"home"]]) {
+    const b = BL[team]; if (!b || !b.flag) continue;
+    const teamLine = side === "home" ? x.vline : -x.vline;   // + means this team is the underdog
+    const big = teamLine >= 6.5;
+    pills.push(`<span class="pill lean">Blowout repeat offender: ${team} (${b.last5} of last 5, ${b.season} this season lost by 17+)${big ? ". Flagged teams as 6.5+ pt dogs covered 46% since 2015; not proven" : ""}</span>`);
+  }
+  $("verdict").innerHTML = pills.join("");
+  $("st-impact").textContent = `QB matchup is worth ${Math.abs(r.qbPts).toFixed(1)} pts to ${r.qbPts >= 0 ? x.home : x.away}. Return units are worth ${Math.abs(r.st).toFixed(1)} pts to ${r.st >= 0 ? x.home : x.away}. Both are already in the model line.`;
+  renderProfiles(x);
+  if (typeof comeback === "function") try { comeback(); } catch (e) {}
+}
+
+function buildInj(){
+  const x = read();
+  $("inj").innerHTML = `<tr><th>Position</th><th>${x.away}</th><th>${x.home}</th></tr>` + POS.map(p =>
+    `<tr><td>${POSL[p]}</td>${["away","home"].map(s => `<td><span class="step"><button type="button" data-s="${s}" data-p="${p}" data-d="-1" aria-label="${s} ${POSL[p]} minus">−</button><output>${inj[s][p]}</output><button type="button" data-s="${s}" data-p="${p}" data-d="1" aria-label="${s} ${POSL[p]} plus">+</button></span></td>`).join("")}</tr>`).join("");
+}
+$("inj").addEventListener("click", e => { const b = e.target.closest("button"); if (!b) return;
+  const s = b.dataset.s, p = b.dataset.p; inj[s][p] = Math.max(0, Math.min(5, inj[s][p] + +b.dataset.d)); buildInj(); render(); });
+
+function load(g, btn){
+  $("away").value = g.away; $("home").value = g.home; $("vline").value = g.homeLine; $("vtotal").value = g.total;
+  $("rest").value = g.rest; $("div").checked = !!g.div; $("neutral").checked = false;
+  const retract = g.roof == null; $("dome").checked = !!g.dome || retract;
+  const hasFc = g.temp != null;
+  $("temp").value = hasFc ? Math.round(g.temp) : 65; $("wind").value = hasFc ? Math.round(g.wind) : 6;
+  $("wx-note").textContent = hasFc ? `Kickoff forecast as of ${g.fcAsOf}${g.dome ? ", roof expected closed" : ""}. Wind only matters above 15 mph; cold below 45°F.`
+    : retract ? "Retractable roof: check whether it will be open before kickoff. Wind only matters above 15 mph; cold below 45°F."
+    : g.dome ? "Indoor stadium." : "No forecast saved yet. Enter the kickoff forecast; wind only matters above 15 mph and cold below 45°F.";
+  fillQBs("home", g.hqbId); fillQBs("away", g.aqbId);
+  POS.forEach(p => { inj.home[p] = g["home_"+p]; inj.away[p] = g["away_"+p]; });
+  document.querySelectorAll("#slate button").forEach(b => b.setAttribute("aria-pressed", b === btn));
+  buildInj(); render();
+}
+$("slate").innerHTML = D.slate.map((g,i) => `<button type="button" data-i="${i}" aria-pressed="false">${g.away} @ ${g.home} · ${g.when}</button>`).join("");
+$("slate").addEventListener("click", e => { const b = e.target.closest("button"); if (b) load(D.slate[b.dataset.i], b); });
+["away","home"].forEach(id => $(id).addEventListener("input", () => { fillQBs(id); buildInj(); render(); }));
+["vline","vtotal","rest","div","neutral","dome","temp","wind","hqbsel","aqbsel"].forEach(id => $(id).addEventListener("input", render));
+
+function renderProfiles(x){
+  const P = [["Offense", null], ["Success rate","off_sr",v=>pct(v),1,K], ["Pass EPA per dropback","off_pass_epa",v=>sgn(v),1,K],
+    ["Explosive play rate","off_expl",v=>(v*100).toFixed(1)+"%",1,K], ["Seconds per snap, neutral","pace",v=>v.toFixed(1),-1,K],
+    ["Defense", null], ["Success rate allowed","def_sr",v=>pct(v),-1,K], ["Pass EPA allowed","def_pass_epa",v=>sgn(v),-1,K],
+    ["Explosive rate allowed","def_expl",v=>(v*100).toFixed(1)+"%",-1,K], ["Penalty yards per game","pen_yds_pg",v=>v.toFixed(0),-1,K],
+    ["Special teams", null], ["Start after kickoffs, own yd","ko_ret_start",v=>v.toFixed(1),1,S], ["Punt return, yds per punt","pr_avg",v=>v.toFixed(1),1,S],
+    ["Punts inside the 10","punt_in10",v=>pct(v),1,S], ["Net punt, yds","punt_net",v=>v.toFixed(1),1,S],
+    ["Kicker FG pts over expected","fg_poe_pg",v=>sgn(v,2),1,S]];
+  const B = D.blowouts || {}, bt = t => B[t] || {season:0,last5:0,prior3:0,flag:0};
+  const list = src => src === K ? D.cand : D.st;
+  const rank = (src,k,dir,v) => 1 + list(src).filter(t => dir > 0 ? t[k] > v : t[k] < v).length;
+  $("prof").innerHTML = `<tr><th>Stat</th><th>${x.away}</th><th>${x.home}</th></tr>` + P.map(([n,k,f,dir,src]) => {
+    if (!k) return `<tr><td colspan="3" class="label" style="padding-top:10px">${n}</td></tr>`;
+    const a = src[x.away][k], h = src[x.home][k];
+    return `<tr><td>${n}</td><td>${f(a)} <span class="note" style="display:inline">#${rank(src,k,dir,a)}</span></td><td>${f(h)} <span class="note" style="display:inline">#${rank(src,k,dir,h)}</span></td></tr>`; }).join("");
+  const bf = t => bt(t).flag ? ` <span class="flag">Repeat offender</span>` : "";
+  const MK = D.mkt || {}, SN = D.snaps || {};
+  const mrank = t => 1 + Object.values(MK).filter(v => v > MK[t]).length;
+  $("prof").innerHTML += `<tr><td colspan="3" class="label" style="padding-top:10px">Market and workload</td></tr>` +
+    `<tr><td>Market power rating (pts vs average)</td><td>${sgn(MK[x.away]||0,1)} <span class="note" style="display:inline">#${mrank(x.away)}</span></td><td>${sgn(MK[x.home]||0,1)} <span class="note" style="display:inline">#${mrank(x.home)}</span></td></tr>` +
+    `<tr><td>Snaps last game, offense / defense</td><td>${(SN[x.away]||["–","–"]).join(" / ")}</td><td>${(SN[x.home]||["–","–"]).join(" / ")}</td></tr>`;
+  const VV = D.vsVegas || {}, vv = t => VV[t] || {covers:0,fails:0,net:0,miss:0};
+  const lg = Object.values(VV); const lgMiss = lg.length ? lg.reduce((a,b)=>a+b.miss,0)/lg.length : 0;
+  const lineLab = m => m >= lgMiss + 3 ? "High," : m <= lgMiss - 3 ? "Steady," : "Normal,";
+  $("prof").innerHTML += `<tr><td colspan="3" class="label" style="padding-top:10px">2026 against Vegas</td></tr>` +
+    `<tr><td>Against the spread</td><td>${vv(x.away).covers}-${vv(x.away).fails}</td><td>${vv(x.home).covers}-${vv(x.home).fails}</td></tr>` +
+    `<tr><td>Beat the line by, per game</td><td>${sgn(vv(x.away).net,1)}</td><td>${sgn(vv(x.home).net,1)}</td></tr>` +
+    (D.vol ? `<tr><td>Game volatility (swings in scores and stats)</td><td>${(D.vol[x.away]||{}).label||"–"} <span class="note" style="display:inline">pts ±${((D.vol[x.away]||{}).pf||0).toFixed(0)}/±${((D.vol[x.away]||{}).pa||0).toFixed(0)}</span></td><td>${(D.vol[x.home]||{}).label||"–"} <span class="note" style="display:inline">pts ±${((D.vol[x.home]||{}).pf||0).toFixed(0)}/±${((D.vol[x.home]||{}).pa||0).toFixed(0)}</span></td></tr>` : "") +
+    `<tr><td>Line volatility, avg pts from the spread (league ${lgMiss.toFixed(1)})</td><td>${lineLab(vv(x.away).miss)} ${vv(x.away).miss.toFixed(1)}</td><td>${lineLab(vv(x.home).miss)} ${vv(x.home).miss.toFixed(1)}</td></tr>` +
+    `<tr><td>Pts vs spread, season total</td><td>${sgn(vv(x.away).sum||0,1)}</td><td>${sgn(vv(x.home).sum||0,1)}</td></tr>` +
+    `<tr><td>Over/under record</td><td>${vv(x.away).overs||0}-${vv(x.away).unders||0}</td><td>${vv(x.home).overs||0}-${vv(x.home).unders||0}</td></tr>` +
+    `<tr><td>Pts vs posted total, per game</td><td>${sgn(vv(x.away).ou_net||0,1)}</td><td>${sgn(vv(x.home).ou_net||0,1)}</td></tr>` +
+    `<tr><td>Pts vs posted total, season total</td><td>${sgn(vv(x.away).ou_sum||0,1)}</td><td>${sgn(vv(x.home).ou_sum||0,1)}</td></tr>`;
+  $("prof").innerHTML += `<tr><td colspan="3" class="label" style="padding-top:10px">Blowout losses (17+ pts)</td></tr>` +
+    [["This season","season"],["Last 5 games","last5"],["2023 to 2025 combined","prior3"]].map(([n,k]) =>
+      `<tr><td>${n}</td><td>${bt(x.away)[k]}${k==="season"?bf(x.away):""}</td><td>${bt(x.home)[k]}${k==="season"?bf(x.home):""}</td></tr>`).join("");
+}
+
+
+// live comeback check
+function comeback(){
+  if (!D.cb) return;
+  const x = read(), cb = D.cb, trailSide = $("cb-trail").value, leadSide = trailSide === "home" ? "away" : "home";
+  const tTeam = x[trailSide], lTeam = x[leadSide];
+  const q = +$("cb-q").value, mins = Math.max(0, Math.min(15, +$("cb-min").value || 0));
+  const secs = (q === 3 ? 900 : 0) + mins*60, deficit = Math.max(17, +$("cb-def").value || 17);
+  const rec = (D.records || {})[tTeam] || [0,0,0], gp = rec[0]+rec[1]+rec[2], wpct = gp ? (rec[0]+0.5*rec[2])/gp : 0.5, wk = D.week || 1;
+  const vegasHomeMargin = -x.vline;
+  const v = { deficit, secs, secs2:(secs/1800)**2, under10:+(secs<600), half:+(secs>=1750), has_ball:+$("cb-ball").checked,
+    trail_spread: trailSide === "home" ? vegasHomeMargin : -vegasHomeMargin, trail_home:+(trailSide === "home"),
+    trail_qb_epa: trailSide === "home" ? x.hqbEpa : x.aqbEpa, trail_off_pass_epa:K[tTeam].off_pass_epa, trail_off_expl:K[tTeam].off_expl,
+    lead_def_pass_epa:K[lTeam].def_pass_epa, lead_off_pass_epa:K[lTeam].off_pass_epa,
+    trail_contender:+(wpct >= 0.5 && wk >= 8), trail_out_of_it:+(wpct <= 0.3 && wk >= 10) };
+  const lin = m => m.b + cb.x.reduce((a,c) => a + m.w[c]*((v[c]-cb.mu[c])/cb.sd[c]), 0);
+  const sig = z => 1/(1+Math.exp(-z));
+  const within = sig(lin(cb.within)), won = sig(lin(cb.won)), pts = Math.max(0, lin(cb.pts));
+  $("cb-out").innerHTML = [["Gets within one score", pct(within)], ["Wins the game", won < 0.01 ? "<1%" : pct(won)], ["Their points the rest of the way", pts.toFixed(1)]]
+    .map(([k,val]) => `<div class="kpi"><div class="k">${k}</div><div class="v">${val}</div></div>`).join("");
+  const mot = v.trail_out_of_it ? ` ${tTeam} is ${rec[0]}-${rec[1]}${rec[2]?"-"+rec[2]:""}: teams with little left to play for went 0 for 162 on comebacks from 17+.`
+    : v.trail_contender ? ` ${tTeam} is in the race, which nudges the odds of a push back up a little.` : "";
+  $("cb-note").textContent = `${tTeam} down ${deficit} with ${Math.floor(secs/60)}:${String(Math.round(secs%60)).padStart(2,"0")} left in the game.${mot} Outright wins are rare and live moneylines already price them about right; the bigger question is whether they get back within one score.`;
+}
+["cb-trail","cb-def","cb-q","cb-min","cb-ball"].forEach(id => $(id).addEventListener("input", comeback));
+if (D.cb) $("cb-rank").innerHTML = `<tr><th>Team</th><th>QB</th><th>Gets within one</th><th>Wins</th><th>Pts after</th><th>Lets teams back</th></tr>` +
+  D.cb.rank.map(r => `<tr><td>${r.team}</td><td>${r.qb}</td><td>${pct(r.within)}</td><td>${pct(r.won)}</td><td>${r.pts.toFixed(1)}</td><td>${pct(r.def_within)}</td></tr>`).join("");
+
+// needle movers, points per 1 SD
+const sd = C.sd, sp = C.spread, tt = C.total;
+const W = [
+  ["Home field, 2021 onward", (C.spread_intercept + sp.home_field + (sp.home_field_2021||0)), "spread, per game"],
+  ["Scoring form (PPG net), each team", (sp.home_net*sd.home_net - sp.away_net*sd.away_net)/2, "spread"],
+  ["Starting QB rating gap", sp.diff_qb*sd.diff_qb, "spread"],
+  ["Market power rating gap (from earlier weeks' lines)", sp.mkt_diff*sd.mkt_diff, "spread"],
+  ["Each 10 extra defensive snaps last week", sp.d_prev_def_snaps*10, "spread"],
+  ["Each 10 extra offensive snaps last week", sp.d_prev_off_snaps*10, "spread"],
+  ["Offensive success rate gap", sp.diff_sr_off*sd.diff_sr_off, "spread"],
+  ["Return units (kick 70%, punt 30%)", sp.diff_returns*sd.diff_returns, "spread"],
+  ["Each WR/TE starter out", sp.diff_out_WR, "spread, per player"],
+  ["Each LB starter out", sp.diff_out_LB, "spread, per player"],
+  ["QB ratings of both starters", tt.sum_qb*sd.sum_qb, "total"],
+  ["Home team scoring matchup", tt.home_exp_pts*sd.home_exp_pts, "total"],
+  ["Indoors", tt.dome, "total"],
+  ["Pace (seconds per snap)", tt.sum_pace*sd.sum_pace, "total"],
+  ["Explosive plays, both teams", tt.sum_ex_off*sd.sum_ex_off + tt.sum_ex_def*sd.sum_ex_def, "total"],
+  ["Each mph of wind over 15", tt.wind15, "total"],
+  ["Each °F below 45", tt.cold, "total"]];
+$("weights").innerHTML = W.map(([k,v,u]) => `<div>${k} <span class="note" style="display:inline">(${u})</span></div><div class="n">${v>0?"+":""}${v.toFixed(2)}</div>`).join("");
+
+// backtest
+$("bt").innerHTML = `<tr><th>Model</th><th></th><th>Avg miss</th><th>Vegas miss</th><th colspan="5">Record by minimum edge (pts)</th></tr>` +
+  D.bt.map(r => `<tr><td>${r.model}</td><td>${r.version}</td><td>${r.MAE}</td><td>${r["Vegas MAE"]}</td>${["e0","e1","e2","e3","e4"].map(c=>`<td>${r[c]}</td>`).join("")}</tr>`).join("");
+
+$("w-ats").textContent = D.bt[7].e2.replace(/^[^:]+: /,"");
+$("slate-label").textContent = `Week ${D.week} games still to play · updated ${D.updated}`;
+if (D.slate.length) load(D.slate[0], document.querySelectorAll("#slate button")[0]);
+else { fillQBs("home"); fillQBs("away"); buildInj(); render(); }
+</script>

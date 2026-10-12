@@ -1,0 +1,11 @@
+# downloaded nflverse data (rebuilt by run_all.sh)
+data/
+# generated outputs
+*.csv
+*.json
+!settings.example.json
+gridline_model.html
+gridline_2026.html
+settings.json
+__pycache__/
+.DS_Store

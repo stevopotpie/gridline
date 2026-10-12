@@ -1,0 +1,5 @@
+{
+  "avoid": [],
+  "trust": [],
+  "note": "Copy to settings.json and list team abbreviations (e.g. \"SF\") you want flagged on the pages. The model ignores both lists."
+}

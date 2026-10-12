@@ -1,0 +1,242 @@
+<title>Gridline Bet Log</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Barlow+Condensed:wght@600;700&family=IBM+Plex+Sans:wght@400;500;600&family=IBM+Plex+Mono:wght@400;500&display=swap">
+<style>
+/* Layout: summary scoreboard, then the add-a-bet form, then the ledger; one phone-width column. */
+:root{
+  --bg:#eef1ee; --panel:#fbfcfb; --ink:#18201b; --muted:#5b665f; --line:#d5dcd7;
+  --accent:#1f6b45; --accent-ink:#ffffff; --board:#141a16; --board-ink:#f1f5f2; --amber:#c98a12;
+  --good:#1f7a4a; --bad:#b23b2e; --chip:#e3e9e5;
+  --f-display:"Barlow Condensed","Arial Narrow",system-ui,sans-serif;
+  --f-body:"IBM Plex Sans",system-ui,-apple-system,"Segoe UI",sans-serif;
+  --f-mono:"IBM Plex Mono",ui-monospace,Menlo,Consolas,monospace;
+  color-scheme:light;
+}
+@media (prefers-color-scheme: dark){:root:not([data-theme="light"]){
+  --bg:#101512; --panel:#171e1a; --ink:#e6ece8; --muted:#9aa7a0; --line:#2b352f;
+  --accent:#4fbf83; --accent-ink:#08130d; --board:#0a0e0c; --board-ink:#eef4f0; --amber:#e6a933;
+  --good:#5fd394; --bad:#ef7d6f; --chip:#222b26; color-scheme:dark}}
+:root[data-theme="dark"]{
+  --bg:#101512; --panel:#171e1a; --ink:#e6ece8; --muted:#9aa7a0; --line:#2b352f;
+  --accent:#4fbf83; --accent-ink:#08130d; --board:#0a0e0c; --board-ink:#eef4f0; --amber:#e6a933;
+  --good:#5fd394; --bad:#ef7d6f; --chip:#222b26; color-scheme:dark}
+body{background:var(--bg);color:var(--ink);font:15px/1.5 var(--f-body)}
+.wrap{max-width:720px;margin:0 auto;padding-inline:16px;padding-block:20px 48px;display:grid;gap:16px}
+h1{font:700 2.1rem/1 var(--f-display);text-transform:uppercase;margin:0}
+.sub{color:var(--muted);margin:.35rem 0 0;max-width:60ch}
+section.panel{background:var(--panel);border:1px solid var(--line);border-radius:12px;padding:14px;display:grid;gap:12px}
+h2{font:700 1.15rem var(--f-display);text-transform:uppercase;letter-spacing:.03em;margin:0}
+.kpis{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:10px}
+@media (min-width:560px){.kpis{grid-template-columns:repeat(4,minmax(0,1fr))}}
+.kpi{background:var(--board);color:var(--board-ink);border-radius:10px;padding:10px 12px;min-width:0}
+.kpi .k{font:600 .64rem var(--f-body);letter-spacing:.08em;text-transform:uppercase;opacity:.75}
+.kpi .v{font:700 1.6rem/1.1 var(--f-display);font-variant-numeric:tabular-nums}
+.kpi .d{font:400 .74rem var(--f-mono);opacity:.8}
+.grid2{display:grid;grid-template-columns:1fr 1fr;gap:10px}
+.field{display:grid;gap:4px;min-width:0}
+.field span{font-size:.8rem;color:var(--muted)}
+.full{grid-column:1/-1}
+input,select{width:100%;box-sizing:border-box;font:500 1rem var(--f-mono);padding:8px 10px;border:1px solid var(--line);border-radius:8px;background:var(--bg);color:var(--ink)}
+input:focus-visible,select:focus-visible,button:focus-visible{outline:2px solid var(--accent);outline-offset:2px}
+.row{display:flex;flex-wrap:wrap;gap:8px;align-items:center}
+button{font:600 .9rem var(--f-body);border-radius:8px;padding:8px 14px;border:1px solid var(--line);background:var(--panel);color:var(--ink);cursor:pointer}
+button.primary{background:var(--accent);color:var(--accent-ink);border-color:var(--accent)}
+button.danger{color:var(--bad);border-color:var(--bad)}
+button:disabled{opacity:.5;cursor:default}
+.note{font-size:.82rem;color:var(--muted);margin:0}
+.msg{font-size:.85rem}
+.msg.err{color:var(--bad)}
+.bets{display:grid;gap:10px}
+.bet{border:1px solid var(--line);border-radius:10px;padding:12px;display:grid;gap:6px;background:var(--bg)}
+.bet .top{display:flex;justify-content:space-between;gap:8px;flex-wrap:wrap;align-items:baseline}
+.pick{font:700 1.2rem var(--f-display);letter-spacing:.02em}
+.meta{font:400 .8rem var(--f-mono);color:var(--muted);font-variant-numeric:tabular-nums}
+.pl{font:600 .95rem var(--f-mono);font-variant-numeric:tabular-nums}
+.pl.pos{color:var(--good)} .pl.neg{color:var(--bad)}
+.chip{font:600 .72rem var(--f-body);text-transform:uppercase;letter-spacing:.05em;border-radius:999px;padding:2px 9px;background:var(--chip)}
+.chip.win{background:color-mix(in srgb,var(--good) 18%,var(--panel));color:var(--good)}
+.chip.loss{background:color-mix(in srgb,var(--bad) 15%,var(--panel));color:var(--bad)}
+.chip.pending{background:color-mix(in srgb,var(--amber) 20%,var(--panel))}
+.clv{font:500 .8rem var(--f-mono)}
+.clv.pos{color:var(--good)} .clv.neg{color:var(--bad)}
+.settle{display:flex;flex-wrap:wrap;gap:6px}
+.settle button{padding:4px 10px;font-size:.8rem}
+table.bt{width:100%;border-collapse:collapse;font:400 .82rem var(--f-mono);font-variant-numeric:tabular-nums}
+.bt th,.bt td{padding:6px 8px;border-top:1px solid var(--line);text-align:right;white-space:nowrap}
+.bt th:first-child,.bt td:first-child{text-align:left}
+.bt th{font:600 .7rem var(--f-body);letter-spacing:.06em;text-transform:uppercase;color:var(--muted)}
+.scroll{overflow-x:auto}
+.empty{border:1px dashed var(--line);border-radius:10px;padding:16px;color:var(--muted);text-align:center}
+</style>
+
+<div class="wrap">
+  <header>
+    <h1>Gridline Bet Log</h1>
+    <p class="sub">Every bet you place, graded two ways: whether it won, and whether you got a better number than the closing line. Beating the close consistently is the clearest early sign of a real edge.</p>
+  </header>
+
+  <section class="panel">
+    <h2>Scoreboard</h2>
+    <div class="kpis" id="kpis"></div>
+    <div class="scroll"><table class="bt" id="bymkt"></table></div>
+    <p class="note">Closing line value: for spreads and totals, the points you gained on the closing number; for moneylines, the change in implied win chance. Positive means you bet a better number than the market settled on.</p>
+  </section>
+
+  <section class="panel" id="form-panel">
+    <h2 id="form-title">Log a bet</h2>
+    <form id="f" class="grid2" novalidate>
+      <label class="field"><span>Date</span><input id="f-date" type="date"></label>
+      <label class="field"><span>Game</span><input id="f-game" type="text" placeholder="SF @ SEA" autocomplete="off"></label>
+      <label class="field"><span>Bet type</span><select id="f-market">
+        <option value="spread">Spread</option><option value="over">Total: over</option><option value="under">Total: under</option><option value="ml">Moneyline</option>
+      </select></label>
+      <label class="field"><span id="f-pick-l">Team</span><input id="f-pick" type="text" placeholder="SF" autocomplete="off"></label>
+      <label class="field" id="f-line-w"><span id="f-line-l">Line you got (your side, e.g. +3)</span><input id="f-line" type="number" step="0.5" inputmode="decimal"></label>
+      <label class="field"><span>Odds (American)</span><input id="f-odds" type="number" step="1" inputmode="numeric" placeholder="-110"></label>
+      <label class="field"><span>Stake ($)</span><input id="f-stake" type="number" step="1" min="0" inputmode="decimal"></label>
+      <label class="field"><span id="f-close-l">Closing line (optional)</span><input id="f-close" type="number" step="0.5" inputmode="decimal"></label>
+      <label class="field"><span>Result</span><select id="f-result"><option value="pending">Pending</option><option value="win">Win</option><option value="loss">Loss</option><option value="push">Push</option></select></label>
+      <label class="field"><span>Model edge (pts, optional)</span><input id="f-edge" type="number" step="0.1" inputmode="decimal"></label>
+      <label class="field full"><span>Notes</span><input id="f-notes" type="text" autocomplete="off" placeholder="Why you liked it"></label>
+      <div class="row full"><button type="submit" class="primary" id="f-save">Save bet</button><button type="button" id="f-cancel" hidden>Cancel edit</button><span class="msg" id="f-msg"></span></div>
+    </form>
+  </section>
+
+  <section class="panel">
+    <h2>Ledger</h2>
+    <div class="bets" id="bets"><div class="empty">Loading your bets…</div></div>
+  </section>
+</div>
+
+<script>
+const $ = id => document.getElementById(id);
+let db = null, bets = [], editing = null, canWrite = true;
+const today = () => { const d = new Date(); d.setMinutes(d.getMinutes() - d.getTimezoneOffset()); return d.toISOString().slice(0,10); };
+$("f-date").value = today();
+
+const payout = o => o > 0 ? o/100 : 100/Math.abs(o);                 // profit per $1 risked
+const implied = o => o > 0 ? 100/(o+100) : Math.abs(o)/(Math.abs(o)+100);
+const money = v => (v < 0 ? "−$" : "+$") + Math.abs(v).toFixed(2);
+function profit(b){
+  if (b.result === "win") return b.stake * payout(b.odds || -110);
+  if (b.result === "loss") return -b.stake;
+  return 0;
+}
+function clv(b){
+  if (b.closing == null || b.closing === "") return null;
+  if (b.market === "ml") return b.odds ? (implied(b.closing) - implied(b.odds)) * 100 : null;  // percentage points of win chance
+  if (b.line == null) return null;
+  if (b.market === "spread") return b.line - b.closing;
+  if (b.market === "over") return b.closing - b.line;
+  return b.line - b.closing;
+}
+function pickText(b){
+  if (b.market === "ml") return `${b.pick} moneyline`;
+  if (b.market === "over" || b.market === "under") return `${b.market === "over" ? "Over" : "Under"} ${b.line ?? "?"}`;
+  const l = b.line; return `${b.pick} ${l == null ? "?" : (l > 0 ? "+" + l : l === 0 ? "PK" : l)}`;
+}
+
+function setMarketLabels(){
+  const m = $("f-market").value;
+  $("f-pick-l").textContent = m === "over" || m === "under" ? "Game note (optional)" : "Team";
+  $("f-line-w").hidden = m === "ml";
+  $("f-line-l").textContent = m === "spread" ? "Line you got (your side, e.g. +3)" : "Total you got";
+  $("f-close-l").textContent = m === "ml" ? "Closing odds (optional)" : "Closing line (optional)";
+}
+$("f-market").addEventListener("input", setMarketLabels); setMarketLabels();
+
+function render(){
+  const settled = bets.filter(b => b.result && b.result !== "pending");
+  const w = settled.filter(b => b.result === "win").length, l = settled.filter(b => b.result === "loss").length, p = settled.filter(b => b.result === "push").length;
+  const risked = settled.reduce((a,b) => a + (b.stake||0), 0), pl = settled.reduce((a,b) => a + profit(b), 0);
+  const withClv = bets.map(clv).filter(v => v != null);
+  const ptsClv = bets.filter(b => b.market !== "ml").map(clv).filter(v => v != null);
+  const beat = withClv.filter(v => v > 0).length;
+  $("kpis").innerHTML = [
+    ["Record", `${w}-${l}${p ? "-" + p : ""}`, `${bets.length - settled.length} pending`],
+    ["Profit", settled.length ? money(pl) : "$0.00", `on $${risked.toFixed(0)} risked`],
+    ["Return", risked ? ((pl/risked)*100).toFixed(1) + "%" : "–", "profit ÷ risked"],
+    ["Beat the close", withClv.length ? `${beat} of ${withClv.length}` : "–", ptsClv.length ? `avg ${(ptsClv.reduce((a,b)=>a+b,0)/ptsClv.length).toFixed(1)} pts` : "add closing lines"]
+  ].map(([k,v,d]) => `<div class="kpi"><div class="k">${k}</div><div class="v">${v}</div><div class="d">${d}</div></div>`).join("");
+  const names = {spread:"Spread", over:"Total: over", under:"Total: under", ml:"Moneyline"};
+  const rows = Object.keys(names).map(m => {
+    const s = bets.filter(b => b.market === m); if (!s.length) return "";
+    const st = s.filter(b => b.result !== "pending"), ww = st.filter(b => b.result === "win").length, ll = st.filter(b => b.result === "loss").length;
+    const c = s.map(clv).filter(v => v != null);
+    return `<tr><td>${names[m]}</td><td>${s.length}</td><td>${ww}-${ll}</td><td>${st.length ? money(st.reduce((a,b)=>a+profit(b),0)) : "–"}</td><td>${c.length ? (c.reduce((a,b)=>a+b,0)/c.length).toFixed(1) + (m === "ml" ? " pct" : " pts") : "–"}</td></tr>`;
+  }).join("");
+  $("bymkt").innerHTML = rows ? `<tr><th>Bet type</th><th>Bets</th><th>W-L</th><th>Profit</th><th>Avg CLV</th></tr>` + rows : "";
+
+  if (!bets.length) { $("bets").innerHTML = `<div class="empty">No bets yet. Log your first one above and it will show up here, with its result and how your number compared to the close.</div>`; return; }
+  $("bets").innerHTML = bets.map(b => {
+    const c = clv(b), pr = profit(b);
+    const clvTxt = c == null ? "Add the closing number to see line value" : b.market === "ml" ? `Line value: ${c > 0 ? "+" : ""}${c.toFixed(1)} pct points of win chance` : `Line value: ${c > 0 ? "+" : ""}${c.toFixed(1)} pts vs close`;
+    return `<article class="bet" data-id="${b.id}">
+      <div class="top"><span class="pick">${esc(pickText(b))}</span><span class="chip ${b.result}">${b.result}</span></div>
+      <div class="meta">${esc(b.date || "")} · ${esc(b.game || "")} · ${b.odds ? (b.odds > 0 ? "+" : "") + b.odds : "odds needed"} · $${(b.stake||0).toFixed(0)}${b.edge != null && b.edge !== "" ? ` · model edge ${b.edge}` : ""}</div>
+      ${b.result !== "pending" ? `<div class="pl ${pr > 0 ? "pos" : pr < 0 ? "neg" : ""}">${money(pr)}</div>` : ""}
+      <div class="clv ${c > 0 ? "pos" : c < 0 ? "neg" : ""}">${clvTxt}</div>
+      ${b.notes ? `<div class="note">${esc(b.notes)}</div>` : ""}
+      ${canWrite ? `<div class="settle">${b.result === "pending" ? `<button type="button" data-act="win">Won</button><button type="button" data-act="loss">Lost</button><button type="button" data-act="push">Push</button>` : ""}<button type="button" data-act="edit">Edit</button><button type="button" data-act="del" class="danger">Delete</button></div>` : ""}
+    </article>`;
+  }).join("");
+}
+const esc = s => String(s).replace(/[&<>"]/g, c => ({"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;"}[c]));
+const num = id => { const v = $(id).value.trim(); return v === "" ? null : Number(v); };
+
+function readForm(){
+  const m = $("f-market").value;
+  return { date: $("f-date").value || today(), game: $("f-game").value.trim(), market: m, pick: $("f-pick").value.trim(),
+    line: m === "ml" ? null : num("f-line"), odds: num("f-odds") ?? (m === "ml" ? null : -110), stake: num("f-stake") ?? 0,
+    closing: num("f-close"), result: $("f-result").value, edge: num("f-edge"), notes: $("f-notes").value.trim() };
+}
+function fillForm(b){
+  $("f-date").value = b.date || today(); $("f-game").value = b.game || ""; $("f-market").value = b.market; $("f-pick").value = b.pick || "";
+  $("f-line").value = b.line ?? ""; $("f-odds").value = b.odds ?? ""; $("f-stake").value = b.stake ?? ""; $("f-close").value = b.closing ?? "";
+  $("f-result").value = b.result || "pending"; $("f-edge").value = b.edge ?? ""; $("f-notes").value = b.notes || ""; setMarketLabels();
+}
+function resetForm(){ editing = null; $("f").reset(); $("f-date").value = today(); $("f-title").textContent = "Log a bet"; $("f-cancel").hidden = true; $("f-save").textContent = "Save bet"; setMarketLabels(); }
+function msg(t, err){ $("f-msg").textContent = t; $("f-msg").className = "msg" + (err ? " err" : ""); }
+
+$("f").addEventListener("submit", async e => {
+  e.preventDefault();
+  if (!db) { msg("Saving isn't available in this view.", true); return; }
+  const b = readForm();
+  if (!b.game) { msg("Add the game, like SF @ SEA.", true); return; }
+  if ((b.market === "spread" || b.market === "ml") && !b.pick) { msg("Add the team you bet.", true); return; }
+  if (b.market !== "ml" && b.line == null) { msg("Add the line you got.", true); return; }
+  if (!b.stake) { msg("Add your stake.", true); return; }
+  $("f-save").disabled = true;
+  try {
+    if (editing) { await db.collection("bets").doc(editing).set({...b, createdAt: (bets.find(x => x.id === editing)||{}).createdAt || Date.now()}); msg("Bet updated."); }
+    else { await db.collection("bets").add({...b, createdAt: Date.now()}); msg("Bet saved."); }
+    resetForm();
+  } catch (err) { msg(err && err.code === "invalid_argument" ? "You don't have permission to save to this log." : "Couldn't save. Try again in a moment.", true); }
+  $("f-save").disabled = false;
+});
+$("f-cancel").addEventListener("click", () => { resetForm(); msg(""); });
+
+let pendingDelete = null;
+$("bets").addEventListener("click", async e => {
+  const btn = e.target.closest("button"); if (!btn || !db) return;
+  const id = btn.closest(".bet").dataset.id, act = btn.dataset.act, b = bets.find(x => x.id === id);
+  if (act === "edit") { editing = id; fillForm(b); $("f-title").textContent = "Edit bet"; $("f-cancel").hidden = false; $("f-save").textContent = "Save changes"; $("form-panel").scrollIntoView({behavior: "smooth"}); return; }
+  if (act === "del") {
+    if (pendingDelete !== id) { pendingDelete = id; btn.textContent = "Tap again to delete"; return; }
+    pendingDelete = null; try { await db.collection("bets").doc(id).delete(); } catch (err) { btn.textContent = "Couldn't delete"; } return;
+  }
+  if (["win","loss","push"].includes(act)) { btn.disabled = true; try { await db.collection("bets").doc(id).update({result: act}); } catch (err) { btn.disabled = false; } }
+});
+
+render();
+(async () => {
+  db = await claude.use("db");
+  const user = await claude.use("user");
+  if (user) { const c = await user.can("data.write"); if (c === false) { canWrite = false; $("form-panel").hidden = true; } }
+  if (!db) { $("bets").innerHTML = `<div class="empty">The log can't load here. Open it in Claude while signed in to see and save your bets.</div>`; $("f-save").disabled = true; return; }
+  db.collection("bets").orderBy("createdAt", "desc").onSnapshot(snap => {
+    bets = snap.docs.map(d => ({id: d.id, ...d.data()}));
+    render();
+  }, () => { $("bets").innerHTML = `<div class="empty">The log stopped updating. Reload the page to reconnect.</div>`; });
+})();
+</script>
