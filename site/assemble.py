@@ -97,7 +97,7 @@ def meta(f):
         f'<meta property="og:image:width" content="2400">\n<meta property="og:image:height" content="1254">\n'
         f'<meta property="og:image:alt" content="Gridline: spreads, totals and player props, tested honestly against the betting market">\n'
         f'<meta name="twitter:card" content="summary_large_image">\n'
-        f'<link rel="canonical" href="{url}">\n<link rel="icon" type="image/png" href="icon.png">\n<link rel="apple-touch-icon" href="icon.png">\n')
+        f'<link rel="canonical" href="{url}">\n<link rel="icon" type="image/png" href="icon.png?v=2">\n<link rel="apple-touch-icon" href="icon.png?v=2">\n')
 
 
 HEAD = ('<!doctype html>\n<html lang="en">\n<meta charset="utf-8">\n'
