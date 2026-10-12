@@ -4,6 +4,15 @@ Gridline is a model I built to project NFL point spreads, over/unders, final sco
 
 The goal was never to find a magic system. It was to find out which factors actually move outcomes, measure them on games the model had not seen, and keep only what earned its place.
 
+## Try it
+
+No install needed. The pages rebuild automatically from the latest data and odds:
+
+- **[Gridline home](https://stevopotpie.github.io/gridline/)**
+- **[2026 season board](https://stevopotpie.github.io/gridline/season.html)**: every game graded or projected, the best number at the books, player props and playoff odds
+- **[Matchup calculator](https://stevopotpie.github.io/gridline/model.html)**: set any matchup, line, weather, quarterbacks and injuries
+- **[Bet log](https://stevopotpie.github.io/gridline/bet-log.html)**: enter a bet and a meter runs from red to green with its chance to win, and whether Gridline's chance beats the price. Bets are saved in your own browser only, with export and import to back them up.
+
 ## Results at a glance
 
 All figures come from walk-forward testing: each season from 2018 to 2025 was predicted by a model trained only on earlier seasons. Breakeven at standard -110 odds is 52.4%.
@@ -104,6 +113,7 @@ One limit: the free data has no historical prop lines, so the backtest grades pr
 
 | Step | Script |
 |---|---|
+| Live sportsbook lines from the odds snapshots in `odds/` | `odds.py` |
 | Team form, weather, injuries, QB changes | `features.py` |
 | Special teams and field position | `special_teams.py` |
 | Efficiency, pace, QB ratings | `candidates.py` |
@@ -122,7 +132,7 @@ Scheduled runs grade each weekend on Tuesday, pull in lines and final injury rep
 
 ## Bet log and risk meter
 
-A private bet log tracks every bet, its result and its closing line value. As a bet is entered, a meter runs from red (long shot) to green (safe) showing its chance to win, and says whether Gridline's chance beats the price the odds imply. Spreads and totals start from the Vegas line and add only the share of Gridline's disagreement that has shown up in results: fit on the 2018 to 2025 backtest, a 3 point gap from the Vegas spread is worth about 52%, not the 59% a raw projection would suggest. Safe means likely, not good value.
+The bet log tracks every bet, its result and its closing line value. As a bet is entered, a meter runs from red (long shot) to green (safe) showing its chance to win, and says whether Gridline's chance beats the price the odds imply. Spreads and totals start from the Vegas line and add only the share of Gridline's disagreement that has shown up in results: fit on the 2018 to 2025 backtest, a 3 point gap from the Vegas spread is worth about 52%, not the 59% a raw projection would suggest. Safe means likely, not good value. Opened from the public site or a local file, the log saves bets in that browser (localStorage) with export and import buttons; nothing is sent anywhere.
 
 ## Run it yourself
 
@@ -133,7 +143,7 @@ pip install -r requirements.txt
 bash run_all.sh "$(pwd)"
 ```
 
-The first run downloads about 250 MB of nflverse data into `data/` and takes a few minutes. It writes the projections, backtest results and coefficients as CSV and JSON files, and builds `gridline_model.html` (the matchup calculator) and `gridline_2026.html` (the season board), which open in any browser. To flag teams on the pages, copy `settings.example.json` to `settings.json` and list team abbreviations under `avoid` or `trust`.
+The first run downloads about 250 MB of nflverse data into `data/` and takes a few minutes. It writes the projections, backtest results and coefficients as CSV and JSON files, and builds `gridline_model.html` (the matchup calculator), `gridline_2026.html` (the season board) and `gridline_bet_log.html` (the bet log), which open in any browser. To flag teams on the pages, copy `settings.example.json` to `settings.json` and list team abbreviations under `avoid` or `trust`.
 
 ### Repository layout
 
@@ -141,6 +151,9 @@ The first run downloads about 250 MB of nflverse data into `data/` and takes a f
 |---|---|
 | Top level `*.py` and `run_all.sh` | The weekly pipeline, in the order listed above |
 | `templates/` | The calculator, season board and bet log pages |
+| `site/index.html` | The landing page for the public site |
+| `odds/` | Sportsbook odds snapshots pulled several times a week from The Odds API |
+| `.github/workflows/pages.yml` | Rebuilds everything and publishes the site to GitHub Pages on a schedule and whenever new odds arrive |
 | `player_best_models.json` | The winning player model and features for each stat, from `research/player_experiments.py` |
 | `research/` | One-off studies: factor ranking, the improvement tests, the player model bake-off, the "do teams quit" study and the trust/avoid test |
 

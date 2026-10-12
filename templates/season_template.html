@@ -118,6 +118,14 @@ tr.split td{background:var(--bg);font-size:.76rem;white-space:normal;text-align:
 .wrap>*,section.panel,.game,details.props{min-width:0}
 .wrap,section.panel,.game{grid-template-columns:minmax(0,1fr)}
 .pscroll{overflow-x:auto}
+.books{border-top:1px solid var(--line);padding-top:8px;display:grid;gap:4px}
+.books .bl{display:grid;grid-template-columns:4.2rem minmax(0,1fr);gap:8px;font:500 .82rem var(--f-mono);font-variant-numeric:tabular-nums;align-items:baseline}
+.books .bl>span:first-child{font:600 .64rem var(--f-body);letter-spacing:.08em;text-transform:uppercase;color:var(--muted)}
+.books .sides{display:flex;flex-wrap:wrap;gap:2px 16px}
+.books .side{white-space:nowrap}
+.books .bk{color:var(--muted);font-size:.74rem}
+.books .gl{font-size:.84rem}
+.books .gl b{font-weight:600}
 </style>
 
 <div class="wrap">
@@ -243,7 +251,7 @@ function card(g){
   return `<article class="game"><div class="top"><div class="teams">${g.a} <span class="at">@</span> ${g.h}</div>${score}</div>
     <div class="qbs">${g.aq || "QB TBD"} vs ${g.hq || "QB TBD"}${!done && g.wk === firstOpen && (g.aqb || g.hqb) ? ` <span class="badge lean">QB change: ${[g.aqb ? g.aq : null, g.hqb ? g.hq : null].filter(Boolean).join(", ")} starting</span>` : ""}</div>
     <div class="proj">Projected score: ${(() => { const [ps_a, ps_h] = projScore(g.pm, g.mt ?? g.pt); return `${g.a} ${ps_a}, ${g.h} ${ps_h}`; })()}${done ? ` <span class="note" style="display:inline">· final ${g.a} ${g.as_}, ${g.h} ${g.hs}</span>` : ""}</div>
-    <div class="row3">${rows.join("")}</div>${vs}${tags.length ? `<div class="tags">${tags.join("")}</div>` : ""}${propsBlock(g)}</article>`;
+    <div class="row3">${rows.join("")}</div>${vs}${tags.length ? `<div class="tags">${tags.join("")}</div>` : ""}${oddsBlock(g)}${propsBlock(g)}</article>`;
 }
 function renderWeek(){
   document.querySelectorAll("#weeks button").forEach(b => b.setAttribute("aria-pressed", +b.dataset.w === wk));
@@ -297,6 +305,45 @@ function renderMVV(){
   const fv = (g, m) => Math.abs(m) < 0.05 ? "PK" : (m > 0 ? g.h : g.a) + " −" + Math.abs(m).toFixed(1);
   $("mvv-up").innerHTML = `<tr><th>Game</th><th>Model</th><th>Vegas</th><th>Gap</th><th>Model total</th><th>Vegas total</th></tr>` +
     M.upcoming.map(g => `<tr><td>Wk ${g.wk} ${g.a} @ ${g.h}</td><td>${fv(g, g.pm)}</td><td>${fv(g, g.sl)}</td><td>${Math.abs(g.diff).toFixed(1)} toward ${g.diff > 0 ? g.h : g.a}</td><td>${g.pt.toFixed(1)}</td><td>${g.tl}</td></tr>`).join("");
+}
+
+// ---------- live sportsbook odds (pulled on Steven's PC, matched in odds.py) ----------
+const am = p => p == null ? "" : p > 0 ? "+" + p : "−" + Math.abs(p);
+const spt = v => v == null ? "?" : Math.abs(v) < 0.01 ? "PK" : (v > 0 ? "+" : "−") + Math.abs(v).toFixed(1).replace(/\.0$/, "");
+const ago = m => m < 90 ? `${m} min` : m < 48*60 ? `${Math.round(m/60)} hours` : `${Math.round(m/1440)} days`;
+const sideTxt = (team, x, pt) => x ? `<span class="side">${team}${pt === undefined ? "" : " " + spt(pt)} ${am(x.price)} <span class="bk">${x.book}</span></span>` : "";
+function oddsBlock(g){
+  const O = g.odds; if (!O) return "";
+  if (g.hs != null || O.close) {
+    const C = O.close; if (!C) return "";
+    return `<div class="books"><div class="bl"><span>Close</span><span>${C.hs == null ? "" : fav(g, -C.hs)}${C.tot == null ? "" : ` · total ${C.tot}`}${C.hml == null ? "" : ` · ML ${g.a} ${am(Math.round(C.aml))} / ${g.h} ${am(Math.round(C.hml))}`} <span class="bk">middle of ${O.books} books, last pull ${ago(C.mins)} before kickoff</span></span></div></div>`;
+  }
+  const B = O.best, c = O.cons, out = [];
+  out.push(`<div class="bl"><span>Spread</span><span class="sides">${sideTxt(g.a, B.away, B.away && B.away.pt)}${sideTxt(g.h, B.home, B.home && B.home.pt)}</span></div>`);
+  if (B.over) out.push(`<div class="bl"><span>Total</span><span class="sides">${sideTxt("Over " + B.over.pt, B.over)}${sideTxt("Under " + B.under.pt, B.under)}</span></div>`);
+  if (B.aml) out.push(`<div class="bl"><span>Money</span><span class="sides">${sideTxt(g.a, B.aml)}${sideTxt(g.h, B.hml)}</span></div>`);
+  // Gridline's side against the best number on that side
+  const gl = [];
+  if (c.hs != null && B.home && B.away) {
+    const sl = -c.hs, home = g.pm > sl, x = home ? B.home : B.away;
+    const cushion = home ? g.pm + x.pt : x.pt - g.pm, team = home ? g.h : g.a;
+    gl.push(`Spread: <b>${team} ${spt(x.pt)}</b> at ${x.book}, ${cushion >= 0 ? `${cushion.toFixed(1)} pts of cushion` : `${Math.abs(cushion).toFixed(1)} pts short`} vs Gridline${cushion >= 3 ? ' <span class="badge lean">3+ pt gap</span>' : ""}`);
+  }
+  if (c.tot != null && g.mt != null && B.over && B.under) {
+    const over = g.mt > c.tot, x = over ? B.over : B.under, gap = over ? g.mt - x.pt : x.pt - g.mt;
+    gl.push(`Total: <b>${over ? "Over" : "Under"} ${x.pt}</b> at ${x.book}, Gridline ${g.mt.toFixed(1)} (${gap >= 0 ? gap.toFixed(1) + " pts of cushion" : Math.abs(gap).toFixed(1) + " pts short"})${gap >= 1.5 ? ' <span class="badge lean">1.5+ lean</span>' : ""}`);
+  }
+  const R = O.range, spread = R.hs ? R.hs[1] - R.hs[0] : 0, tspread = R.tot ? R.tot[1] - R.tot[0] : 0;
+  const tags = [];
+  if (spread >= 1.5) tags.push(`<span class="badge lean">Shop it: books ${spread.toFixed(1)} pts apart on the spread</span>`);
+  if (tspread >= 1.5) tags.push(`<span class="badge lean">Shop it: books ${tspread.toFixed(1)} pts apart on the total</span>`);
+  if (O.open && c.hs != null && O.open.hs != null && Math.abs(O.open.hs - c.hs) >= 0.5) tags.push(`<span class="badge muted">Spread moved ${fav(g, -O.open.hs)} → ${fav(g, -c.hs)} since ${O.open.asof.split(",")[0]}</span>`);
+  if (O.open && c.tot != null && O.open.tot != null && Math.abs(O.open.tot - c.tot) >= 0.5) tags.push(`<span class="badge muted">Total moved ${O.open.tot} → ${c.tot}</span>`);
+  const rows = O.lines.map(l => `<tr><td>${l.book}</td><td>${l.hs == null ? "–" : `${spt(-l.hs)} ${am(l.as_p)}`}</td><td>${l.hs == null ? "–" : `${spt(l.hs)} ${am(l.hs_p)}`}</td><td>${l.tot == null ? "–" : `${l.tot} ${am(l.ov_p)}/${am(l.un_p)}`}</td><td>${l.aml == null ? "–" : `${am(l.aml)}/${am(l.hml)}`}</td></tr>`).join("");
+  return `<div class="books"><div class="label">Best number at the books</div>${out.join("")}
+    ${gl.length ? `<div class="gl">${gl.join("<br>")}</div>` : ""}${tags.length ? `<div class="tags">${tags.join("")}</div>` : ""}
+    <details class="props"><summary>All ${O.books} books</summary><div class="pscroll"><table class="pt"><tr><th>Book</th><th>${g.a}</th><th>${g.h}</th><th>Total o/u</th><th>ML ${g.a}/${g.h}</th></tr>${rows}</table></div>
+    <p class="note">The Vegas column above is the middle line across these ${O.books} books, pulled ${O.asof}. Cushion is how many points Gridline's number clears the best line on its side. Only the 3+ point spread gap and the 1.5+ total lean have held up in past seasons, and only modestly.</p></details></div>`;
 }
 
 const odds = p => p == null || p < 0.02 || p >= 1 ? "" : p >= 0.5 ? "−" + Math.round(100*p/(1-p)) : "+" + Math.round(100*(1-p)/p);

@@ -20,6 +20,11 @@ def forecasts():
     f = J("forecasts.csv")
     return pd.read_csv(f).set_index("game_id") if os.path.exists(f) else pd.DataFrame()
 
+def odds():
+    """Live book lines from odds.py: middle line, best number per side with its book, and closing lines."""
+    f = J("odds_games.json")
+    return json.load(open(f)) if os.path.exists(f) else {}
+
 def settings():
     f = J("settings.json")
     return json.load(open(f)) if os.path.exists(f) else {}
@@ -182,7 +187,7 @@ if MODE == "calc":
 elif MODE == "season":
     x = pd.read_csv(J("season_2026_games.csv"), parse_dates=["gameday"]).sort_values(["week", "gameday", "gametime"])
     p = pd.read_csv(J("season_2026_projection.csv")); gr = json.load(open(J("season_2026_grade.json")))
-    fc = forecasts()
+    fc = forecasts(); OD = odds()
     f1 = lambda v, n=1: None if pd.isna(v) else round(float(v), n)
     games = []
     for r in x.itertuples():
@@ -197,13 +202,14 @@ elif MODE == "season":
             f = fc.loc[r.game_id]
             e.update(fcT=float(f.temp_f), fcW=float(f.wind_mph), fcRoof=int(f.roof_closed), fcAsOf=str(f.as_of))
         e["id"] = r.game_id
+        if r.game_id in OD: e["odds"] = OD[r.game_id]
         games.append(e)
     data = {"games": games, "proj": p.round(3).to_dict("records"), "grade": gr, "blowouts": blowouts(), "avoid": settings().get("avoid", []), "trust": settings().get("trust", []), "vsVegas": vs_vegas(), "vol": volatility(), "mvv": model_vs_vegas(), **players(),
             "updated": pd.Timestamp.now(tz="America/New_York").strftime("%a %b %d, %I:%M %p ET")}
     json.dump(data, open(J("season_data.json"), "w"))
     html = open(template("season_template.html")).read().replace("__DATA__", json.dumps(data))
     open(J("gridline_2026.html"), "w").write(html)
-    print("season page built:", len(games), "games |", gr["games"], "graded |", sum("fcT" in e for e in games), "with forecasts")
+    print("season page built:", len(games), "games |", gr["games"], "graded |", sum("fcT" in e for e in games), "with forecasts |", sum("odds" in e for e in games), "with book odds")
 
 elif MODE == "betlog":
     # Snapshot of Gridline's numbers for the bet log's risk meter: every 2026 game, this slate's player props,
@@ -230,8 +236,15 @@ elif MODE == "betlog":
         k["tot"] = fit(((t.tm_final - t.total_line) / sdT).values, (t.total > t.total_line).astype(int).values)
     x = pd.read_csv(J("season_2026_games.csv"))
     f1 = lambda v, n=2: None if pd.isna(v) else round(float(v), n)
-    games = [dict(wk=int(r.week), d=str(r.gameday), a=r.away_team, h=r.home_team, pm=f1(r.p_margin), sl=f1(r.spread_line, 1),
-                  tl=f1(r.total_line, 1), tot=f1(r.m_total if not pd.isna(r.m_total) else r.p_total), done=not pd.isna(r.home_score))
+    OD = odds()
+    def book_info(gid):
+        e = OD.get(gid)
+        if not e: return {}
+        if "close" in e: return {"cl": e["close"]}
+        return {"bn": e["best"], "bk": e["books"], "bas": e["asof"]}
+    games = [dict(wk=int(r.week), d=str(r.gameday), a=r.away_team, h=r.home_team, pm=f1(r.p_margin), sl=f1(r.spread_line, 2),
+                  tl=f1(r.total_line, 2), tot=f1(r.m_total if not pd.isna(r.m_total) else r.p_total), done=not pd.isna(r.home_score),
+                  **book_info(r.game_id))
              for r in x.itertuples()]
     props, psd = [], {}
     if os.path.exists(J("player_props_2026.csv")):
@@ -248,4 +261,4 @@ elif MODE == "betlog":
              "k": {kk: round(v, 3) for kk, v in k.items()}, "games": games, "props": props, "psd": psd}
     html = open(template("bet_log.html")).read().replace("__MODEL__", json.dumps(model))
     open(J("gridline_bet_log.html"), "w").write(html)
-    print("bet log built:", len(games), "games |", len(props), "player props | calibration", model["k"])
+    print("bet log built:", len(games), "games |", len(props), "player props |", sum("cl" in g for g in games), "closing lines |", sum("bn" in g for g in games), "games with live odds | calibration", model["k"])
