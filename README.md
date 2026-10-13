@@ -64,6 +64,7 @@ Some of the most useful findings were negative. Each of these was tested on held
 - Bye weeks, short weeks, and coming off a division game, a shootout or overtime. Fatigue shows up better in snap counts.
 - Team specific home field. A team's home edge one year has almost no relationship to the next (correlation 0.02).
 - "Trust" and "avoid" labels. How far a team's games land from the line is not a stable trait: a team's misses in its odd numbered games had no relationship to its even numbered games in the same season (correlation -0.04).
+- Penalties as a drag on passing yards. The idea: holding wipes out completions and pass interference turns catches into penalty yards, so penalty-prone matchups should cut into a quarterback's passing total. In 3,723 QB games from 2019 to 2025 it ran the other way. Quarterbacks whose offense drew the most penalty yards in a game threw for 12 yards more than the model expected, and those with the fewest threw for 14 fewer, because penalties follow passing volume: more dropbacks mean more chances for a flag. Known before kickoff, neither team's penalty habit improved the passing yards projection (average miss 64.85 to 64.82 yards at best), and a defense's pass interference rate does not carry over at all (first 8 games vs the rest of the season: correlation 0.01). In the team model, combined penalty yards stay in the totals projection but are worth only about 0.2 points per standard deviation.
 
 ## Player props
 
@@ -155,7 +156,7 @@ The first run downloads about 250 MB of nflverse data into `data/` and takes a f
 | `odds/` | Sportsbook odds snapshots pulled several times a week from The Odds API |
 | `.github/workflows/pages.yml` | Rebuilds everything and publishes the site to GitHub Pages on a schedule and whenever new odds arrive |
 | `player_best_models.json` | The winning player model and features for each stat, from `research/player_experiments.py` |
-| `research/` | One-off studies: factor ranking, the improvement tests, the player model bake-off, the "do teams quit" study and the trust/avoid test |
+| `research/` | One-off studies: factor ranking, the improvement tests, the player model bake-off, the "do teams quit" study, the trust/avoid test and the penalties vs passing yards study |
 
 ## Tools
 
