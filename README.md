@@ -110,6 +110,17 @@ The season board shows every player's per game averages by quarter since 2021 wh
 
 One limit: the free data has no historical prop lines, so the backtest grades projections against actual results, not against what books posted. The way to judge it against the market is to log the posted line and price on each bet and track closing line value.
 
+## Live game model
+
+The calculator has a live game panel: enter the score, clock, who has the ball, field position, down and distance, and timeouts, and it projects each team's chance to win, the final score, the chance of any more scoring, and, when a team is down 9 or more, its chance to get back within one score. Type in a live spread, total or moneyline and it shows the chance each side wins on the same red to green meter, and whether the price is fair.
+
+- **How it works.** Gradient boosted trees learned from every snap since 2010 (about 680,000 plays), using the game state plus the pregame spread and total. The pregame spread's pull fades as the game goes on and the lead's weight grows, the same way nflverse builds its model. Live spreads and totals are priced from the projected margin and points still to come plus the actual spread of outcomes at that point in the game, and a whole number line that lands exactly is a push, as a book grades it. The trees run in the browser, and the export is checked against scikit-learn's own predictions before publishing.
+- **Tested on 855 games from 2023 to 2025** with models trained only on 2010 to 2022. Win chance log loss 0.456, close to nflverse's own win probability model on the same 123,505 plays (0.448; lower is better), and well calibrated: snaps given 75% won 77% of the time, 25% won 24%. Over/under chances against a live total were calibrated within a few points, and "any more scoring" and "within one score" both beat simple base rates by a wide margin (log loss 0.13 vs 0.29 and 0.47 vs 0.67).
+- **What did not work: bigger trees.** Plays within a game are tightly linked, so there are far fewer independent examples than rows, and larger trees overfit badly (test log loss 0.539). Small, heavily regularized trees and five more seasons of history did best.
+- **One lean to know about.** Home teams beat the pregame spread by about 0.8 points a game in 2023 to 2025, after running slightly behind it in 2019 and 2020, so the live model ran a few points low on home covers in the test. That swings season to season and is not adjusted for.
+
+Live books run models like this on every snap, so a gap between Gridline and a live price is a reason to look closer, not a sure edge.
+
 ## Side studies
 
 - **Comebacks.** Of 1,239 second halves where a team trailed by 17 or more since 2015, 2.6% won and 19.3% got back within one score. Live win probability models already price outright comebacks well. Teams already out of contention went 0 for 162.
@@ -130,6 +141,7 @@ One limit: the free data has no historical prop lines, so the backtest grades pr
 | Efficiency, pace, QB ratings | `candidates.py` |
 | Market ratings and previous game workload | `improvements.py` |
 | Fit, backtest, coefficients | `final_model.py` |
+| Live game model (trained once on 2010 to 2025 and kept in the repo; retrained only if missing) | `live_model.py` |
 | Season projections and simulation | `season.py` |
 | Comeback model | `comebacks.py`, `comeback_model.py` |
 | Blowout flags and volatility | `blowouts.py`, `volatility.py` |

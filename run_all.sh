@@ -20,6 +20,14 @@ python3 -I -W ignore special_teams.py "$D" "$W/games_features.csv" "$W/games_fea
 python3 -I -W ignore candidates.py "$D" "$W/games_features_st.csv" "$W/games_features_all.csv"
 python3 -I -W ignore improvements.py "$D" "$W/games_features_all.csv" "$W/games_features_plus.csv"
 python3 -I -W ignore final_model.py "$W/games_features_plus.csv" "$W" | head -12
+# live game model: trained once on 2010 to 2025 and kept in the GitHub repo; reuse it, and retrain only when missing
+if [ -f live_model.py ] && [ ! -f "$W/live_model.json" ]; then
+  if [ -f "$D/oddsrepo/live_model.json" ]; then cp "$D/oddsrepo/live_model.json" "$W/live_model.json"; echo "live model: reused from the repo"
+  else
+    for y in $(seq 2010 2014); do [ -f "$D/pbp_$y.parquet" ] || curl -sSLf -o "$D/pbp_$y.parquet" "$B/pbp/play_by_play_$y.parquet"; done
+    python3 -I -W ignore live_model.py "$D" "$W"
+  fi
+fi
 python3 -I -W ignore build_pages.py calc "$W"
 python3 -I -W ignore season.py "$W" | head -3
 python3 -I -W ignore comebacks.py "$D" "$W" | head -1

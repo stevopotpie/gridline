@@ -191,6 +191,8 @@ if MODE == "calc":
         data["snaps"] = {r.team: [float(r.off_snaps), float(r.def_snaps)] for r in pd.read_csv(J("last_snaps.csv")).itertuples()}
     if os.path.exists(J("comeback_model.json")):
         data["cb"] = json.load(open(J("comeback_model.json")))
+    if os.path.exists(J("live_model.json")):
+        data["live"] = json.load(open(J("live_model.json")))       # live game model (live_model.py), run in the page
     if os.path.exists(J("season_2026_projection.csv")):
         pr = pd.read_csv(J("season_2026_projection.csv"))
         data["records"] = {r.team: [int(r.w), int(r.l), int(r.t)] for r in pr.itertuples()}
