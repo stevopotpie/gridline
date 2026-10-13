@@ -171,7 +171,7 @@ tr.split td{background:var(--bg);font-size:.76rem;white-space:normal;text-align:
     <div class="slate" id="ptabs"></div>
     <input class="search" id="psearch" type="search" placeholder="Search a player or team" aria-label="Search players">
     <div class="scroll"><table class="bt" id="pstats"></table></div>
-    <p class="note">Regular season totals from play by play. Tap a player to see his per game averages by weather since 2021: domes, outdoors, cold below 40°F, and wind of 15 mph or more.</p>
+    <p class="note">Regular season totals from play by play. Tap a player to see his per game averages since 2021 by weather (domes, outdoors, cold below 40°F, wind of 15 mph or more) and by quarter. Quarter patterns are worth a look but don't lean on them: a player's share of yards in the first quarter or first half barely repeats from one season to the next (correlation about 0.05), so the projections use the norm for his position and the point spread instead.</p>
   </section>
 
   <section class="panel">
@@ -348,6 +348,7 @@ function oddsBlock(g){
 
 const odds = p => p == null || p < 0.02 || p >= 1 ? "" : p >= 0.5 ? "−" + Math.round(100*p/(1-p)) : "+" + Math.round(100*(1-p)/p);
 const pp = p => p == null ? "–" : pct(p);
+const ey = v => v == null ? "–" : Math.round(v);
 function propsBlock(g){
   const P = (D.props || []).filter(p => p.g === g.id);
   if (!P.length || g.hs != null) return "";
@@ -360,18 +361,18 @@ function propsBlock(g){
   const wxNote = w.roof !== "outdoors" ? "Indoors." : `${w.wx === "forecast" ? "Forecast" : "Typical"} weather: ${w.temp}°F, wind ${w.wind} mph${w.wind >= 15 ? " (passing projections lowered for wind)" : ""}.`;
   return `<details class="props"><summary>Player props (${P.length} players)</summary>
     <div class="ph">Likely scorers</div>
-    <div class="pscroll"><table class="pt"><tr><th>Player</th><th>Proj TDs</th><th>Anytime</th><th>Fair</th><th>2+ TDs</th><th>Fair</th></tr>
-    ${td.map(p => `<tr><td>${nm(p)}</td><td>${p.td.toFixed(2)}</td><td>${pp(p.td1)}</td><td>${odds(p.td1)}</td><td>${pp(p.td2)}</td><td>${odds(p.td2)}</td></tr>`).join("")}</table></div>
+    <div class="pscroll"><table class="pt"><tr><th>Player</th><th>Proj TDs</th><th>Anytime</th><th>Fair</th><th>2+ TDs</th><th>Fair</th><th>First TD</th><th>Fair</th></tr>
+    ${td.map(p => `<tr><td>${nm(p)}</td><td>${p.td.toFixed(2)}</td><td>${pp(p.td1)}</td><td>${odds(p.td1)}</td><td>${pp(p.td2)}</td><td>${odds(p.td2)}</td><td>${pp(p.ftd)}</td><td>${odds(p.ftd)}</td></tr>`).join("")}</table></div>
     <div class="ph">Passing</div>
-    <div class="pscroll"><table class="pt"><tr><th>QB</th><th>Yds</th><th>300+</th><th>Pass TDs</th><th>2+ TD</th><th>3+ TD</th></tr>
-    ${qb.map(p => `<tr><td>${nm(p)}</td><td>${p.py}</td><td>${pp(p.p300)}</td><td>${p.ptd.toFixed(1)}</td><td>${pp(p.ptd2)}</td><td>${pp(p.ptd3)}</td></tr>`).join("")}</table></div>
+    <div class="pscroll"><table class="pt"><tr><th>QB</th><th>Yds</th><th>1Q</th><th>1H</th><th>300+</th><th>Pass TDs</th><th>2+ TD</th><th>3+ TD</th></tr>
+    ${qb.map(p => `<tr><td>${nm(p)}</td><td>${p.py}</td><td>${ey(p.py1)}</td><td>${ey(p.pyh)}</td><td>${pp(p.p300)}</td><td>${p.ptd.toFixed(1)}</td><td>${pp(p.ptd2)}</td><td>${pp(p.ptd3)}</td></tr>`).join("")}</table></div>
     <div class="ph">Rushing</div>
-    <div class="pscroll"><table class="pt"><tr><th>Player</th><th>Yds</th><th>100+</th><th>Fair</th></tr>
-    ${ru.map(p => `<tr><td>${nm(p)}</td><td>${p.ry}</td><td>${pp(p.r100)}</td><td>${odds(p.r100)}</td></tr>`).join("")}</table></div>
+    <div class="pscroll"><table class="pt"><tr><th>Player</th><th>Yds</th><th>1H</th><th>100+</th><th>Fair</th></tr>
+    ${ru.map(p => `<tr><td>${nm(p)}</td><td>${p.ry}</td><td>${ey(p.ryh)}</td><td>${pp(p.r100)}</td><td>${odds(p.r100)}</td></tr>`).join("")}</table></div>
     <div class="ph">Receiving</div>
-    <div class="pscroll"><table class="pt"><tr><th>Player</th><th>Rec</th><th>Yds</th><th>100+</th><th>Fair</th></tr>
-    ${re.map(p => `<tr><td>${nm(p)}</td><td>${p.rec.toFixed(1)}</td><td>${p.cy}</td><td>${pp(p.c100)}</td><td>${odds(p.c100)}</td></tr>`).join("")}</table></div>
-    <p class="note">${wxNote} Projections use ${w.lines === "market" ? "the posted Vegas lines" : "Gridline's line (Vegas not posted yet)"} for game script. Fair odds have no vig: a book's price needs to beat them to be worth a look.</p></details>`;
+    <div class="pscroll"><table class="pt"><tr><th>Player</th><th>Rec</th><th>Yds</th><th>1H</th><th>100+</th><th>Fair</th></tr>
+    ${re.map(p => `<tr><td>${nm(p)}</td><td>${p.rec.toFixed(1)}</td><td>${p.cy}</td><td>${ey(p.cyh)}</td><td>${pp(p.c100)}</td><td>${odds(p.c100)}</td></tr>`).join("")}</table></div>
+    <p class="note">${wxNote} Projections use ${w.lines === "market" ? "the posted Vegas lines" : "Gridline's line (Vegas not posted yet)"} for game script. Fair odds have no vig: a book's price needs to beat them to be worth a look. 1Q and 1H are first quarter and first half yards: the game projection times the share that comes early for that position at this point spread (favorites throw more early and run more late). First TD is the chance he scores the game's first touchdown; quarterbacks and defensive or return scores are not projected, so a game's column adds up to about ${Math.round(100 * ((D.qbt || {}).first_td || {share_by_projected_player: 0.72}).share_by_projected_player)}%.</p></details>`;
 }
 
 const PTABS = {
@@ -386,11 +387,14 @@ $("ptabs").innerHTML = Object.keys(PTABS).map(k => `<button type="button" data-k
 $("ptabs").addEventListener("click", e => { const b = e.target.closest("button"); if (!b) return; ptab = b.dataset.k; pkey = PTABS[ptab].key; pdir = -1; popen = null; renderPStats(); });
 $("psearch").addEventListener("input", () => renderPStats());
 function splitRow(id, span){
-  const S = (D.splits || {})[id]; if (!S) return `<tr class="split"><td colspan="${span}">No weather history since 2021.</td></tr>`;
+  const Q = (D.qsplits || {})[id], qi = {Passing: [1, "pass yds"], Rushing: [5, "rush yds"], Receiving: [9, "rec yds"], Touchdowns: [13, "TDs"]}[ptab];
+  const fq = v => ptab === "Touchdowns" ? v.toFixed(2) : v.toFixed(1);
+  const qline = Q ? `<br><b>By quarter since 2021, ${qi[1]} per game:</b> ` + [1, 2, 3, 4].map(k => `Q${k} ${fq(Q[qi[0] + k - 1])}`).join(" · ") + ` <span class="tm">(${Q[0]} g)</span>` : "";
+  const S = (D.splits || {})[id]; if (!S) return `<tr class="split"><td colspan="${span}">No weather history since 2021.${qline}</td></tr>`;
   const order = ["Dome","Outdoor","Cold <40F","Wind 15+"];
   const col = ptab === "Passing" ? [2,"pass yds"] : ptab === "Rushing" ? [3,"rush yds"] : ptab === "Receiving" ? [4,"rec yds"] : [5,"TDs"];
   return `<tr class="split"><td colspan="${span}"><b>Weather splits since 2021, ${col[1]} per game:</b> ` +
-    order.map(o => S.find(s => s[0] === o)).filter(Boolean).map(s => `${s[0]} ${s[col[0]]} <span class="tm">(${s[1]} g)</span>`).join(" · ") + `</td></tr>`;
+    order.map(o => S.find(s => s[0] === o)).filter(Boolean).map(s => `${s[0]} ${s[col[0]]} <span class="tm">(${s[1]} g)</span>`).join(" · ") + qline + `</td></tr>`;
 }
 function renderPStats(){
   document.querySelectorAll("#ptabs button").forEach(b => b.setAttribute("aria-pressed", b.dataset.k === ptab));

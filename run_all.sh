@@ -29,6 +29,7 @@ python3 -I -W ignore volatility.py "$D" "$W" | head -5
 python3 -I -W ignore build_pages.py calc "$W"
 python3 -I -W ignore player_stats.py "$D" "$W"
 python3 -I -W ignore player_props.py "$D" "$W" | head -1
+if [ -f player_quarters.py ]; then python3 -I -W ignore player_quarters.py "$D" "$W"; fi
 python3 -I -W ignore fourth_quarter.py "$D" "$W" | head -8
 python3 -I -W ignore build_pages.py season "$W"
 python3 -I -W ignore build_pages.py betlog "$W"

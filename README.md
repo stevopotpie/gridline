@@ -98,6 +98,16 @@ Measured against what the model expects without weather, 2016 to 2026:
 
 Wind is the one that matters, and it lands on the passing game. The season board shows each player's own per game averages in domes, outdoors, cold and wind since 2021.
 
+### First quarter, first half and first touchdown
+
+Books post early-game props, so the player model also projects first quarter and first half passing, rushing and receiving yards, and each player's chance to score the game's first touchdown.
+
+- **Slow starters and fast starters are mostly noise.** A player's share of his yards that come in the first quarter or first half barely repeats: odd vs even games in the same season correlated 0.03 to 0.20, and one season to the next 0.06 at most. Adding a player's own early history, even shrunk hard toward the norm, made the walk forward projections slightly worse, so it is left out.
+- **Game script is what moves early yards.** Big favorites get 53% of their passing yards in the first half and big underdogs 48%, because leaders run out the clock and trailing teams throw. Rushing is the mirror image (47% vs 52%). Early projections are the game projection times the early share for that position at that point spread, which beat a flat "a quarter of the game" rule for first quarter passing (average miss 25.7 vs 27.0 yards) and receiving (10.2 vs 10.7).
+- **First touchdown scorer** is each player's expected touchdowns as a share of everyone's in the game, times how often the first touchdown goes to a player the model projects (72%; quarterbacks score 7% and defenses or return units 4%). It is well calibrated on 1,949 games from 2019 to 2025: players given 9 to 12% scored first 10.1% of the time. 70% of first touchdowns come in the first quarter.
+
+The season board shows every player's per game averages by quarter since 2021 when you tap his name, for reference.
+
 One limit: the free data has no historical prop lines, so the backtest grades projections against actual results, not against what books posted. The way to judge it against the market is to log the posted line and price on each bet and track closing line value.
 
 ## Side studies
@@ -125,6 +135,7 @@ One limit: the free data has no historical prop lines, so the backtest grades pr
 | Blowout flags and volatility | `blowouts.py`, `volatility.py` |
 | Player box scores | `player_stats.py` |
 | Player projections and prop probabilities | `player_features.py`, `player_props.py` |
+| Quarter splits, early-game yards and first touchdown scorer | `player_quarters.py` |
 | Fourth quarter scoring by margin | `fourth_quarter.py` |
 | Publish the calculator and season board | `build_pages.py` |
 | Bet log with a calibrated risk meter | `build_pages.py betlog`, `templates/bet_log.html` |
@@ -156,7 +167,7 @@ The first run downloads about 250 MB of nflverse data into `data/` and takes a f
 | `odds/` | Sportsbook odds snapshots pulled several times a week from The Odds API |
 | `.github/workflows/pages.yml` | Rebuilds everything and publishes the site to GitHub Pages on a schedule and whenever new odds arrive |
 | `player_best_models.json` | The winning player model and features for each stat, from `research/player_experiments.py` |
-| `research/` | One-off studies: factor ranking, the improvement tests, the player model bake-off, the "do teams quit" study, the trust/avoid test and the penalties vs passing yards study |
+| `research/` | One-off studies: factor ranking, the improvement tests, the player model bake-off, the "do teams quit" study, the trust/avoid test the penalties vs passing yards study and the quarter patterns study |
 
 ## Tools
 

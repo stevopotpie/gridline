@@ -86,7 +86,8 @@ def players():
                              py=r(x.proj_pass_yds, 0), ptd=r(x.proj_pass_td, 2), p300=r(x.p_pass300, 3), ptd2=r(x.p_ptd2, 3), ptd3=r(x.p_ptd3, 3),
                              ry=r(x.proj_rush_yds, 0), r100=r(x.p_rush100, 3), cy=r(x.proj_rec_yds, 0), c100=r(x.p_rec100, 3),
                              rec=r(x.proj_receptions, 1), td=r(x.proj_tds, 2), td1=r(x.p_td1, 3), td2=r(x.p_td2, 3),
-                             wx=x.wx_source, wind=r(x.wx_wind, 0), temp=r(x.wx_temp, 0), roof=x.wx_roof, lines=x.lines) for x in p.itertuples()]
+                             wx=x.wx_source, wind=r(x.wx_wind, 0), temp=r(x.wx_temp, 0), roof=x.wx_roof, lines=x.lines,
+                             **early(x, r)) for x in p.itertuples()]
     if os.path.exists(J("player_season_2026.csv")):
         s = pd.read_csv(J("player_season_2026.csv"))
         cols = ["games", "completions", "pass_att", "pass_yds", "pass_td", "ints", "carries", "rush_yds", "rush_td", "targets", "receptions", "rec_yds", "rec_td", "tds"]
@@ -99,10 +100,24 @@ def players():
         out["splits"] = sp
     if os.path.exists(J("player_backtest.json")):
         out["pbt"] = json.load(open(J("player_backtest.json")))
+    if os.path.exists(J("player_quarter_splits.csv")):
+        q = pd.read_csv(J("player_quarter_splits.csv"))
+        cols = [f"{m}_q{i}" for m in ("pass_yds", "rush_yds", "rec_yds", "tds") for i in range(1, 5)]
+        out["qsplits"] = {x.player_id: [int(x.g)] + [round(float(getattr(x, c)), 2) for c in cols] for x in q.itertuples()}
+    if os.path.exists(J("player_quarter_backtest.json")):
+        b = json.load(open(J("player_quarter_backtest.json")))
+        out["qbt"] = {k: b[k] for k in ("pass_yds", "rush_yds", "rec_yds", "first_td") if k in b}
     if os.path.exists(J("q4_data.json")):
         q = json.load(open(J("q4_data.json")))
         out["q4"] = {"league": q["league"], "team": q["team"]}
     return out
+
+
+def early(x, r):
+    """First quarter and first half yards and the first touchdown chance (player_quarters.py), when present."""
+    g = lambda c, n=0: r(getattr(x, c), n) if hasattr(x, c) else None
+    return dict(py1=g("proj_pass_yds_q1"), pyh=g("proj_pass_yds_h1"), ry1=g("proj_rush_yds_q1"), ryh=g("proj_rush_yds_h1"),
+                cy1=g("proj_rec_yds_q1"), cyh=g("proj_rec_yds_h1"), ftd=g("p_first_td", 3))
 
 
 def blowouts():
@@ -254,9 +269,12 @@ elif MODE == "betlog":
             props.append(dict(g=gk.get(r.game_id), wk=int(r.week), n=r.display_name, t=r.team, pos=r.position,
                               py=f1(r.proj_pass_yds, 1), ptd=f1(r.proj_pass_td), ry=f1(r.proj_rush_yds, 1), cy=f1(r.proj_rec_yds, 1),
                               rec=f1(r.proj_receptions), td=f1(r.proj_tds), td1=f1(r.p_td1, 3), td2=f1(r.p_td2, 3), p300=f1(r.p_pass300, 3),
-                              ptd2=f1(r.p_ptd2, 3), ptd3=f1(r.p_ptd3, 3), r100=f1(r.p_rush100, 3), c100=f1(r.p_rec100, 3)))
+                              ptd2=f1(r.p_ptd2, 3), ptd3=f1(r.p_ptd3, 3), r100=f1(r.p_rush100, 3), c100=f1(r.p_rec100, 3),
+                              **early(r, f1)))
     if os.path.exists(J("player_backtest.json")):
         psd = {m: v.get("sd") for m, v in json.load(open(J("player_backtest.json"))).items()}
+    if os.path.exists(J("player_quarter_backtest.json")):
+        psd.update(json.load(open(J("player_quarter_backtest.json"))).get("sd", {}))
     model = {"asof": pd.Timestamp.now(tz="America/New_York").strftime("%a %b %d"), "sdM": round(sdM, 2), "sdT": round(sdT, 2),
              "k": {kk: round(v, 3) for kk, v in k.items()}, "games": games, "props": props, "psd": psd}
     html = open(template("bet_log.html")).read().replace("__MODEL__", json.dumps(model))
