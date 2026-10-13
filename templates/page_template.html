@@ -74,6 +74,7 @@ table.bt{width:100%;border-collapse:collapse;font:400 .82rem var(--f-mono);font-
 .kpi .k{font:600 .64rem var(--f-body);letter-spacing:.08em;text-transform:uppercase;opacity:.75}
 .kpi .v{font:700 1.6rem/1.1 var(--f-display);font-variant-numeric:tabular-nums}
 .kpi .d{font:400 .74rem var(--f-mono);opacity:.8}
+[hidden]{display:none!important}
 .lv-teams{display:grid;grid-template-columns:1fr 1fr;gap:10px}
 .lv-row{display:grid;grid-template-columns:minmax(0,1fr) auto;gap:4px 10px;align-items:center;border-top:1px solid var(--line);padding:8px 0}
 .lv-row:first-child{border-top:0}
@@ -176,8 +177,8 @@ table.bt{width:100%;border-collapse:collapse;font:400 .82rem var(--f-mono);font-
     <div class="grid2">
       <label class="field"><span id="lv-as-l">Away score</span><input id="lv-as" type="number" min="0" step="1" value="0" inputmode="numeric"></label>
       <label class="field"><span id="lv-hs-l">Home score</span><input id="lv-hs" type="number" min="0" step="1" value="0" inputmode="numeric"></label>
-      <label class="field"><span>Quarter</span><select id="lv-q"><option value="1">1st</option><option value="2">2nd</option><option value="3">3rd</option><option value="4">4th</option></select></label>
-      <label class="field"><span>Clock left in quarter (min:sec)</span><div class="lv-teams"><input id="lv-min" type="number" min="0" max="15" step="1" value="15" inputmode="numeric" aria-label="Minutes"><input id="lv-sec" type="number" min="0" max="59" step="1" value="0" inputmode="numeric" aria-label="Seconds"></div></label>
+      <label class="field"><span>Quarter</span><select id="lv-q"><option value="1">1st</option><option value="2">2nd</option><option value="3">3rd</option><option value="4">4th</option><option value="5">Overtime</option></select></label>
+      <label class="field"><span id="lv-clock-l">Clock left in quarter (min:sec)</span><div class="lv-teams"><input id="lv-min" type="number" min="0" max="15" step="1" value="15" inputmode="numeric" aria-label="Minutes"><input id="lv-sec" type="number" min="0" max="59" step="1" value="0" inputmode="numeric" aria-label="Seconds"></div></label>
       <label class="field"><span>Ball with</span><select id="lv-ball"><option value="away">Away</option><option value="home">Home</option></select></label>
       <label class="field"><span>Ball on</span><div class="lv-teams"><select id="lv-side"><option value="own">Own</option><option value="opp">Their</option></select><input id="lv-yl" type="number" min="1" max="50" step="1" value="25" inputmode="numeric" aria-label="Yard line"></div></label>
       <label class="field"><span>Down</span><select id="lv-down"><option>1</option><option>2</option><option>3</option><option>4</option></select></label>
@@ -185,6 +186,15 @@ table.bt{width:100%;border-collapse:collapse;font:400 .82rem var(--f-mono);font-
       <label class="field"><span id="lv-ato-l">Away timeouts</span><select id="lv-ato"><option>3</option><option>2</option><option>1</option><option>0</option></select></label>
       <label class="field"><span id="lv-hto-l">Home timeouts</span><select id="lv-hto"><option>3</option><option>2</option><option>1</option><option>0</option></select></label>
       <label class="field" id="lv-ko-w"><span>Gets the 2nd half kickoff</span><select id="lv-ko"><option value="home">Home</option><option value="away">Away</option></select></label>
+    </div>
+    <div id="lv-ot" hidden>
+      <div class="label">Overtime</div>
+      <div class="toggles">
+        <label class="tog"><input type="checkbox" id="lv-ahad"> <span id="lv-ahad-l">Away has had the ball in OT</span></label>
+        <label class="tog"><input type="checkbox" id="lv-hhad"> <span id="lv-hhad-l">Home has had the ball in OT</span></label>
+        <label class="tog"><input type="checkbox" id="lv-po"> Playoff game</label>
+      </div>
+      <p class="note">Both teams are guaranteed a possession (regular season since 2025, playoffs since 2022), then it is sudden death. Regular season overtime is 10 minutes and can end in a tie; playoff overtime is 15 minute periods until someone wins.</p>
     </div>
     <div class="kpis" id="lv-out"></div>
     <div class="label">Live lines (optional)</div>
@@ -487,6 +497,18 @@ const lvColor = p => `hsl(${Math.round(Math.max(0, Math.min(1, (p - 0.15) / 0.6)
 const am = o => o > 0 ? "+" + o : "−" + Math.abs(o);
 const ln = v => v > 0 ? "+" + v : v === 0 ? "PK" : "−" + Math.abs(v);
 const nv = id => { const v = $(id).value.trim(); return v === "" ? null : Number(v); };
+function otState(x, clock, hs, as, homeBall, ydl){
+  const po = $("lv-po").checked, len = po ? 900 : 600, c = Math.min(len, clock), spread = -x.vline;
+  const f = {diff: hs - as, ot_left: c / len, home_ball: homeBall, home_field_pos: homeBall ? 1 - ydl / 100 : ydl / 100,
+    down: +$("lv-down").value, togo: Math.min(30, Math.max(1, +$("lv-togo").value || 10)), home_to: +$("lv-hto").value, away_to: +$("lv-ato").value,
+    spread, home_had: $("lv-hhad").checked || homeBall ? 1 : 0, away_had: $("lv-ahad").checked || !homeBall ? 1 : 0, both_rule: 1, playoff: po ? 1 : 0};
+  // the regulation model's end-of-game view with the same clock, for the chance nobody scores again (ties)
+  const el = (3600 - c) / 3600;
+  const g = {diff: 0, secs: c, half_secs: c, home_ball: homeBall, ydl, down: f.down, togo: f.togo, home_to: f.home_to, away_to: f.away_to, spread,
+    total_line: x.vtotal || 44, lead_per_min: 0, cur_total: hs + as, spread_time: spread * Math.exp(-4 * el), diff_time: 0, home_gets_2h: 0.5};
+  return {ot: true, po, len, c, f, vec: LV.ot_features.map(k => f[k]), regVec: LV.features.map(k => g[k])};
+}
+function logitModel(e, x){ let z = e.b; for (let i = 0; i < x.length; i++) z += e.coef[i] * (x[i] - e.mean[i]) / e.scale[i]; return z; }
 function liveState(){
   const x = read(), q = +$("lv-q").value, clock = Math.min(900, Math.max(0, (+$("lv-min").value || 0) * 60 + (+$("lv-sec").value || 0)));
   const secs = (4 - q) * 900 + clock, half = (q <= 2 ? 2 - q : 4 - q) * 900 + clock;
@@ -497,7 +519,8 @@ function liveState(){
     home_to: +$("lv-hto").value, away_to: +$("lv-ato").value, spread, total_line: total, lead_per_min: diff / Math.sqrt(secs / 60 + 1),
     cur_total: hs + as, spread_time: spread * Math.exp(-4 * el), diff_time: diff * Math.exp(4 * el),
     home_gets_2h: q <= 2 ? ($("lv-ko").value === "home" ? 1 : 0) : 0.5};
-  return {x, q, secs, hs, as, diff, f, vec: LV.features.map(k => f[k])};
+  const base = {x, q, secs, hs, as, diff, f, vec: LV.features.map(k => f[k])};
+  return q === 5 && LV.ot_features ? {...base, ...otState(x, clock, hs, as, homeBall, ydl)} : base;
 }
 function liveRow(label, p, price, note){
   const w = Math.round(Math.max(0.02, Math.min(0.98, p)) * 100);
@@ -515,6 +538,10 @@ function live(){
   [...$("lv-ball").options].forEach(o => o.textContent = o.value === "home" ? H : A);
   [...$("lv-ko").options].forEach(o => o.textContent = o.value === "home" ? H : A);
   $("lv-ko-w").hidden = S.q > 2;
+  $("lv-ot").hidden = !S.ot;
+  $("lv-ahad-l").textContent = `${A} has had the ball in OT`; $("lv-hhad-l").textContent = `${H} has had the ball in OT`;
+  $("lv-clock-l").textContent = S.ot ? `Overtime clock left (min:sec, ${S.po ? 15 : 10}:00 to start)` : "Clock left in quarter (min:sec)";
+  if (S.ot) return liveOT(S, A, H);
   const M = LV.models, b = LV.buckets.findIndex((v, i) => secs >= v && secs < LV.buckets[i + 1]), bk = b < 0 ? LV.buckets.length - 2 : b;
   const pHome = sig(gbm(M.win, vec)), muM = gbm(M.margin, vec), muT = gbm(M.total, vec), pMore = sig(gbm(M.more, vec));
   const finalM = diff + muM, finalT = hs + as + muT;
@@ -543,6 +570,35 @@ function live(){
   const T = LV.test;
   $("lv-note").textContent = `Learned from every snap since 2010, using the score, clock, possession, field position, down and distance, timeouts and the pregame line (whose pull fades as the game goes on). Tested on ${T.games.toLocaleString()} games from ${T.years} with models trained only on earlier seasons: win chance log loss ${T.win_logloss} vs ${T.win_logloss_nflverse} for nflverse's own win probability model (lower is better), with predicted chances landing close to actual results. Live books run models like this on every snap, so treat a gap here as a reason to look closer, not a sure edge. Between plays, set it as the next snap: after a touchdown or field goal, the other team 1st and 10 at its own 25.`;
 }
+function liveOT(S, A, H){
+  const M = LV.models, {hs, as} = S, diff = hs - as;
+  const pNoTieHome = sig(logitModel(M.ot_win, S.vec));
+  const T = LV.ot_tie, pTie = diff === 0 && !S.po ? sig(T.a + T.b * -gbm(M.more, S.regVec)) : 0;
+  const pHome = (1 - pTie) * pNoTieHome, pAway = (1 - pTie) * (1 - pNoTieHome);
+  const muM = gbm(M.ot_margin, S.vec), muT = gbm(M.ot_total, S.vec);
+  const pMore = diff === 0 ? 1 - pTie : sig(logitModel(M.ot_more, S.vec));
+  const finalM = diff + muM, finalT = hs + as + Math.max(0, muT);
+  const lead = pHome >= pAway ? H : A;
+  const tiles = [[`${lead} wins`, `${Math.round(Math.max(pHome, pAway) * 100)}%`, `${H} ${Math.round(pHome * 100)}% · ${A} ${Math.round(pAway * 100)}%${S.po ? "" : ` · tie ${Math.round(pTie * 100)}%`}`],
+    ["Projected final", `${Math.max(as, Math.round((finalT - finalM) / 2))}–${Math.max(hs, Math.round((finalT + finalM) / 2))}`, `${A}–${H} · total ${finalT.toFixed(1)}`],
+    ["Any more scoring", `${Math.round(pMore * 100)}%`, diff === 0 ? "a score now likely decides it" : "the trailing team still gets its possession"]];
+  $("lv-out").innerHTML = tiles.map(([k, v, d]) => `<div class="kpi"><div class="k">${k}</div><div class="v">${v}</div><div class="d">${d}</div></div>`).join("");
+  const rows = [], qm = LV.residual_quantiles.ot_margin, qt = LV.residual_quantiles.ot_total;
+  const sp = nv("lv-sp"), spo = nv("lv-spo"), tot = nv("lv-tot"), toto = nv("lv-toto"), aml = nv("lv-aml"), hml = nv("lv-hml");
+  if (sp != null) { const pH = beats(finalM, -sp, qm);
+    rows.push(liveRow(`${H} ${ln(sp)}${spo != null ? " " + am(spo) : ""}`, pH, spo, `Projected ${H} margin ${finalM >= 0 ? "+" : "−"}${Math.abs(finalM).toFixed(1)}`));
+    rows.push(liveRow(`${A} ${ln(-sp)}${spo != null ? " " + am(spo) : ""}`, 1 - pH, spo, "")); }
+  if (tot != null) { const pO = beats(finalT, tot, qt);
+    rows.push(liveRow(`Over ${tot}${toto != null ? " " + am(toto) : ""}`, pO, toto, `Projected total ${finalT.toFixed(1)}`));
+    rows.push(liveRow(`Under ${tot}${toto != null ? " " + am(toto) : ""}`, 1 - pO, toto, "")); }
+  // most books refund a moneyline on a tie, so the meter uses the chance to win given no tie
+  if (hml != null) rows.push(liveRow(`${H} moneyline ${am(hml)}`, pNoTieHome, hml, S.po ? "" : "Chance to win if it does not end tied (most books refund a tie)"));
+  if (aml != null) rows.push(liveRow(`${A} moneyline ${am(aml)}`, 1 - pNoTieHome, aml, ""));
+  $("lv-bets").innerHTML = rows.join("") || `<p class="note">Type a live spread, total or moneyline above to see its chance and whether the price is fair.</p>`;
+  const O = LV.test.overtime || {};
+  $("lv-note").textContent = `Overtime has its own models: there have been only ${O.games || 262} overtime games since 2010, so they are kept simple and tested by holding out whole games. Win chance log loss ${O.win_logloss} vs ${O.win_logloss_spread_only} for the pregame spread alone. With only ${O.ties || 13} ties to learn from, the tie chance borrows the regulation model's read on whether anyone scores again with this much time left; treat it as a rough guide, and it tends to run low late in overtime.`;
+}
+["lv-ahad","lv-hhad","lv-po"].forEach(id => $(id).addEventListener("input", live));
 ["lv-as","lv-hs","lv-q","lv-min","lv-sec","lv-ball","lv-side","lv-yl","lv-down","lv-togo","lv-ato","lv-hto","lv-ko","lv-sp","lv-spo","lv-tot","lv-toto","lv-aml","lv-hml"].forEach(id => $(id).addEventListener("input", live));
 ["away","home","vline","vtotal","neutral"].forEach(id => $(id).addEventListener("input", live));
 

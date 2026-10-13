@@ -36,7 +36,7 @@ GBM = dict(max_iter=400, learning_rate=0.03, max_leaf_nodes=7, min_samples_leaf=
 COLS = ["game_id", "season", "play_id", "qtr", "down", "ydstogo", "yardline_100", "game_seconds_remaining",
         "half_seconds_remaining", "posteam", "home_team", "score_differential", "posteam_score", "defteam_score",
         "home_score", "away_score", "spread_line", "total_line", "home_timeouts_remaining", "away_timeouts_remaining",
-        "vegas_home_wp"]
+        "vegas_home_wp", "season_type", "quarter_seconds_remaining"]
 
 
 def load():
@@ -81,6 +81,123 @@ def load():
     p["y_more"] = (p.y_total > 0).astype(int)
     p["bucket"] = np.searchsorted(BUCKETS, p.secs, side="right") - 1
     return p.dropna(subset=["spread", "total_line"] + ["home_to", "away_to"])
+
+
+# ---------- overtime ----------
+# Overtime is rare (262 games and about 4,500 snaps since 2010) and its rules changed: regular season overtime went
+# from 15 to 10 minutes in 2017, playoffs guaranteed both teams a possession from 2022 and the regular season from 2025.
+# So it gets its own small models, with the rule era and who has had the ball as inputs, tested by holding out whole games.
+OT_FEATURES = ["diff", "ot_left", "home_ball", "home_field_pos", "down", "togo", "home_to", "away_to", "spread",
+               "home_had", "away_had", "both_rule", "playoff"]
+OT_GBM = dict(max_iter=150, learning_rate=0.05, max_leaf_nodes=4, min_samples_leaf=80, l2_regularization=5.0,
+              random_state=0, early_stopping=False)
+
+
+def load_ot():
+    out = []
+    for y in range(FIRST_SEASON, 2026):
+        f = os.path.join(D, f"pbp_{y}.parquet")
+        if os.path.exists(f):
+            out.append(pd.read_parquet(f, columns=COLS))
+    p = pd.concat(out, ignore_index=True)
+    p = p[(p.qtr >= 5) & p.down.notna() & p.yardline_100.notna() & p.score_differential.notna() & p.home_score.notna()].copy()
+    p = p.sort_values(["game_id", "play_id"])
+    p["home_ball"] = (p.posteam == p.home_team).astype(int)
+    p["diff"] = np.where(p.home_ball == 1, p.score_differential, -p.score_differential)
+    p["cur_total"] = p.posteam_score + p.defteam_score
+    p["playoff"] = (p.season_type == "POST").astype(int)
+    length = np.where(p.playoff == 1, 900, np.where(p.season >= 2017, 600, 900))
+    p["ot_left"] = (p.quarter_seconds_remaining / length).clip(0, 1)         # share of the overtime period left
+    p["home_field_pos"] = np.where(p.home_ball == 1, 1 - p.yardline_100 / 100, p.yardline_100 / 100)  # 1 = home at the goal line
+    p["togo"] = p.ydstogo.clip(1, 30)
+    p["home_to"], p["away_to"] = p.home_timeouts_remaining, p.away_timeouts_remaining
+    p["spread"] = p.spread_line
+    p["home_had"] = p.groupby("game_id").home_ball.cummax()
+    p["away_had"] = (1 - p.home_ball).groupby(p.game_id).cummax()
+    p["both_rule"] = (((p.playoff == 1) & (p.season >= 2022)) | (p.season >= 2025)).astype(int)
+    tie = p.home_score == p.away_score
+    p["y_tie"] = tie.astype(int)
+    p["y_win"] = np.where(tie, np.nan, (p.home_score > p.away_score).astype(float))
+    p["y_margin"] = (p.home_score - p.away_score) - p["diff"]
+    p["y_total"] = (p.home_score + p.away_score) - p.cur_total
+    p["y_more"] = (p.y_total > 0).astype(int)
+    return p.dropna(subset=["spread", "home_to", "away_to"])
+
+
+OT_CAUTIOUS = {**OT_GBM, "min_samples_leaf": 250, "max_iter": 80, "learning_rate": 0.04}
+
+
+def logit_model():
+    from sklearn.linear_model import LogisticRegression
+    from sklearn.pipeline import make_pipeline
+    from sklearn.preprocessing import StandardScaler
+    return make_pipeline(StandardScaler(), LogisticRegression(C=0.3, max_iter=1000))
+
+
+def reg_more_logit(t, reg_more):
+    """The regulation model's 'any more scoring' log odds for overtime snaps, treating the overtime clock like the
+    end of the 4th quarter (tied, same time left, field position, timeouts)."""
+    secs = t.quarter_seconds_remaining
+    el = (3600 - secs) / 3600
+    f = pd.DataFrame({"diff": 0.0, "secs": secs, "half_secs": secs, "home_ball": t.home_ball, "ydl": t.yardline_100, "down": t.down,
+                      "togo": t.togo, "home_to": t.home_to, "away_to": t.away_to, "spread": t.spread, "total_line": t.total_line,
+                      "lead_per_min": 0.0, "cur_total": t.cur_total, "spread_time": t.spread * np.exp(-4 * el), "diff_time": 0.0,
+                      "home_gets_2h": 0.5}, index=t.index)
+    return reg_more._raw_predict(f[FEATURES].values).ravel()
+
+
+def fit_tie(d, reg_more):
+    """Ties: only 8 since overtime went to 10 minutes in 2017, too few to learn from directly. The regulation model
+    already knows end-of-game scoring from 644,000 snaps, so an overtime tie is its chance of no more scoring with the
+    same clock, field position and timeouts. Tested on held-out overtime games it beat the base rate (log loss 0.342
+    vs 0.346); recalibrating it on overtime games overfit (0.391), so it is used as is."""
+    return {"a": 0.0, "b": 1.0}
+
+
+def tie_prob(d, cal, reg_more):
+    z = cal["a"] + cal["b"] * -reg_more_logit(d, reg_more)
+    return np.where((d["diff"] == 0) & (d.playoff == 0), 1 / (1 + np.exp(-z)), 0.0)
+
+
+def fit_ot(d):
+    m = {}
+    w = d[d.y_win.notna()]
+    m["ot_win"] = logit_model().fit(w[OT_FEATURES], w.y_win.astype(int))        # chance home wins, given no tie
+    m["ot_more"] = logit_model().fit(d[OT_FEATURES], d.y_more)
+    m["ot_margin"] = HistGradientBoostingRegressor(**OT_CAUTIOUS).fit(d[OT_FEATURES], d.y_margin)
+    m["ot_total"] = HistGradientBoostingRegressor(**OT_CAUTIOUS).fit(d[OT_FEATURES], d.y_total)
+    res = {k: np.quantile(d[f"y_{k[3:]}"].values - m[k].predict(d[OT_FEATURES]), QS).round(3).tolist() for k in ("ot_margin", "ot_total")}
+    return m, res
+
+
+def test_ot(d, reg_more):
+    """Hold out a fifth of the overtime games at a time, so no game's snaps are in both training and test."""
+    from sklearn.model_selection import GroupKFold
+    from scipy.stats import norm
+    pw, pt, pm = (pd.Series(np.nan, index=d.index) for _ in range(3))
+    for tri, tei in GroupKFold(5).split(d, groups=d.game_id):
+        tr, te = d.iloc[tri], d.iloc[tei]
+        m, _ = fit_ot(tr)
+        cal = fit_tie(tr, reg_more)
+        pw.iloc[tei] = m["ot_win"].predict_proba(te[OT_FEATURES])[:, 1]
+        pt.iloc[tei] = tie_prob(te, cal, reg_more)
+        pm.iloc[tei] = m["ot_more"].predict_proba(te[OT_FEATURES])[:, 1]
+    w = d.y_win.notna()
+    base = pd.Series(norm.cdf(d.spread / 13.5), index=d.index)      # the pregame spread alone, as a win chance
+    reg = (d.playoff == 0) & (d.season >= 2017) & (d["diff"] == 0)
+    return {"games": int(d.game_id.nunique()), "snaps": int(len(d)), "ties": int(d.drop_duplicates("game_id").y_tie.sum()),
+            "win_logloss": round(ll(pw[w].values, d.y_win[w].values), 4), "win_logloss_spread_only": round(ll(base[w].values, d.y_win[w].values), 4),
+            "win_reliability": reliability(pw[w].values, d.y_win[w].values, (0, .2, .4, .6, .8, 1)),
+            "tie_logloss": round(ll(pt[reg].values, d.y_tie[reg].values), 4),
+            "tie_logloss_base": round(ll(np.full(int(reg.sum()), d.y_tie[reg].mean()), d.y_tie[reg].values), 4),
+            "tie_reliability": reliability(pt[reg].values, d.y_tie[reg].values, (0, .1, .2, .35, 1)),
+            "more_logloss": round(ll(pm.values, d.y_more.values), 4), "more_logloss_base": round(ll(np.full(len(d), d.y_more.mean()), d.y_more.values), 4)}
+
+
+def export_logit(pipe):
+    sc, lr = pipe[0], pipe[-1]
+    return {"type": "logit", "mean": sc.mean_.round(6).tolist(), "scale": sc.scale_.round(6).tolist(),
+            "coef": lr.coef_[0].round(6).tolist(), "b": float(lr.intercept_[0])}
 
 
 def fit_all(tr):
@@ -183,25 +300,41 @@ def main():
     pwi = m["within"].predict_proba(wi[FEATURES])[:, 1]
     bt["within"] = {"plays": int(len(wi)), "logloss": ll(pwi, wi.y_within.values), "logloss_base": ll(np.full(len(wi), wi.y_within.mean()), wi.y_within.values),
                     "reliability": reliability(pwi, wi.y_within.values)}
+    ot = load_ot()
+    bt["overtime"] = test_ot(ot, m["more"])
     json.dump(bt, open(os.path.join(W, "live_backtest.json"), "w"), indent=1)
 
     # ---------- publish: refit on everything through 2025, export, verify ----------
     m, res = fit_all(hist)
-    out = {"features": FEATURES, "buckets": BUCKETS, "residual_quantiles": res, "models": {k: export(v) for k, v in m.items()},
-           "kinds": {"win": "prob", "more": "prob", "within": "prob", "margin": "value", "total": "value"},
+    mo, reso = fit_ot(ot)
+    res.update(reso)
+    tie_cal = fit_tie(ot, m["more"])
+    out = {"features": FEATURES, "ot_features": OT_FEATURES, "buckets": BUCKETS, "residual_quantiles": res, "models": {k: export(v) for k, v in m.items()},
+           "kinds": {"win": "prob", "more": "prob", "within": "prob", "margin": "value", "total": "value",
+                     "ot_win": "logit", "ot_more": "logit", "ot_margin": "value", "ot_total": "value"},
            "test": {"win_logloss": round(bt["win"]["logloss"], 4), "win_logloss_nflverse": round(bt["win"]["logloss_nflverse"], 4),
                     "cover_logloss": round(bt["cover"]["logloss"], 4), "over_logloss": round(bt["over"]["logloss"], 4),
                     "plays": bt["plays"], "games": bt["games"], "years": bt["test"]}}
+    out["models"].update({k: export_logit(v) if k in ("ot_win", "ot_more") else export(v) for k, v in mo.items()})
+    out["ot_tie"] = tie_cal         # tie = logistic(a + b x log odds of no more scoring from the regulation model)
+    out["test"]["overtime"] = {k: bt["overtime"][k] for k in ("games", "ties", "win_logloss", "win_logloss_spread_only")}
     sample = hist.sample(400, random_state=1)[FEATURES].values
-    for k, est in m.items():
-        mine = run_exported(out["models"][k], sample)
-        ref = est._raw_predict(sample).ravel()
+    sample_ot = ot.sample(min(400, len(ot)), random_state=1)[OT_FEATURES].values
+    for k, est in {**m, **mo}.items():
+        X = sample_ot if k.startswith("ot_") else sample
+        e = out["models"][k]
+        if e.get("type") == "logit":
+            mine = ((X - np.array(e["mean"])) / np.array(e["scale"])) @ np.array(e["coef"]) + e["b"]
+            ref = est.decision_function(pd.DataFrame(X, columns=OT_FEATURES))
+        else:
+            mine, ref = run_exported(e, X), est._raw_predict(X).ravel()
         err = float(np.max(np.abs(mine - ref)))
         assert err < 1e-4, (k, err)
     json.dump(out, open(os.path.join(W, "live_model.json"), "w"), separators=(",", ":"))
     kb = os.path.getsize(os.path.join(W, "live_model.json")) // 1024
     print(f"live model: {bt['plays']:,} test plays ({bt['test']}) | win log loss {bt['win']['logloss']:.4f} vs nflverse {bt['win']['logloss_nflverse']:.4f} | "
-          f"live cover {bt['cover']['logloss']:.4f} vs coin flip {bt['cover']['logloss_coin_flip']:.4f} | live over {bt['over']['logloss']:.4f} | {kb} KB")
+          f"live cover {bt['cover']['logloss']:.4f} vs coin flip {bt['cover']['logloss_coin_flip']:.4f} | live over {bt['over']['logloss']:.4f} | "
+          f"overtime: {bt['overtime']['games']} games, win log loss {bt['overtime']['win_logloss']} vs {bt['overtime']['win_logloss_spread_only']} spread only | {kb} KB")
 
 
 if __name__ == "__main__":
