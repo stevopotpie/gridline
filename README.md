@@ -4,6 +4,15 @@ Gridline is a model I built to project NFL point spreads, over/unders, final sco
 
 The goal was never to find a magic system. It was to find out which factors actually move outcomes, measure them on games the model had not seen, and keep only what earned its place.
 
+## Try it
+
+No install needed. The pages rebuild automatically from the latest data and odds:
+
+- **[Gridline home](https://stevopotpie.github.io/gridline/)**
+- **[2026 season board](https://stevopotpie.github.io/gridline/season.html)**: every game graded or projected, the best number at the books, player props and playoff odds
+- **[Matchup calculator](https://stevopotpie.github.io/gridline/model.html)**: set any matchup, line, weather, quarterbacks and injuries
+- **[Bet log](https://stevopotpie.github.io/gridline/bet-log.html)**: enter a bet and a meter runs from red to green with its chance to win, and whether Gridline's chance beats the price. Bets are saved in your own browser only, with export and import to back them up.
+
 ## Results at a glance
 
 All figures come from walk-forward testing: each season from 2018 to 2025 was predicted by a model trained only on earlier seasons. Breakeven at standard -110 odds is 52.4%.
@@ -55,6 +64,7 @@ Some of the most useful findings were negative. Each of these was tested on held
 - Bye weeks, short weeks, and coming off a division game, a shootout or overtime. Fatigue shows up better in snap counts.
 - Team specific home field. A team's home edge one year has almost no relationship to the next (correlation 0.02).
 - "Trust" and "avoid" labels. How far a team's games land from the line is not a stable trait: a team's misses in its odd numbered games had no relationship to its even numbered games in the same season (correlation -0.04).
+- Penalties as a drag on passing yards. The idea: holding wipes out completions and pass interference turns catches into penalty yards, so penalty-prone matchups should cut into a quarterback's passing total. In 3,723 QB games from 2019 to 2025 it ran the other way. Quarterbacks whose offense drew the most penalty yards in a game threw for 12 yards more than the model expected, and those with the fewest threw for 14 fewer, because penalties follow passing volume: more dropbacks mean more chances for a flag. Known before kickoff, neither team's penalty habit improved the passing yards projection (average miss 64.85 to 64.82 yards at best), and a defense's pass interference rate does not carry over at all (first 8 games vs the rest of the season: correlation 0.01). In the team model, combined penalty yards stay in the totals projection but are worth only about 0.2 points per standard deviation.
 
 ## Player props
 
@@ -88,7 +98,29 @@ Measured against what the model expects without weather, 2016 to 2026:
 
 Wind is the one that matters, and it lands on the passing game. The season board shows each player's own per game averages in domes, outdoors, cold and wind since 2021.
 
+### First quarter, first half and first touchdown
+
+Books post early-game props, so the player model also projects first quarter and first half passing, rushing and receiving yards, and each player's chance to score the game's first touchdown.
+
+- **Slow starters and fast starters are mostly noise.** A player's share of his yards that come in the first quarter or first half barely repeats: odd vs even games in the same season correlated 0.03 to 0.20, and one season to the next 0.06 at most. Adding a player's own early history, even shrunk hard toward the norm, made the walk forward projections slightly worse, so it is left out.
+- **Game script is what moves early yards.** Big favorites get 53% of their passing yards in the first half and big underdogs 48%, because leaders run out the clock and trailing teams throw. Rushing is the mirror image (47% vs 52%). Early projections are the game projection times the early share for that position at that point spread, which beat a flat "a quarter of the game" rule for first quarter passing (average miss 25.7 vs 27.0 yards) and receiving (10.2 vs 10.7).
+- **First touchdown scorer** is each player's expected touchdowns as a share of everyone's in the game, times how often the first touchdown goes to a player the model projects (72%; quarterbacks score 7% and defenses or return units 4%). It is well calibrated on 1,949 games from 2019 to 2025: players given 9 to 12% scored first 10.1% of the time. 70% of first touchdowns come in the first quarter.
+
+The season board shows every player's per game averages by quarter since 2021 when you tap his name, for reference.
+
 One limit: the free data has no historical prop lines, so the backtest grades projections against actual results, not against what books posted. The way to judge it against the market is to log the posted line and price on each bet and track closing line value.
+
+## Live game model
+
+The calculator has a live game panel: enter the score, clock, who has the ball, field position, down and distance, and timeouts, and it projects each team's chance to win, the final score, the chance of any more scoring, and, when a team is down 9 or more, its chance to get back within one score. Type in a live spread, total or moneyline and it shows the chance each side wins on the same red to green meter, and whether the price is fair.
+
+- **How it works.** Gradient boosted trees learned from every snap since 2010 (about 644,000 snaps in 4,363 games), using the game state plus the pregame spread and total. The pregame spread's pull fades as the game goes on and the lead's weight grows, the same way nflverse builds its model. Live spreads and totals are priced from the projected margin and points still to come plus the actual spread of outcomes at that point in the game, and a whole number line that lands exactly is a push, as a book grades it. The trees run in the browser, and the export is checked against scikit-learn's own predictions before publishing.
+- **Tested on 855 games from 2023 to 2025** with models trained only on 2010 to 2022. Win chance log loss 0.456, close to nflverse's own win probability model on the same 123,505 plays (0.448; lower is better), and well calibrated: snaps given 75% won 77% of the time, 25% won 24%. Over/under chances against a live total were calibrated within a few points, and "any more scoring" and "within one score" both beat simple base rates by a wide margin (log loss 0.13 vs 0.29 and 0.47 vs 0.67).
+- **What did not work: bigger trees.** Plays within a game are tightly linked, so there are far fewer independent examples than rows, and larger trees overfit badly (test log loss 0.539). Small, heavily regularized trees and five more seasons of history did best.
+- **Overtime** has its own models, because it is rare (262 games and about 4,500 snaps since 2010) and its rules changed: 10 minute regular season overtime from 2017, and both teams guaranteed a possession in the playoffs from 2022 and the regular season from 2025. You mark which teams have had the ball, and it shows win and tie chances. Tested by holding out whole games, the simple logistic win model beat the pregame spread alone (log loss 0.616 vs 0.696); flexible trees did worse. With only 13 ties to learn from, the tie chance borrows the regulation model's read on whether anyone scores again with that much clock left. It beat the base rate on held-out games (0.340 vs 0.346) but runs low late in overtime, and recalibrating it on overtime games overfit.
+- **One lean to know about.** Home teams beat the pregame spread by about 0.8 points a game in 2023 to 2025, after running slightly behind it in 2019 and 2020, so the live model ran a few points low on home covers in the test. That swings season to season and is not adjusted for.
+
+Live books run models like this on every snap, so a gap between Gridline and a live price is a reason to look closer, not a sure edge.
 
 ## Side studies
 
@@ -104,16 +136,19 @@ One limit: the free data has no historical prop lines, so the backtest grades pr
 
 | Step | Script |
 |---|---|
+| Live sportsbook lines from the odds snapshots in `odds/` | `odds.py` |
 | Team form, weather, injuries, QB changes | `features.py` |
 | Special teams and field position | `special_teams.py` |
 | Efficiency, pace, QB ratings | `candidates.py` |
 | Market ratings and previous game workload | `improvements.py` |
 | Fit, backtest, coefficients | `final_model.py` |
+| Live game model (trained once on 2010 to 2025 and kept in the repo; retrained only if missing) | `live_model.py` |
 | Season projections and simulation | `season.py` |
 | Comeback model | `comebacks.py`, `comeback_model.py` |
 | Blowout flags and volatility | `blowouts.py`, `volatility.py` |
 | Player box scores | `player_stats.py` |
 | Player projections and prop probabilities | `player_features.py`, `player_props.py` |
+| Quarter splits, early-game yards and first touchdown scorer | `player_quarters.py` |
 | Fourth quarter scoring by margin | `fourth_quarter.py` |
 | Publish the calculator and season board | `build_pages.py` |
 | Bet log with a calibrated risk meter | `build_pages.py betlog`, `templates/bet_log.html` |
@@ -122,7 +157,7 @@ Scheduled runs grade each weekend on Tuesday, pull in lines and final injury rep
 
 ## Bet log and risk meter
 
-A private bet log tracks every bet, its result and its closing line value. As a bet is entered, a meter runs from red (long shot) to green (safe) showing its chance to win, and says whether Gridline's chance beats the price the odds imply. Spreads and totals start from the Vegas line and add only the share of Gridline's disagreement that has shown up in results: fit on the 2018 to 2025 backtest, a 3 point gap from the Vegas spread is worth about 52%, not the 59% a raw projection would suggest. Safe means likely, not good value.
+The bet log tracks every bet, its result and its closing line value. As a bet is entered, a meter runs from red (long shot) to green (safe) showing its chance to win, and says whether Gridline's chance beats the price the odds imply. Spreads and totals start from the Vegas line and add only the share of Gridline's disagreement that has shown up in results: fit on the 2018 to 2025 backtest, a 3 point gap from the Vegas spread is worth about 52%, not the 59% a raw projection would suggest. Safe means likely, not good value. Opened from the public site or a local file, the log saves bets in that browser (localStorage) with export and import buttons; nothing is sent anywhere.
 
 ## Run it yourself
 
@@ -133,7 +168,7 @@ pip install -r requirements.txt
 bash run_all.sh "$(pwd)"
 ```
 
-The first run downloads about 250 MB of nflverse data into `data/` and takes a few minutes. It writes the projections, backtest results and coefficients as CSV and JSON files, and builds `gridline_model.html` (the matchup calculator) and `gridline_2026.html` (the season board), which open in any browser. To flag teams on the pages, copy `settings.example.json` to `settings.json` and list team abbreviations under `avoid` or `trust`.
+The first run downloads about 250 MB of nflverse data into `data/` and takes a few minutes. It writes the projections, backtest results and coefficients as CSV and JSON files, and builds `gridline_model.html` (the matchup calculator), `gridline_2026.html` (the season board) and `gridline_bet_log.html` (the bet log), which open in any browser. To flag teams on the pages, copy `settings.example.json` to `settings.json` and list team abbreviations under `avoid` or `trust`.
 
 ### Repository layout
 
@@ -141,8 +176,11 @@ The first run downloads about 250 MB of nflverse data into `data/` and takes a f
 |---|---|
 | Top level `*.py` and `run_all.sh` | The weekly pipeline, in the order listed above |
 | `templates/` | The calculator, season board and bet log pages |
+| `site/` | The public site's landing page, and `assemble.py`, which adds the navigation bar, site map, sitemap.xml and robots.txt |
+| `odds/` | Sportsbook odds snapshots pulled several times a week from The Odds API |
+| `.github/workflows/pages.yml` | Rebuilds everything and publishes the site to GitHub Pages on a schedule and whenever new odds arrive |
 | `player_best_models.json` | The winning player model and features for each stat, from `research/player_experiments.py` |
-| `research/` | One-off studies: factor ranking, the improvement tests, the player model bake-off, the "do teams quit" study and the trust/avoid test |
+| `research/` | One-off studies: factor ranking, the improvement tests, the player model bake-off, the "do teams quit" study, the trust/avoid test the penalties vs passing yards study and the quarter patterns study |
 
 ## Tools
 

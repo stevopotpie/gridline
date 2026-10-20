@@ -144,7 +144,7 @@ def logit(p):
     return np.log(p / (1 - p))
 
 
-backtest = {}
+backtest, oos_all = {}, []
 for m in MARKETS:
     cols = cfg[m]["features"]
     d = hist_rows[F.eligible(hist_rows, m)]
@@ -157,7 +157,7 @@ for m in MARKETS:
         f = ridge(tr, cols, m)
         mu_tr, mu_te = f(tr), f(te)
         sdf = sd_fit(tr[m].values, mu_tr)
-        o = te[["season", m]].assign(mu=mu_te, naive=te[f"std_{m}"].values)
+        o = te[["season", "game_id", "player_id", m]].assign(mu=mu_te, naive=te[f"std_{m}"].values)
         for name, k in MILE.get(m, []):
             o[name] = raw_prob(m, k, mu_te, sdf)
         oos.append(o)
@@ -186,6 +186,8 @@ for m in MARKETS:
                                                   for i, r in rel.iterrows()]}
         new.loc[e, name] = cal.predict_proba(logit(raw_prob(m, k, new.loc[e, f"proj_{m}"].values, sdf)).reshape(-1, 1))[:, 1]
     backtest[m] = bt
+    oos_all.append(oos[["season", "game_id", "player_id", "mu"]].assign(market=m))
+pd.concat(oos_all).to_csv(f"{W}/player_oos.csv", index=False)   # walk forward game projections, used by player_quarters.py
 json.dump(backtest, open(f"{W}/player_backtest.json", "w"), indent=1)
 
 

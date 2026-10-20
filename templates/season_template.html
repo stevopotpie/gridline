@@ -118,6 +118,14 @@ tr.split td{background:var(--bg);font-size:.76rem;white-space:normal;text-align:
 .wrap>*,section.panel,.game,details.props{min-width:0}
 .wrap,section.panel,.game{grid-template-columns:minmax(0,1fr)}
 .pscroll{overflow-x:auto}
+.books{border-top:1px solid var(--line);padding-top:8px;display:grid;gap:4px}
+.books .bl{display:grid;grid-template-columns:4.2rem minmax(0,1fr);gap:8px;font:500 .82rem var(--f-mono);font-variant-numeric:tabular-nums;align-items:baseline}
+.books .bl>span:first-child{font:600 .64rem var(--f-body);letter-spacing:.08em;text-transform:uppercase;color:var(--muted)}
+.books .sides{display:flex;flex-wrap:wrap;gap:2px 16px}
+.books .side{white-space:nowrap}
+.books .bk{color:var(--muted);font-size:.74rem}
+.books .gl{font-size:.84rem}
+.books .gl b{font-weight:600}
 </style>
 
 <div class="wrap">
@@ -163,7 +171,7 @@ tr.split td{background:var(--bg);font-size:.76rem;white-space:normal;text-align:
     <div class="slate" id="ptabs"></div>
     <input class="search" id="psearch" type="search" placeholder="Search a player or team" aria-label="Search players">
     <div class="scroll"><table class="bt" id="pstats"></table></div>
-    <p class="note">Regular season totals from play by play. Tap a player to see his per game averages by weather since 2021: domes, outdoors, cold below 40°F, and wind of 15 mph or more.</p>
+    <p class="note">Regular season totals from play by play. Tap a player to see his per game averages since 2021 by weather (domes, outdoors, cold below 40°F, wind of 15 mph or more) and by quarter. Quarter patterns are worth a look but don't lean on them: a player's share of yards in the first quarter or first half barely repeats from one season to the next (correlation about 0.05), so the projections use the norm for his position and the point spread instead.</p>
   </section>
 
   <section class="panel">
@@ -237,13 +245,13 @@ function card(g){
   const tr = (D.trust || []).filter(t => t === g.a || t === g.h);
   if (tr.length) tags.unshift(`<span class="badge win">Your trust list: ${tr.join(", ")}</span>`);
   if (!done) for (const tm of [g.a, g.h]) { const b = (D.blowouts || {})[tm]; if (b && b.flag) tags.push(`<span class="badge loss">${tm}: blowout repeat offender (${b.last5} of last 5)</span>`); }
-  if (!done && g.fcT != null) tags.push(`<span class="badge ${g.fcW >= 15 && !g.fcRoof ? "lean" : "muted"}">${g.fcRoof ? "Roof closed" : `Forecast ${Math.round(g.fcT)}°F, wind ${Math.round(g.fcW)} mph`} · ${g.fcAsOf}</span>`);
+  if (!done && g.fcT != null) tags.push(`<span class="badge ${(g.fcW >= 15 || g.fcP) && !g.fcRoof ? "lean" : "muted"}">${g.fcRoof ? "Roof closed" : `Forecast ${Math.round(g.fcT)}°F, wind ${Math.round(g.fcW)} mph${g.fcP ? ", rain or snow" : ""}`} · ${g.fcAsOf}</span>`);
   else if (!done && g.est) tags.push(`<span class="badge muted">${g.dome >= 0.99 ? "Indoors" : g.dome > 0.01 ? "Retractable roof, typical weather" : "Typical weather for this stadium and month"}</span>`);
   const score = done ? `<span class="score">${g.as_}–${g.hs}</span>` : `<span class="when">${g.day} · ${g.time}</span>`;
   return `<article class="game"><div class="top"><div class="teams">${g.a} <span class="at">@</span> ${g.h}</div>${score}</div>
     <div class="qbs">${g.aq || "QB TBD"} vs ${g.hq || "QB TBD"}${!done && g.wk === firstOpen && (g.aqb || g.hqb) ? ` <span class="badge lean">QB change: ${[g.aqb ? g.aq : null, g.hqb ? g.hq : null].filter(Boolean).join(", ")} starting</span>` : ""}</div>
     <div class="proj">Projected score: ${(() => { const [ps_a, ps_h] = projScore(g.pm, g.mt ?? g.pt); return `${g.a} ${ps_a}, ${g.h} ${ps_h}`; })()}${done ? ` <span class="note" style="display:inline">· final ${g.a} ${g.as_}, ${g.h} ${g.hs}</span>` : ""}</div>
-    <div class="row3">${rows.join("")}</div>${vs}${tags.length ? `<div class="tags">${tags.join("")}</div>` : ""}${propsBlock(g)}</article>`;
+    <div class="row3">${rows.join("")}</div>${vs}${tags.length ? `<div class="tags">${tags.join("")}</div>` : ""}${oddsBlock(g)}${propsBlock(g)}</article>`;
 }
 function renderWeek(){
   document.querySelectorAll("#weeks button").forEach(b => b.setAttribute("aria-pressed", +b.dataset.w === wk));
@@ -299,8 +307,48 @@ function renderMVV(){
     M.upcoming.map(g => `<tr><td>Wk ${g.wk} ${g.a} @ ${g.h}</td><td>${fv(g, g.pm)}</td><td>${fv(g, g.sl)}</td><td>${Math.abs(g.diff).toFixed(1)} toward ${g.diff > 0 ? g.h : g.a}</td><td>${g.pt.toFixed(1)}</td><td>${g.tl}</td></tr>`).join("");
 }
 
+// ---------- live sportsbook odds (pulled on Steven's PC, matched in odds.py) ----------
+const am = p => p == null ? "" : p > 0 ? "+" + p : "−" + Math.abs(p);
+const spt = v => v == null ? "?" : Math.abs(v) < 0.01 ? "PK" : (v > 0 ? "+" : "−") + Math.abs(v).toFixed(1).replace(/\.0$/, "");
+const ago = m => m < 90 ? `${m} min` : m < 48*60 ? `${Math.round(m/60)} hours` : `${Math.round(m/1440)} days`;
+const sideTxt = (team, x, pt) => x ? `<span class="side">${team}${pt === undefined ? "" : " " + spt(pt)} ${am(x.price)} <span class="bk">${x.book}</span></span>` : "";
+function oddsBlock(g){
+  const O = g.odds; if (!O) return "";
+  if (g.hs != null || O.close) {
+    const C = O.close; if (!C) return "";
+    return `<div class="books"><div class="bl"><span>Close</span><span>${C.hs == null ? "" : fav(g, -C.hs)}${C.tot == null ? "" : ` · total ${C.tot}`}${C.hml == null ? "" : ` · ML ${g.a} ${am(Math.round(C.aml))} / ${g.h} ${am(Math.round(C.hml))}`} <span class="bk">middle of ${O.books} books, last pull ${ago(C.mins)} before kickoff</span></span></div></div>`;
+  }
+  const B = O.best, c = O.cons, out = [];
+  out.push(`<div class="bl"><span>Spread</span><span class="sides">${sideTxt(g.a, B.away, B.away && B.away.pt)}${sideTxt(g.h, B.home, B.home && B.home.pt)}</span></div>`);
+  if (B.over) out.push(`<div class="bl"><span>Total</span><span class="sides">${sideTxt("Over " + B.over.pt, B.over)}${sideTxt("Under " + B.under.pt, B.under)}</span></div>`);
+  if (B.aml) out.push(`<div class="bl"><span>Money</span><span class="sides">${sideTxt(g.a, B.aml)}${sideTxt(g.h, B.hml)}</span></div>`);
+  // Gridline's side against the best number on that side
+  const gl = [];
+  if (c.hs != null && B.home && B.away) {
+    const sl = -c.hs, home = g.pm > sl, x = home ? B.home : B.away;
+    const cushion = home ? g.pm + x.pt : x.pt - g.pm, team = home ? g.h : g.a;
+    gl.push(`Spread: <b>${team} ${spt(x.pt)}</b> at ${x.book}, ${cushion >= 0 ? `${cushion.toFixed(1)} pts of cushion` : `${Math.abs(cushion).toFixed(1)} pts short`} vs Gridline${cushion >= 3 ? ' <span class="badge lean">3+ pt gap</span>' : ""}`);
+  }
+  if (c.tot != null && g.mt != null && B.over && B.under) {
+    const over = g.mt > c.tot, x = over ? B.over : B.under, gap = over ? g.mt - x.pt : x.pt - g.mt;
+    gl.push(`Total: <b>${over ? "Over" : "Under"} ${x.pt}</b> at ${x.book}, Gridline ${g.mt.toFixed(1)} (${gap >= 0 ? gap.toFixed(1) + " pts of cushion" : Math.abs(gap).toFixed(1) + " pts short"})${gap >= 1.5 ? ' <span class="badge lean">1.5+ lean</span>' : ""}`);
+  }
+  const R = O.range, spread = R.hs ? R.hs[1] - R.hs[0] : 0, tspread = R.tot ? R.tot[1] - R.tot[0] : 0;
+  const tags = [];
+  if (spread >= 1.5) tags.push(`<span class="badge lean">Shop it: books ${spread.toFixed(1)} pts apart on the spread</span>`);
+  if (tspread >= 1.5) tags.push(`<span class="badge lean">Shop it: books ${tspread.toFixed(1)} pts apart on the total</span>`);
+  if (O.open && c.hs != null && O.open.hs != null && Math.abs(O.open.hs - c.hs) >= 0.5) tags.push(`<span class="badge muted">Spread moved ${fav(g, -O.open.hs)} → ${fav(g, -c.hs)} since ${O.open.asof.split(",")[0]}</span>`);
+  if (O.open && c.tot != null && O.open.tot != null && Math.abs(O.open.tot - c.tot) >= 0.5) tags.push(`<span class="badge muted">Total moved ${O.open.tot} → ${c.tot}</span>`);
+  const rows = O.lines.map(l => `<tr><td>${l.book}</td><td>${l.hs == null ? "–" : `${spt(-l.hs)} ${am(l.as_p)}`}</td><td>${l.hs == null ? "–" : `${spt(l.hs)} ${am(l.hs_p)}`}</td><td>${l.tot == null ? "–" : `${l.tot} ${am(l.ov_p)}/${am(l.un_p)}`}</td><td>${l.aml == null ? "–" : `${am(l.aml)}/${am(l.hml)}`}</td></tr>`).join("");
+  return `<div class="books"><div class="label">Best number at the books</div>${out.join("")}
+    ${gl.length ? `<div class="gl">${gl.join("<br>")}</div>` : ""}${tags.length ? `<div class="tags">${tags.join("")}</div>` : ""}
+    <details class="props"><summary>All ${O.books} books</summary><div class="pscroll"><table class="pt"><tr><th>Book</th><th>${g.a}</th><th>${g.h}</th><th>Total o/u</th><th>ML ${g.a}/${g.h}</th></tr>${rows}</table></div>
+    <p class="note">The Vegas column above is the middle line across these ${O.books} books, pulled ${O.asof}. Cushion is how many points Gridline's number clears the best line on its side. Only the 3+ point spread gap and the 1.5+ total lean have held up in past seasons, and only modestly.</p></details></div>`;
+}
+
 const odds = p => p == null || p < 0.02 || p >= 1 ? "" : p >= 0.5 ? "−" + Math.round(100*p/(1-p)) : "+" + Math.round(100*(1-p)/p);
 const pp = p => p == null ? "–" : pct(p);
+const ey = v => v == null ? "–" : Math.round(v);
 function propsBlock(g){
   const P = (D.props || []).filter(p => p.g === g.id);
   if (!P.length || g.hs != null) return "";
@@ -313,18 +361,18 @@ function propsBlock(g){
   const wxNote = w.roof !== "outdoors" ? "Indoors." : `${w.wx === "forecast" ? "Forecast" : "Typical"} weather: ${w.temp}°F, wind ${w.wind} mph${w.wind >= 15 ? " (passing projections lowered for wind)" : ""}.`;
   return `<details class="props"><summary>Player props (${P.length} players)</summary>
     <div class="ph">Likely scorers</div>
-    <div class="pscroll"><table class="pt"><tr><th>Player</th><th>Proj TDs</th><th>Anytime</th><th>Fair</th><th>2+ TDs</th><th>Fair</th></tr>
-    ${td.map(p => `<tr><td>${nm(p)}</td><td>${p.td.toFixed(2)}</td><td>${pp(p.td1)}</td><td>${odds(p.td1)}</td><td>${pp(p.td2)}</td><td>${odds(p.td2)}</td></tr>`).join("")}</table></div>
+    <div class="pscroll"><table class="pt"><tr><th>Player</th><th>Proj TDs</th><th>Anytime</th><th>Fair</th><th>2+ TDs</th><th>Fair</th><th>First TD</th><th>Fair</th></tr>
+    ${td.map(p => `<tr><td>${nm(p)}</td><td>${p.td.toFixed(2)}</td><td>${pp(p.td1)}</td><td>${odds(p.td1)}</td><td>${pp(p.td2)}</td><td>${odds(p.td2)}</td><td>${pp(p.ftd)}</td><td>${odds(p.ftd)}</td></tr>`).join("")}</table></div>
     <div class="ph">Passing</div>
-    <div class="pscroll"><table class="pt"><tr><th>QB</th><th>Yds</th><th>300+</th><th>Pass TDs</th><th>2+ TD</th><th>3+ TD</th></tr>
-    ${qb.map(p => `<tr><td>${nm(p)}</td><td>${p.py}</td><td>${pp(p.p300)}</td><td>${p.ptd.toFixed(1)}</td><td>${pp(p.ptd2)}</td><td>${pp(p.ptd3)}</td></tr>`).join("")}</table></div>
+    <div class="pscroll"><table class="pt"><tr><th>QB</th><th>Yds</th><th>1Q</th><th>1H</th><th>300+</th><th>Pass TDs</th><th>2+ TD</th><th>3+ TD</th></tr>
+    ${qb.map(p => `<tr><td>${nm(p)}</td><td>${p.py}</td><td>${ey(p.py1)}</td><td>${ey(p.pyh)}</td><td>${pp(p.p300)}</td><td>${p.ptd.toFixed(1)}</td><td>${pp(p.ptd2)}</td><td>${pp(p.ptd3)}</td></tr>`).join("")}</table></div>
     <div class="ph">Rushing</div>
-    <div class="pscroll"><table class="pt"><tr><th>Player</th><th>Yds</th><th>100+</th><th>Fair</th></tr>
-    ${ru.map(p => `<tr><td>${nm(p)}</td><td>${p.ry}</td><td>${pp(p.r100)}</td><td>${odds(p.r100)}</td></tr>`).join("")}</table></div>
+    <div class="pscroll"><table class="pt"><tr><th>Player</th><th>Yds</th><th>1H</th><th>100+</th><th>Fair</th></tr>
+    ${ru.map(p => `<tr><td>${nm(p)}</td><td>${p.ry}</td><td>${ey(p.ryh)}</td><td>${pp(p.r100)}</td><td>${odds(p.r100)}</td></tr>`).join("")}</table></div>
     <div class="ph">Receiving</div>
-    <div class="pscroll"><table class="pt"><tr><th>Player</th><th>Rec</th><th>Yds</th><th>100+</th><th>Fair</th></tr>
-    ${re.map(p => `<tr><td>${nm(p)}</td><td>${p.rec.toFixed(1)}</td><td>${p.cy}</td><td>${pp(p.c100)}</td><td>${odds(p.c100)}</td></tr>`).join("")}</table></div>
-    <p class="note">${wxNote} Projections use ${w.lines === "market" ? "the posted Vegas lines" : "Gridline's line (Vegas not posted yet)"} for game script. Fair odds have no vig: a book's price needs to beat them to be worth a look.</p></details>`;
+    <div class="pscroll"><table class="pt"><tr><th>Player</th><th>Rec</th><th>Yds</th><th>1H</th><th>100+</th><th>Fair</th></tr>
+    ${re.map(p => `<tr><td>${nm(p)}</td><td>${p.rec.toFixed(1)}</td><td>${p.cy}</td><td>${ey(p.cyh)}</td><td>${pp(p.c100)}</td><td>${odds(p.c100)}</td></tr>`).join("")}</table></div>
+    <p class="note">${wxNote} Projections use ${w.lines === "market" ? "the posted Vegas lines" : "Gridline's line (Vegas not posted yet)"} for game script. Fair odds have no vig: a book's price needs to beat them to be worth a look. 1Q and 1H are first quarter and first half yards: the game projection times the share that comes early for that position at this point spread (favorites throw more early and run more late). First TD is the chance he scores the game's first touchdown; quarterbacks and defensive or return scores are not projected, so a game's column adds up to about ${Math.round(100 * ((D.qbt || {}).first_td || {share_by_projected_player: 0.72}).share_by_projected_player)}%.</p></details>`;
 }
 
 const PTABS = {
@@ -339,11 +387,14 @@ $("ptabs").innerHTML = Object.keys(PTABS).map(k => `<button type="button" data-k
 $("ptabs").addEventListener("click", e => { const b = e.target.closest("button"); if (!b) return; ptab = b.dataset.k; pkey = PTABS[ptab].key; pdir = -1; popen = null; renderPStats(); });
 $("psearch").addEventListener("input", () => renderPStats());
 function splitRow(id, span){
-  const S = (D.splits || {})[id]; if (!S) return `<tr class="split"><td colspan="${span}">No weather history since 2021.</td></tr>`;
+  const Q = (D.qsplits || {})[id], qi = {Passing: [1, "pass yds"], Rushing: [5, "rush yds"], Receiving: [9, "rec yds"], Touchdowns: [13, "TDs"]}[ptab];
+  const fq = v => ptab === "Touchdowns" ? v.toFixed(2) : v.toFixed(1);
+  const qline = Q ? `<br><b>By quarter since 2021, ${qi[1]} per game:</b> ` + [1, 2, 3, 4].map(k => `Q${k} ${fq(Q[qi[0] + k - 1])}`).join(" · ") + ` <span class="tm">(${Q[0]} g)</span>` : "";
+  const S = (D.splits || {})[id]; if (!S) return `<tr class="split"><td colspan="${span}">No weather history since 2021.${qline}</td></tr>`;
   const order = ["Dome","Outdoor","Cold <40F","Wind 15+"];
   const col = ptab === "Passing" ? [2,"pass yds"] : ptab === "Rushing" ? [3,"rush yds"] : ptab === "Receiving" ? [4,"rec yds"] : [5,"TDs"];
   return `<tr class="split"><td colspan="${span}"><b>Weather splits since 2021, ${col[1]} per game:</b> ` +
-    order.map(o => S.find(s => s[0] === o)).filter(Boolean).map(s => `${s[0]} ${s[col[0]]} <span class="tm">(${s[1]} g)</span>`).join(" · ") + `</td></tr>`;
+    order.map(o => S.find(s => s[0] === o)).filter(Boolean).map(s => `${s[0]} ${s[col[0]]} <span class="tm">(${s[1]} g)</span>`).join(" · ") + qline + `</td></tr>`;
 }
 function renderPStats(){
   document.querySelectorAll("#ptabs button").forEach(b => b.setAttribute("aria-pressed", b.dataset.k === ptab));

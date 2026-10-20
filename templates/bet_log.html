@@ -79,6 +79,8 @@ table.bt{width:100%;border-collapse:collapse;font:400 .82rem var(--f-mono);font-
 .mini .track{flex:0 0 90px;height:7px}
 [hidden]{display:none!important}
 .empty{border:1px dashed var(--line);border-radius:10px;padding:16px;color:var(--muted);text-align:center}
+.local{border:1px solid var(--line);border-radius:10px;padding:10px 12px;display:grid;gap:8px;background:var(--bg)}
+.local .row button{padding:6px 12px;font-size:.85rem}
 </style>
 
 <div class="wrap">
@@ -91,26 +93,31 @@ table.bt{width:100%;border-collapse:collapse;font:400 .82rem var(--f-mono);font-
     <h2>Scoreboard</h2>
     <div class="kpis" id="kpis"></div>
     <div class="scroll"><table class="bt" id="bymkt"></table></div>
-    <p class="note">Closing line value: for spreads and totals, the points you gained on the closing number; for moneylines, the change in implied win chance. Positive means you bet a better number than the market settled on.</p>
+    <p class="note">Closing line value: for spreads and totals, the points you gained on the closing number; for moneylines, the change in implied win chance. Positive means you bet a better number than the market settled on. For spreads, totals and moneylines the closing number fills in on its own after kickoff (the middle line across books at the last odds pull before the game); a number you type in always wins.</p>
   </section>
 
   <section class="panel" id="form-panel">
     <h2 id="form-title">Log a bet</h2>
     <form id="f" class="grid2" novalidate>
-      <label class="field"><span>Date</span><input id="f-date" type="date"></label>
-      <label class="field"><span>Game</span><input id="f-game" type="text" placeholder="SF @ SEA" autocomplete="off"></label>
+      <label class="field"><span>Week</span><select id="f-week"></select></label>
+      <label class="field"><span>Game</span><select id="f-game"></select></label>
       <label class="field"><span>Bet type</span><select id="f-market">
         <option value="spread">Spread</option><option value="over">Total: over</option><option value="under">Total: under</option><option value="ml">Moneyline</option><option value="prop">Player prop</option>
       </select></label>
-      <label class="field"><span id="f-pick-l">Team</span><input id="f-pick" type="text" placeholder="SF" autocomplete="off"></label>
+      <label class="field" id="f-team-w"><span>Team</span><select id="f-team"></select></label>
+      <label class="field" id="f-pick-w"><span id="f-pick-l">Player</span><input id="f-pick" type="text" list="f-players" autocomplete="off"><datalist id="f-players"></datalist></label>
       <label class="field" id="f-prop-w" hidden><span>Prop</span><select id="f-prop">
-        <option value="td1">Anytime touchdown</option><option value="td2">2+ touchdowns</option><option value="pass_yds">Passing yards</option><option value="pass_td">Passing TDs</option>
-        <option value="rush_yds">Rushing yards</option><option value="rec_yds">Receiving yards</option><option value="receptions">Receptions</option></select></label>
+        <option value="td1">Anytime touchdown</option><option value="td2">2+ touchdowns</option><option value="first_td">First touchdown scorer</option>
+        <option value="pass_yds">Passing yards</option><option value="pass_td">Passing TDs</option>
+        <option value="rush_yds">Rushing yards</option><option value="rec_yds">Receiving yards</option><option value="receptions">Receptions</option>
+        <optgroup label="First half"><option value="pass_yds_h1">1st half passing yards</option><option value="rush_yds_h1">1st half rushing yards</option><option value="rec_yds_h1">1st half receiving yards</option></optgroup>
+        <optgroup label="First quarter"><option value="pass_yds_q1">1st quarter passing yards</option><option value="rush_yds_q1">1st quarter rushing yards</option><option value="rec_yds_q1">1st quarter receiving yards</option></optgroup></select></label>
       <label class="field" id="f-side-w" hidden><span>Side</span><select id="f-side"><option value="over">Over</option><option value="under">Under</option></select></label>
       <label class="field" id="f-line-w"><span id="f-line-l">Line you got (your side, e.g. +3)</span><input id="f-line" type="number" step="0.5" inputmode="decimal"></label>
       <label class="field"><span>Odds (American)</span><input id="f-odds" type="number" step="1" inputmode="numeric" placeholder="-110"></label>
       <label class="field"><span>Stake ($)</span><input id="f-stake" type="number" step="1" min="0" inputmode="decimal"></label>
-      <label class="field"><span id="f-close-l">Closing line (optional)</span><input id="f-close" type="number" step="0.5" inputmode="decimal"></label>
+      <label class="field"><span id="f-close-l">Closing line (fills in after kickoff)</span><input id="f-close" type="number" step="0.5" inputmode="decimal"></label>
+      <label class="field"><span>Game date</span><input id="f-date" type="date"></label>
       <label class="field"><span>Result</span><select id="f-result"><option value="pending">Pending</option><option value="win">Win</option><option value="loss">Loss</option><option value="push">Push</option></select></label>
       <label class="field"><span>Model edge (pts, optional)</span><input id="f-edge" type="number" step="0.1" inputmode="decimal"></label>
       <label class="field full"><span>Notes</span><input id="f-notes" type="text" autocomplete="off" placeholder="Why you liked it"></label>
@@ -121,6 +128,15 @@ table.bt{width:100%;border-collapse:collapse;font:400 .82rem var(--f-mono);font-
 
   <section class="panel">
     <h2>Ledger</h2>
+    <div class="local" id="local-tools" hidden>
+      <p class="note" id="local-note">Your bets are saved in this browser only. Nothing is sent anywhere, so export a copy now and then to keep it safe or move it to another device.</p>
+      <div class="row">
+        <button type="button" id="l-export">Export bets</button>
+        <button type="button" id="l-import">Import bets</button>
+        <input type="file" id="l-file" accept="application/json,.json" hidden>
+        <span class="msg" id="l-msg"></span>
+      </div>
+    </div>
     <div class="bets" id="bets"><div class="empty">Loading your bets…</div></div>
   </section>
 </div>
@@ -141,8 +157,20 @@ function profit(b){
   if (b.result === "loss") return -b.stake;
   return 0;
 }
+// Closing number for a bet: what you typed, else the last book pull before kickoff
+function autoClose(b){
+  const g = findGame(b.game, b.date), C = g && g.cl;
+  if (!C) return null;
+  const side = teamsIn(b.pick)[0];
+  if (b.market === "spread" && C.hs != null && (side === g.a || side === g.h)) return side === g.h ? C.hs : -C.hs;
+  if ((b.market === "over" || b.market === "under") && C.tot != null) return C.tot;
+  if (b.market === "ml" && C.hml != null && (side === g.a || side === g.h)) return Math.round(side === g.h ? C.hml : C.aml);
+  return null;
+}
+const closeOf = b => b.closing != null && b.closing !== "" ? {v: b.closing, auto: false} : (v => v == null ? null : {v, auto: true})(autoClose(b));
 function clv(b){
-  if (b.closing == null || b.closing === "") return null;
+  const cl = closeOf(b); if (!cl) return null;
+  b = {...b, closing: cl.v};
   if (b.market === "ml" || isTdProp(b)) return b.odds ? (implied(b.closing) - implied(b.odds)) * 100 : null;  // percentage points of win chance
   if (b.line == null) return null;
   if (b.market === "prop") return b.side === "under" ? b.closing - b.line : b.line - b.closing;
@@ -150,8 +178,12 @@ function clv(b){
   if (b.market === "over") return b.closing - b.line;
   return b.line - b.closing;
 }
-const PROP_NAMES = {td1:"anytime TD", td2:"2+ TDs", pass_yds:"passing yds", pass_td:"passing TDs", rush_yds:"rushing yds", rec_yds:"receiving yds", receptions:"receptions"};
-const isTdProp = b => b.market === "prop" && (b.prop === "td1" || b.prop === "td2");
+const PROP_NAMES = {td1:"anytime TD", td2:"2+ TDs", first_td:"first TD", pass_yds:"passing yds", pass_td:"passing TDs", rush_yds:"rushing yds", rec_yds:"receiving yds", receptions:"receptions",
+  pass_yds_h1:"1H passing yds", rush_yds_h1:"1H rushing yds", rec_yds_h1:"1H receiving yds", pass_yds_q1:"1Q passing yds", rush_yds_q1:"1Q rushing yds", rec_yds_q1:"1Q receiving yds"};
+const YES_NO = new Set(["td1", "td2", "first_td"]);       // props bet at odds with no line
+const isTdProp = b => b.market === "prop" && YES_NO.has(b.prop);
+// early-game yardage props: the field in the model snapshot that holds each projection
+const EARLY = {pass_yds_h1: "pyh", rush_yds_h1: "ryh", rec_yds_h1: "cyh", pass_yds_q1: "py1", rush_yds_q1: "ry1", rec_yds_q1: "cy1"};
 function pickText(b){
   if (b.market === "prop") return isTdProp(b) ? `${b.pick} ${PROP_NAMES[b.prop]}` : `${b.pick} ${b.side === "under" ? "under" : "over"} ${b.line ?? "?"} ${PROP_NAMES[b.prop] || ""}`;
   if (b.market === "ml") return `${b.pick} moneyline`;
@@ -185,6 +217,13 @@ function propProb(p, prop, side, line){
   let over = null;
   if (prop === "td1") return p.td1;
   if (prop === "td2") return p.td2;
+  if (prop === "first_td") return p.ftd ?? null;
+  if (EARLY[prop]) {
+    const mu = p[EARLY[prop]]; if (mu == null || line == null) return null;
+    const s = MODEL.psd[prop], sdv = Math.max(s ? s[0] + s[1] * mu : 0.6 * mu, 3);
+    const o = 1 - PHI((line - mu) / sdv);
+    return side === "under" ? 1 - o : o;
+  }
   if (line == null) return null;
   const k = Math.floor(line) + 1;          // over 1.5 means 2 or more
   if (prop === "pass_yds" && p.py != null) over = (line === 299.5 && p.p300 != null) ? p.p300 : 1 - PHI((line - p.py) / sd("pass_yds", p.py));
@@ -223,6 +262,8 @@ function winChance(b){
   return null;
 }
 function propProj(p, prop){
+  if (EARLY[prop]) return p[EARLY[prop]] == null ? "" : `${Math.round(p[EARLY[prop]])} ${PROP_NAMES[prop].replace(/^1[HQ] /, "")} in the ${prop.endsWith("h1") ? "first half" : "first quarter"}`;
+  if (prop === "first_td") return `${p.td?.toFixed(2)} TDs, ${p.ftd != null ? Math.round(p.ftd * 100) + "% to score first" : "first TD not projected"}`;
   return {td1: `${p.td?.toFixed(2)} TDs`, td2: `${p.td?.toFixed(2)} TDs`, pass_yds: `${p.py} pass yds`, pass_td: `${p.ptd?.toFixed(1)} pass TDs`,
           rush_yds: `${p.ry} rush yds`, rec_yds: `${p.cy} rec yds`, receptions: `${p.rec?.toFixed(1)} catches`}[prop] || "";
 }
@@ -246,21 +287,60 @@ function meterHTML(r, full){
     <div class="why">Safe means likely, not good value: a −400 favorite can be a bad bet. Value is when Gridline's chance beats the price.${r.src === "Gridline" ? ` Model as of ${MODEL.asof}.` : ""}</div>`;
 }
 const pct = p => p >= 0.995 ? ">99%" : p < 0.005 ? "<1%" : Math.round(p * 100) + "%";
-function updateMeter(){ $("meter").innerHTML = meterHTML(winChance(readForm()), true); }
+const am = p => p > 0 ? "+" + p : "−" + Math.abs(p);
+const spt = v => Math.abs(v) < 0.01 ? "PK" : (v > 0 ? "+" : "−") + Math.abs(v);
+function bestNow(b){
+  const g = findGame(b.game, b.date); if (!g || !g.bn) return "";
+  const B = g.bn, side = teamsIn(b.pick)[0], home = side === g.h;
+  let x = null, txt = "";
+  if (b.market === "spread" && (side === g.a || side === g.h)) { x = home ? B.home : B.away; if (x) txt = `${side} ${spt(x.pt)} ${am(x.price)}`; }
+  if (b.market === "over" || b.market === "under") { x = B[b.market]; if (x) txt = `${b.market === "over" ? "Over" : "Under"} ${x.pt} ${am(x.price)}`; }
+  if (b.market === "ml" && (side === g.a || side === g.h)) { x = home ? B.hml : B.aml; if (x) txt = `${side} ${am(x.price)}`; }
+  return x ? `<div class="why">Best number right now: <b>${txt}</b> at ${x.book} (${g.bk} books, pulled ${g.bas})</div>` : "";
+}
+function updateMeter(){ const b = readForm(); $("meter").innerHTML = meterHTML(winChance(b), true) + bestNow(b); }
+
+// ---------- schedule dropdowns ----------
+const WEEKS = [...new Set(MODEL.games.map(g => g.wk))].sort((a, b) => a - b);
+const OPEN_WK = (MODEL.games.find(g => !g.done) || MODEL.games[MODEL.games.length - 1]).wk;
+const gkey = g => `${g.a} @ ${g.h}`;
+const fmtDay = d => new Date(d + "T12:00:00").toLocaleDateString("en-US", {weekday: "short", month: "short", day: "numeric"});
+$("f-week").innerHTML = WEEKS.map(w => `<option value="${w}">Week ${w}${w === OPEN_WK ? " (this week)" : ""}</option>`).join("");
+function fillGames(wk, keep){
+  const gs = MODEL.games.filter(g => g.wk === +wk);
+  $("f-game").innerHTML = gs.map(g => `<option value="${gkey(g)}" data-d="${g.d}">${gkey(g)} · ${fmtDay(g.d)}${g.done ? " · final" : ""}</option>`).join("");
+  const first = gs.find(g => !g.done) || gs[0];
+  $("f-game").value = keep || (first ? gkey(first) : "");
+  onGame();
+}
+function onGame(){
+  const opt = $("f-game").selectedOptions[0]; if (!opt) return;
+  if (opt.dataset.d) $("f-date").value = opt.dataset.d;
+  const [a, h] = opt.value.split(" @ "), cur = $("f-team").value;
+  $("f-team").innerHTML = `<option value="${a}">${a} (away)</option><option value="${h}">${h} (home)</option>`;
+  if (cur === a || cur === h) $("f-team").value = cur;
+  $("f-players").innerHTML = MODEL.props.filter(p => p.g === opt.value).map(p => `<option value="${esc(p.n)}">${p.t} ${p.pos}</option>`).join("");
+  updateMeter();
+}
+$("f-week").addEventListener("change", () => fillGames($("f-week").value));
+$("f-game").addEventListener("change", onGame);
 
 function setMarketLabels(){
-  const m = $("f-market").value, prop = $("f-prop").value, tdProp = m === "prop" && (prop === "td1" || prop === "td2");
-  $("f-pick-l").textContent = m === "prop" ? "Player" : m === "over" || m === "under" ? "Game note (optional)" : "Team";
-  $("f-pick").placeholder = m === "prop" ? "Bijan Robinson" : "SF";
+  const m = $("f-market").value, prop = $("f-prop").value, tdProp = m === "prop" && YES_NO.has(prop);
+  $("f-team-w").hidden = !(m === "spread" || m === "ml");
+  $("f-pick-w").hidden = m === "spread" || m === "ml";
+  $("f-pick-l").textContent = m === "prop" ? "Player" : "Note (optional)";
+  $("f-pick").placeholder = m === "prop" ? "Start typing a name" : "";
   $("f-prop-w").hidden = m !== "prop";
   $("f-side-w").hidden = m !== "prop" || tdProp;
   $("f-line-w").hidden = m === "ml" || tdProp;
   $("f-line-l").textContent = m === "spread" ? "Line you got (your side, e.g. +3)" : m === "prop" ? "Line you got (e.g. 74.5)" : "Total you got";
-  $("f-close-l").textContent = m === "ml" || tdProp ? "Closing odds (optional)" : "Closing line (optional)";
+  $("f-close-l").textContent = m === "prop" ? (tdProp ? "Closing odds (optional)" : "Closing line (optional)") : m === "ml" ? "Closing odds (fills in after kickoff)" : "Closing line (fills in after kickoff)";
   updateMeter();
 }
 $("f-market").addEventListener("input", setMarketLabels); $("f-prop").addEventListener("input", setMarketLabels);
-$("f").addEventListener("input", e => { if (e.target.id !== "f-market" && e.target.id !== "f-prop") updateMeter(); });
+$("f").addEventListener("input", e => { if (!["f-market", "f-prop", "f-week", "f-game"].includes(e.target.id)) updateMeter(); });
+$("f-week").value = OPEN_WK; fillGames(OPEN_WK); setMarketLabels();
 
 function render(){
   const settled = bets.filter(b => b.result && b.result !== "pending");
@@ -288,10 +368,12 @@ function render(){
   $("bets").innerHTML = bets.map(b => {
     const c = clv(b), pr = profit(b);
     const r = b.prob != null ? {p: b.prob, src: b.probSrc || "Gridline"} : winChance(b);
-    const clvTxt = c == null ? "Add the closing number to see line value" : b.market === "ml" || isTdProp(b) ? `Line value: ${c > 0 ? "+" : ""}${c.toFixed(1)} pct points of win chance` : `Line value: ${c > 0 ? "+" : ""}${c.toFixed(1)} pts vs close`;
-    return `<article class="bet" data-id="${b.id}">
-      <div class="top"><span class="pick">${esc(pickText(b))}</span><span class="chip ${b.result}">${b.result}</span></div>
-      <div class="meta">${esc(b.date || "")} · ${esc(b.game || "")} · ${b.odds ? (b.odds > 0 ? "+" : "") + b.odds : "odds needed"} · $${(b.stake||0).toFixed(0)}${b.edge != null && b.edge !== "" ? ` · model edge ${b.edge}` : ""}</div>
+    const cl = closeOf(b), g0 = findGame(b.game, b.date);
+    const autoTxt = cl && cl.auto && g0 && g0.cl ? ` (close ${b.market === "ml" || (b.market === "spread" && cl.v > 0) ? (cl.v > 0 ? "+" : "") + cl.v : cl.v}, middle of the books ${g0.cl.mins < 90 ? g0.cl.mins + " min" : Math.round(g0.cl.mins / 60) + " hours"} before kickoff)` : "";
+    const clvTxt = c == null ? (b.market === "prop" ? "Add the closing number to see line value" : "Closing line fills in after kickoff, or add it yourself") : (b.market === "ml" || isTdProp(b) ? `Line value: ${c > 0 ? "+" : ""}${c.toFixed(1)} pct points of win chance` : `Line value: ${c > 0 ? "+" : ""}${c.toFixed(1)} pts vs close`) + autoTxt;
+    return `<article class="bet" data-id="${esc(b.id)}">
+      <div class="top"><span class="pick">${esc(pickText(b))}</span><span class="chip ${esc(b.result)}">${esc(b.result)}</span></div>
+      <div class="meta">${esc(b.date || "")} · ${esc(b.game || "")} · ${b.odds ? (b.odds > 0 ? "+" : "") + b.odds : "odds needed"} · $${(b.stake||0).toFixed(0)}${b.edge != null && b.edge !== "" ? ` · model edge ${esc(b.edge)}` : ""}</div>
       ${meterHTML(r, false)}
       ${b.result !== "pending" ? `<div class="pl ${pr > 0 ? "pos" : pr < 0 ? "neg" : ""}">${money(pr)}</div>` : ""}
       <div class="clv ${c > 0 ? "pos" : c < 0 ? "neg" : ""}">${clvTxt}</div>
@@ -302,29 +384,33 @@ function render(){
 }
 
 function readForm(){
-  const m = $("f-market").value, prop = m === "prop" ? $("f-prop").value : null, tdProp = prop === "td1" || prop === "td2";
-  const b = { date: $("f-date").value || today(), game: $("f-game").value.trim(), market: m, pick: $("f-pick").value.trim(),
+  const m = $("f-market").value, prop = m === "prop" ? $("f-prop").value : null, tdProp = YES_NO.has(prop);
+  const b = { date: $("f-date").value || today(), game: $("f-game").value, market: m,
+    pick: m === "spread" || m === "ml" ? $("f-team").value : $("f-pick").value.trim(),
     line: m === "ml" || tdProp ? null : num("f-line"), odds: num("f-odds") ?? (m === "ml" || tdProp ? null : -110), stake: num("f-stake") ?? 0,
     closing: num("f-close"), result: $("f-result").value, edge: num("f-edge"), notes: $("f-notes").value.trim() };
   if (m === "prop") { b.prop = prop; b.side = tdProp ? "yes" : $("f-side").value; }
   return b;
 }
 function fillForm(b){
-  $("f-date").value = b.date || today(); $("f-game").value = b.game || ""; $("f-market").value = b.market; $("f-pick").value = b.pick || "";
+  const g = findGame(b.game, b.date);
+  if (g) { $("f-week").value = g.wk; fillGames(g.wk, gkey(g)); }
+  else if (b.game) { $("f-game").insertAdjacentHTML("afterbegin", `<option value="${esc(b.game)}">${esc(b.game)}</option>`); $("f-game").value = b.game; onGame(); }
+  $("f-date").value = b.date || $("f-date").value; $("f-market").value = b.market;
+  if (b.market === "spread" || b.market === "ml") { const t = teamsIn(b.pick)[0]; if (t) $("f-team").value = t; $("f-pick").value = ""; } else $("f-pick").value = b.pick || "";
   $("f-line").value = b.line ?? ""; $("f-odds").value = b.odds ?? ""; $("f-stake").value = b.stake ?? ""; $("f-close").value = b.closing ?? "";
   $("f-result").value = b.result || "pending"; $("f-edge").value = b.edge ?? ""; $("f-notes").value = b.notes || "";
   if (b.market === "prop") { $("f-prop").value = b.prop || "td1"; if (b.side && b.side !== "yes") $("f-side").value = b.side; }
   setMarketLabels();
 }
-function resetForm(){ editing = null; $("f").reset(); $("f-date").value = today(); $("f-title").textContent = "Log a bet"; $("f-cancel").hidden = true; $("f-save").textContent = "Save bet"; setMarketLabels(); }
+function resetForm(){ editing = null; const wk = $("f-week").value, gm = $("f-game").value; $("f").reset(); $("f-week").value = wk; fillGames(wk, gm); $("form-title").textContent = "Log a bet"; $("f-cancel").hidden = true; $("f-save").textContent = "Save bet"; setMarketLabels(); }
 function msg(t, err){ $("f-msg").textContent = t; $("f-msg").className = "msg" + (err ? " err" : ""); }
 
 $("f").addEventListener("submit", async e => {
   e.preventDefault();
   if (!db) { msg("Saving isn't available in this view.", true); return; }
   const b = readForm();
-  if (!b.game) { msg("Add the game, like SF @ SEA.", true); return; }
-  if ((b.market === "spread" || b.market === "ml") && !b.pick) { msg("Add the team you bet.", true); return; }
+  if (!b.game) { msg("Pick the game.", true); return; }
   if (b.market === "prop" && !b.pick) { msg("Add the player you bet.", true); return; }
   if (b.market !== "ml" && !isTdProp(b) && b.line == null) { msg("Add the line you got.", true); return; }
   const r = winChance(b); if (r) { b.prob = Math.round(r.p * 1000) / 1000; b.probSrc = r.src; }   // the meter reading when the bet was placed
@@ -343,7 +429,7 @@ let pendingDelete = null;
 $("bets").addEventListener("click", async e => {
   const btn = e.target.closest("button"); if (!btn || !db) return;
   const id = btn.closest(".bet").dataset.id, act = btn.dataset.act, b = bets.find(x => x.id === id);
-  if (act === "edit") { editing = id; fillForm(b); $("f-title").textContent = "Edit bet"; $("f-cancel").hidden = false; $("f-save").textContent = "Save changes"; $("form-panel").scrollIntoView({behavior: "smooth"}); return; }
+  if (act === "edit") { editing = id; fillForm(b); $("form-title").textContent = "Edit bet"; $("f-cancel").hidden = false; $("f-save").textContent = "Save changes"; $("form-panel").scrollIntoView({behavior: "smooth"}); return; }
   if (act === "del") {
     if (pendingDelete !== id) { pendingDelete = id; btn.textContent = "Tap again to delete"; return; }
     pendingDelete = null; try { await db.collection("bets").doc(id).delete(); } catch (err) { btn.textContent = "Couldn't delete"; } return;
@@ -351,8 +437,87 @@ $("bets").addEventListener("click", async e => {
   if (["win","loss","push"].includes(act)) { btn.disabled = true; try { await db.collection("bets").doc(id).update({result: act}); } catch (err) { btn.disabled = false; } }
 });
 
+// ---------- saving outside Claude: bets live in this browser ----------
+// Same small interface the page uses inside Claude (collection, add, doc().set/update/delete, orderBy().onSnapshot),
+// backed by localStorage, or by memory alone when the browser blocks storage.
+const LOCAL_KEY = "gridline-bet-log-v1";
+function localStore(){
+  let mem = [], persistent = true;
+  try { const t = "__gridline_test__"; localStorage.setItem(t, "1"); localStorage.removeItem(t); } catch (e) { persistent = false; }
+  const load = () => {
+    if (!persistent) return mem.slice();
+    try { const v = JSON.parse(localStorage.getItem(LOCAL_KEY) || "[]"); return Array.isArray(v) ? v : []; } catch (e) { return []; }
+  };
+  const subs = [];
+  const emit = () => {
+    const docs = load().sort((a, b) => (b.createdAt || 0) - (a.createdAt || 0))
+      .map(d => ({id: d.id, data: () => { const {id, ...rest} = d; return rest; }}));
+    subs.forEach(f => f({docs}));
+  };
+  const save = list => {
+    if (persistent) { try { localStorage.setItem(LOCAL_KEY, JSON.stringify(list)); } catch (e) { persistent = false; mem = list; } }
+    else mem = list;
+    emit();
+  };
+  const newId = () => Date.now().toString(36) + Math.random().toString(36).slice(2, 8);
+  const coll = {
+    add: async b => { const l = load(); const id = newId(); l.push({...b, id}); save(l); return {id}; },
+    doc: id => ({
+      set: async b => { const l = load().filter(x => x.id !== id); l.push({...b, id}); save(l); },
+      update: async p => { save(load().map(x => x.id === id ? {...x, ...p, id} : x)); },
+      delete: async () => { save(load().filter(x => x.id !== id)); },
+    }),
+    orderBy: () => ({ onSnapshot: f => { subs.push(f); emit(); return () => {}; } }),
+  };
+  return {collection: () => coll, persistent: () => persistent, all: load, replaceAll: save};
+}
+function startLocal(){
+  const store = localStore();
+  db = store;
+  $("local-tools").hidden = false;
+  if (!store.persistent()) $("local-note").textContent = "This browser is blocking storage, so bets will disappear when you close the page. Export them before you leave.";
+  const lmsg = (t, err) => { $("l-msg").textContent = t; $("l-msg").className = "msg" + (err ? " err" : ""); };
+  $("l-export").addEventListener("click", () => {
+    const list = store.all();
+    if (!list.length) { lmsg("No bets to export yet.", true); return; }
+    const blob = new Blob([JSON.stringify({app: "gridline-bet-log", version: 1, exported: new Date().toISOString(), bets: list}, null, 2)], {type: "application/json"});
+    const a = document.createElement("a");
+    a.href = URL.createObjectURL(blob); a.download = `gridline-bets-${today()}.json`;
+    document.body.appendChild(a); a.click(); a.remove();
+    setTimeout(() => URL.revokeObjectURL(a.href), 1000);
+    lmsg(`Exported ${list.length} bet${list.length === 1 ? "" : "s"}.`);
+  });
+  $("l-import").addEventListener("click", () => $("l-file").click());
+  $("l-file").addEventListener("change", async () => {
+    const f = $("l-file").files[0]; $("l-file").value = ""; if (!f) return;
+    try {
+      const data = JSON.parse(await f.text());
+      const incoming = (Array.isArray(data) ? data : data.bets || []).filter(b => b && typeof b === "object" && b.market && b.game);
+      if (!incoming.length) { lmsg("That file has no bets in it.", true); return; }
+      const byId = new Map(store.all().map(b => [b.id, b]));
+      let added = 0;
+      for (const b of incoming) {
+        const id = String(b.id || (Date.now().toString(36) + Math.random().toString(36).slice(2, 8)));
+        if (!byId.has(id)) added++;
+        const n = v => v == null || v === "" || !isFinite(Number(v)) ? null : Number(v);   // keep numbers as numbers
+        byId.set(id, {...b, id, line: n(b.line), odds: n(b.odds), stake: n(b.stake) ?? 0, closing: n(b.closing), edge: n(b.edge), prob: n(b.prob),
+          result: ["win", "loss", "push"].includes(b.result) ? b.result : "pending", createdAt: n(b.createdAt) || Date.now()});
+      }
+      store.replaceAll([...byId.values()]);
+      lmsg(`Imported ${incoming.length} bet${incoming.length === 1 ? "" : "s"} (${added} new).`);
+    } catch (e) { lmsg("Couldn't read that file. Pick a file made with Export bets.", true); }
+  });
+}
+
 render();
 (async () => {
+  const inClaude = typeof window.claude !== "undefined" && window.claude && typeof window.claude.use === "function";
+  if (!inClaude) {
+    // Opened from GitHub Pages or a local file: save in this browser instead
+    startLocal();
+    db.collection("bets").orderBy("createdAt", "desc").onSnapshot(snap => { bets = snap.docs.map(d => ({id: d.id, ...d.data()})); render(); });
+    return;
+  }
   db = await claude.use("db");
   const user = await claude.use("user");
   if (user) { const c = await user.can("data.write"); if (c === false) { canWrite = false; $("form-panel").hidden = true; } }

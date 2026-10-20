@@ -48,6 +48,16 @@ g["temp_f"] = g.temp_f.fillna(g.groupby(g.gameday.dt.month).temp.transform("mean
 g["wind_mph"] = g.wind_mph.fillna(8)
 g["freezing"] = (g.temp_f <= 32).astype(int)
 g["wind15"] = np.clip(g.wind_mph - 15, 0, None)   # wind only hurts scoring past ~15 mph
+# rain or snow at kickoff, from the play by play weather text (gamebook conditions); 0 indoors or with no report.
+# "chance of rain" and "rain forecasted" do not count: only conditions reported at kickoff.
+wtxt = []
+for f in sorted(glob.glob(os.path.join(DATA, "pbp_*.parquet"))):
+    try: wtxt.append(pd.read_parquet(f, columns=["game_id", "weather"]).drop_duplicates("game_id"))
+    except Exception: pass
+wtxt = pd.concat(wtxt).drop_duplicates("game_id").set_index("game_id").weather.fillna("").str.lower() if wtxt else pd.Series(dtype=str)
+wet = wtxt.str.contains("rain|shower|drizzle|storm|snow|flurr|sleet") & ~wtxt.str.contains("chance|forecast|no rain")
+g["wet"] = g.game_id.map(wet).fillna(False).astype(int)
+g.loc[g.dome == 1, "wet"] = 0
 
 # ---------- 3. Starting QB change ----------
 qb_hist = {}

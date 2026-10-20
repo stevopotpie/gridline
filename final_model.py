@@ -36,7 +36,7 @@ g["sum_pace"] = sm("pace"); g["sum_pen"] = sm("pen_yds_pg")
 BASE_S = ["home_field", "home_field_2021", "home_net", "away_net", "rest_diff", "div_game", "home_backup_qb", "away_backup_qb", "diff_returns"] + [f"diff_out_{p}" for p in POS]
 BASE_T = ["home_exp_pts", "away_exp_pts", "dome", "cold", "wind15", "backup_qbs", "out_offense", "out_defense", "div_game"]
 FINAL_S = BASE_S + ["diff_sr_off", "diff_sr_def", "diff_qb", "diff_pass_off", "diff_pass_def", "mkt_diff", "d_prev_off_snaps", "d_prev_def_snaps"]
-FINAL_T = BASE_T + ["sum_qb", "sum_pass_off", "sum_pass_def", "sum_ex_off", "sum_ex_def", "sum_pace", "sum_pen"]
+FINAL_T = BASE_T + ["sum_qb", "sum_pass_off", "sum_pass_def", "sum_ex_off", "sum_ex_def", "sum_pace", "sum_pen", "wet"]   # wet = rain or snow at kickoff (Oct 18 2026)
 done = g[g.result.notna() & g.spread_line.notna() & g.total_line.notna() & g.st_data & g.cand_data & g.mkt_diff.notna()].copy()
 
 def ats(pred, line, actual):

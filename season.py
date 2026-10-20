@@ -51,16 +51,16 @@ g["cold"] = np.clip(45 - g.temp_f, 0, None)
 hist = g[(g.season.between(2015, 2025)) & (g.neutral == 0)].copy()
 hist["month"] = hist.gameday.dt.month
 hist["wind15"] = np.clip(hist.wind_mph - 15, 0, None)
-wx = hist.groupby(["home_team", "month"]).agg(dome=("dome", "mean"), cold=("cold", "mean"), wind15=("wind15", "mean"))
-wx_team = hist.groupby("home_team").agg(dome=("dome", "mean"), cold=("cold", "mean"), wind15=("wind15", "mean"))
-g["dome"] = g.dome.astype(float); g["wind15"] = g.wind15.astype(float)
+wx = hist.groupby(["home_team", "month"]).agg(dome=("dome", "mean"), cold=("cold", "mean"), wind15=("wind15", "mean"), wet=("wet", "mean"))
+wx_team = hist.groupby("home_team").agg(dome=("dome", "mean"), cold=("cold", "mean"), wind15=("wind15", "mean"), wet=("wet", "mean"))
+g["dome"] = g.dome.astype(float); g["wind15"] = g.wind15.astype(float); g["wet"] = g.wet.astype(float)
 for i in g.index[fut & ~g.roof.isin(["dome"])]:
     key = (g.at[i, "home_team"], g.at[i, "gameday"].month)
     row = wx.loc[key] if key in wx.index else wx_team.loc[g.at[i, "home_team"]]
     if g.at[i, "neutral"] == 1:
-        row = pd.Series({"dome": 0.3, "cold": 0.0, "wind15": 0.3})
-    g.at[i, "dome"] = row.dome; g.at[i, "cold"] = row.cold; g.at[i, "wind15"] = row.wind15
-g.loc[fut & (g.roof == "dome"), ["dome", "cold", "wind15"]] = [1, 0, 0]
+        row = pd.Series({"dome": 0.3, "cold": 0.0, "wind15": 0.3, "wet": 0.05})
+    g.at[i, "dome"] = row.dome; g.at[i, "cold"] = row.cold; g.at[i, "wind15"] = row.wind15; g.at[i, "wet"] = row.wet
+g.loc[fut & (g.roof == "dome"), ["dome", "cold", "wind15", "wet"]] = [1, 0, 0, 0]
 g["wx_estimated"] = fut & ~(g.roof == "dome")
 # kickoff forecasts, when a weather run has saved them, replace the typical-weather estimates
 fc_path = os.path.join(M, "forecasts.csv")
@@ -72,6 +72,8 @@ if os.path.exists(fc_path):
         g.at[i, "dome"] = 1.0 if closed else 0.0
         g.at[i, "cold"] = 0.0 if closed else max(45 - float(f.temp_f), 0)
         g.at[i, "wind15"] = 0.0 if closed else max(float(f.wind_mph) - 15, 0)
+        precip = f.get("precip", 0)                 # rain or snow expected at kickoff (column added Oct 18 2026; older files lack it)
+        g.at[i, "wet"] = 0.0 if closed or pd.isna(precip) else float(int(precip) == 1)
         g.at[i, "wx_estimated"] = False
     print("forecasts applied:", int((fut & g.game_id.isin(fc.index)).sum()))
 
@@ -98,7 +100,7 @@ g["sum_ex_off"] = sm("off_expl"); g["sum_ex_def"] = sm("def_expl"); g["sum_pace"
 FS = ["home_field", "home_field_2021", "home_net", "away_net", "rest_diff", "div_game", "home_backup_qb", "away_backup_qb", "diff_returns"] + \
      [f"diff_out_{p}" for p in POS] + ["diff_sr_off", "diff_sr_def", "diff_qb", "diff_pass_off", "diff_pass_def", "mkt_diff", "d_prev_off_snaps", "d_prev_def_snaps"]
 FT = ["home_exp_pts", "away_exp_pts", "dome", "cold", "wind15", "backup_qbs", "out_offense", "out_defense", "div_game",
-      "sum_qb", "sum_pass_off", "sum_pass_def", "sum_ex_off", "sum_ex_def", "sum_pace", "sum_pen"]
+      "sum_qb", "sum_pass_off", "sum_pass_def", "sum_ex_off", "sum_ex_def", "sum_pace", "sum_pen", "wet"]
 # played games keep their real kickoff weather (wind15 recomputed the same way)
 g.loc[~fut, "wind15"] = np.clip(g.loc[~fut, "wind_mph"] - 15, 0, None)
 

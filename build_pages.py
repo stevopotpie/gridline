@@ -3,7 +3,8 @@ Usage:
   python3 -I build_pages.py calc   MODEL_DIR   -> page_data.json + gridline_model.html (the calculator)
   python3 -I build_pages.py season MODEL_DIR   -> season_data.json + gridline_2026.html (needs season.py output)
   python3 -I build_pages.py betlog MODEL_DIR   -> gridline_bet_log.html (the bet log, with a snapshot of the model for its risk meter)
-Optional MODEL_DIR/forecasts.csv (game_id,temp_f,wind_mph,roof_closed,as_of) sets kickoff weather for upcoming games."""
+Optional MODEL_DIR/forecasts.csv (game_id,temp_f,wind_mph,roof_closed,as_of[,precip]) sets kickoff weather for upcoming games;
+precip = 1 when rain or snow is expected at kickoff (missing column = 0)."""
 import sys, os, json
 import numpy as np
 import pandas as pd
@@ -19,6 +20,11 @@ def template(name):
 def forecasts():
     f = J("forecasts.csv")
     return pd.read_csv(f).set_index("game_id") if os.path.exists(f) else pd.DataFrame()
+
+def odds():
+    """Live book lines from odds.py: middle line, best number per side with its book, and closing lines."""
+    f = J("odds_games.json")
+    return json.load(open(f)) if os.path.exists(f) else {}
 
 def settings():
     f = J("settings.json")
@@ -81,7 +87,8 @@ def players():
                              py=r(x.proj_pass_yds, 0), ptd=r(x.proj_pass_td, 2), p300=r(x.p_pass300, 3), ptd2=r(x.p_ptd2, 3), ptd3=r(x.p_ptd3, 3),
                              ry=r(x.proj_rush_yds, 0), r100=r(x.p_rush100, 3), cy=r(x.proj_rec_yds, 0), c100=r(x.p_rec100, 3),
                              rec=r(x.proj_receptions, 1), td=r(x.proj_tds, 2), td1=r(x.p_td1, 3), td2=r(x.p_td2, 3),
-                             wx=x.wx_source, wind=r(x.wx_wind, 0), temp=r(x.wx_temp, 0), roof=x.wx_roof, lines=x.lines) for x in p.itertuples()]
+                             wx=x.wx_source, wind=r(x.wx_wind, 0), temp=r(x.wx_temp, 0), roof=x.wx_roof, lines=x.lines,
+                             **early(x, r)) for x in p.itertuples()]
     if os.path.exists(J("player_season_2026.csv")):
         s = pd.read_csv(J("player_season_2026.csv"))
         cols = ["games", "completions", "pass_att", "pass_yds", "pass_td", "ints", "carries", "rush_yds", "rush_td", "targets", "receptions", "rec_yds", "rec_td", "tds"]
@@ -94,10 +101,24 @@ def players():
         out["splits"] = sp
     if os.path.exists(J("player_backtest.json")):
         out["pbt"] = json.load(open(J("player_backtest.json")))
+    if os.path.exists(J("player_quarter_splits.csv")):
+        q = pd.read_csv(J("player_quarter_splits.csv"))
+        cols = [f"{m}_q{i}" for m in ("pass_yds", "rush_yds", "rec_yds", "tds") for i in range(1, 5)]
+        out["qsplits"] = {x.player_id: [int(x.g)] + [round(float(getattr(x, c)), 2) for c in cols] for x in q.itertuples()}
+    if os.path.exists(J("player_quarter_backtest.json")):
+        b = json.load(open(J("player_quarter_backtest.json")))
+        out["qbt"] = {k: b[k] for k in ("pass_yds", "rush_yds", "rec_yds", "first_td") if k in b}
     if os.path.exists(J("q4_data.json")):
         q = json.load(open(J("q4_data.json")))
         out["q4"] = {"league": q["league"], "team": q["team"]}
     return out
+
+
+def early(x, r):
+    """First quarter and first half yards and the first touchdown chance (player_quarters.py), when present."""
+    g = lambda c, n=0: r(getattr(x, c), n) if hasattr(x, c) else None
+    return dict(py1=g("proj_pass_yds_q1"), pyh=g("proj_pass_yds_h1"), ry1=g("proj_rush_yds_q1"), ryh=g("proj_rush_yds_h1"),
+                cy1=g("proj_rec_yds_q1"), cyh=g("proj_rec_yds_h1"), ftd=g("p_first_td", 3))
 
 
 def blowouts():
@@ -128,6 +149,7 @@ if MODE == "calc":
         if r.game_id in fc.index:
             f = fc.loc[r.game_id]
             e.update(temp=float(f.temp_f), wind=float(f.wind_mph), fcAsOf=str(f.as_of))
+            e["precip"] = int(f.get("precip", 0)) if pd.notna(f.get("precip", 0)) else 0
             if int(f.roof_closed) == 1: e["dome"] = 1
         slate.append(e)
 
@@ -137,6 +159,9 @@ if MODE == "calc":
     wind = [dict(lo=a, hi=b, n=int(len(s)), under=round(float((s["diff"] < 0).mean()), 3))
             for a, b in [(0, 9.99), (10, 14.99), (15, 19.99), (20, 24.99), (25, 99)]
             for s in [w[(w.wind_mph >= a) & (w.wind_mph <= b)]]]
+    # same, for rain or snow at kickoff (all wet games, and wet with wind 10+)
+    rain = {k: dict(n=int(len(s)), under=round(float((s["diff"] < 0).mean()), 3), vs=round(float(s["diff"].mean()), 1))
+            for k, s in (("wet", w[w.wet == 1]), ("wetWind", w[(w.wet == 1) & (w.wind_mph >= 10)]), ("dry", w[w.wet == 0]))}
 
     # quarterback options per team: everyone who started for them since last season, most recent first
     q = pd.read_csv(J("qb_form.csv")).set_index("qb_id").qb_epa
@@ -161,7 +186,7 @@ if MODE == "calc":
     bk = pd.concat([g.loc[(g.season >= 2018) & (g.home_backup_qb == 1), "home_qb_epa"], g.loc[(g.season >= 2018) & (g.away_backup_qb == 1), "away_qb_epa"]])
 
     data = {"teams": teams.to_dict("records"), "slate": slate, "week": wk, "coef": json.load(open(J("coefficients_final.json"))),
-            "bt": pd.read_csv(J("backtest_summary_final.csv")).to_dict("records"), "wind": wind,
+            "bt": pd.read_csv(J("backtest_summary_final.csv")).to_dict("records"), "wind": wind, "rain": rain,
             "st": st.to_dict("records"), "cand": cand.to_dict("records"), "qbs": qbs, "backup_epa": round(float(bk.median()), 3),
             "updated": pd.Timestamp.now(tz="America/New_York").strftime("%a %b %d, %I:%M %p ET")}
     data["blowouts"] = blowouts(); data["avoid"] = settings().get("avoid", []); data["trust"] = settings().get("trust", []); data["vsVegas"] = vs_vegas(); data["vol"] = volatility()
@@ -171,6 +196,8 @@ if MODE == "calc":
         data["snaps"] = {r.team: [float(r.off_snaps), float(r.def_snaps)] for r in pd.read_csv(J("last_snaps.csv")).itertuples()}
     if os.path.exists(J("comeback_model.json")):
         data["cb"] = json.load(open(J("comeback_model.json")))
+    if os.path.exists(J("live_model.json")):
+        data["live"] = json.load(open(J("live_model.json")))       # live game model (live_model.py), run in the page
     if os.path.exists(J("season_2026_projection.csv")):
         pr = pd.read_csv(J("season_2026_projection.csv"))
         data["records"] = {r.team: [int(r.w), int(r.l), int(r.t)] for r in pr.itertuples()}
@@ -182,7 +209,7 @@ if MODE == "calc":
 elif MODE == "season":
     x = pd.read_csv(J("season_2026_games.csv"), parse_dates=["gameday"]).sort_values(["week", "gameday", "gametime"])
     p = pd.read_csv(J("season_2026_projection.csv")); gr = json.load(open(J("season_2026_grade.json")))
-    fc = forecasts()
+    fc = forecasts(); OD = odds()
     f1 = lambda v, n=1: None if pd.isna(v) else round(float(v), n)
     games = []
     for r in x.itertuples():
@@ -196,14 +223,16 @@ elif MODE == "season":
         if r.game_id in fc.index and e["hs"] is None:
             f = fc.loc[r.game_id]
             e.update(fcT=float(f.temp_f), fcW=float(f.wind_mph), fcRoof=int(f.roof_closed), fcAsOf=str(f.as_of))
+            if pd.notna(f.get("precip", 0)) and int(f.get("precip", 0)) == 1: e["fcP"] = 1
         e["id"] = r.game_id
+        if r.game_id in OD: e["odds"] = OD[r.game_id]
         games.append(e)
     data = {"games": games, "proj": p.round(3).to_dict("records"), "grade": gr, "blowouts": blowouts(), "avoid": settings().get("avoid", []), "trust": settings().get("trust", []), "vsVegas": vs_vegas(), "vol": volatility(), "mvv": model_vs_vegas(), **players(),
             "updated": pd.Timestamp.now(tz="America/New_York").strftime("%a %b %d, %I:%M %p ET")}
     json.dump(data, open(J("season_data.json"), "w"))
     html = open(template("season_template.html")).read().replace("__DATA__", json.dumps(data))
     open(J("gridline_2026.html"), "w").write(html)
-    print("season page built:", len(games), "games |", gr["games"], "graded |", sum("fcT" in e for e in games), "with forecasts")
+    print("season page built:", len(games), "games |", gr["games"], "graded |", sum("fcT" in e for e in games), "with forecasts |", sum("odds" in e for e in games), "with book odds")
 
 elif MODE == "betlog":
     # Snapshot of Gridline's numbers for the bet log's risk meter: every 2026 game, this slate's player props,
@@ -230,8 +259,15 @@ elif MODE == "betlog":
         k["tot"] = fit(((t.tm_final - t.total_line) / sdT).values, (t.total > t.total_line).astype(int).values)
     x = pd.read_csv(J("season_2026_games.csv"))
     f1 = lambda v, n=2: None if pd.isna(v) else round(float(v), n)
-    games = [dict(wk=int(r.week), d=str(r.gameday), a=r.away_team, h=r.home_team, pm=f1(r.p_margin), sl=f1(r.spread_line, 1),
-                  tl=f1(r.total_line, 1), tot=f1(r.m_total if not pd.isna(r.m_total) else r.p_total), done=not pd.isna(r.home_score))
+    OD = odds()
+    def book_info(gid):
+        e = OD.get(gid)
+        if not e: return {}
+        if "close" in e: return {"cl": e["close"]}
+        return {"bn": e["best"], "bk": e["books"], "bas": e["asof"]}
+    games = [dict(wk=int(r.week), d=str(r.gameday), a=r.away_team, h=r.home_team, pm=f1(r.p_margin), sl=f1(r.spread_line, 2),
+                  tl=f1(r.total_line, 2), tot=f1(r.m_total if not pd.isna(r.m_total) else r.p_total), done=not pd.isna(r.home_score),
+                  **book_info(r.game_id))
              for r in x.itertuples()]
     props, psd = [], {}
     if os.path.exists(J("player_props_2026.csv")):
@@ -241,11 +277,14 @@ elif MODE == "betlog":
             props.append(dict(g=gk.get(r.game_id), wk=int(r.week), n=r.display_name, t=r.team, pos=r.position,
                               py=f1(r.proj_pass_yds, 1), ptd=f1(r.proj_pass_td), ry=f1(r.proj_rush_yds, 1), cy=f1(r.proj_rec_yds, 1),
                               rec=f1(r.proj_receptions), td=f1(r.proj_tds), td1=f1(r.p_td1, 3), td2=f1(r.p_td2, 3), p300=f1(r.p_pass300, 3),
-                              ptd2=f1(r.p_ptd2, 3), ptd3=f1(r.p_ptd3, 3), r100=f1(r.p_rush100, 3), c100=f1(r.p_rec100, 3)))
+                              ptd2=f1(r.p_ptd2, 3), ptd3=f1(r.p_ptd3, 3), r100=f1(r.p_rush100, 3), c100=f1(r.p_rec100, 3),
+                              **early(r, f1)))
     if os.path.exists(J("player_backtest.json")):
         psd = {m: v.get("sd") for m, v in json.load(open(J("player_backtest.json"))).items()}
+    if os.path.exists(J("player_quarter_backtest.json")):
+        psd.update(json.load(open(J("player_quarter_backtest.json"))).get("sd", {}))
     model = {"asof": pd.Timestamp.now(tz="America/New_York").strftime("%a %b %d"), "sdM": round(sdM, 2), "sdT": round(sdT, 2),
              "k": {kk: round(v, 3) for kk, v in k.items()}, "games": games, "props": props, "psd": psd}
     html = open(template("bet_log.html")).read().replace("__MODEL__", json.dumps(model))
     open(J("gridline_bet_log.html"), "w").write(html)
-    print("bet log built:", len(games), "games |", len(props), "player props | calibration", model["k"])
+    print("bet log built:", len(games), "games |", len(props), "player props |", sum("cl" in g for g in games), "closing lines |", sum("bn" in g for g in games), "games with live odds | calibration", model["k"])

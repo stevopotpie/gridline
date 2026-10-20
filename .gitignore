@@ -4,8 +4,14 @@ data/
 *.csv
 *.json
 !settings.example.json
+!player_best_models.json
+!live_model.json
+!live_backtest.json
 gridline_model.html
 gridline_2026.html
+gridline_bet_log.html
 settings.json
 __pycache__/
 .DS_Store
+# odds repo clone and the assembled Pages site
+_site/
