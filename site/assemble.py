@@ -20,7 +20,7 @@ PAGES = [
     ("index.html",    None,                    "Home",       "Home",                "What Gridline is and how it has done"),
     ("season.html",   "gridline_2026.html",    "Season",     "2026 Season Board",   "Every game graded or projected, book odds, props, playoff odds"),
     ("model.html",    "gridline_model.html",   "Calculator", "Matchup Calculator",  "Set any matchup, line, weather, QBs and injuries"),
-    ("bet-log.html",  "gridline_bet_log.html", "Bet log",    "Bet Log",             "Red to green risk meter and a ledger saved in your browser"),
+    ("bet-log.html",  "gridline_bet_log.html", "Bet log",    "Bet Log",             "Red to green risk meter, a ledger saved in your browser, retro bets and strategy replays"),
 ]
 ABOUT = [
     ("Results and method", f"{GH}#results-at-a-glance"),
