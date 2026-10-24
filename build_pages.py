@@ -2,7 +2,8 @@
 Usage:
   python3 -I build_pages.py calc   MODEL_DIR   -> page_data.json + gridline_model.html (the calculator)
   python3 -I build_pages.py season MODEL_DIR   -> season_data.json + gridline_2026.html (needs season.py output)
-  python3 -I build_pages.py betlog MODEL_DIR   -> gridline_bet_log.html (the bet log, with a snapshot of the model for its risk meter)
+  python3 -I build_pages.py betlog MODEL_DIR   -> gridline_bet_log.html (the bet log, with a snapshot of the model for its risk meter,
+                                                  plus finished games since 2024 for retro bets and strategy replays)
 Optional MODEL_DIR/forecasts.csv (game_id,temp_f,wind_mph,roof_closed,as_of[,precip]) sets kickoff weather for upcoming games;
 precip = 1 when rain or snow is expected at kickoff (missing column = 0)."""
 import sys, os, json
@@ -127,6 +128,70 @@ def blowouts():
     b = pd.read_csv(f)
     return {r.team: {"season": int(r.bl_season), "last5": int(r.bl_last5), "flag": int(r.flag), "wins": int(r.bw_season), "prior3": int(r.bl_last3yrs)} for r in b.itertuples()}
 
+def pass_d_form():
+    """Pass defense form for the retro strategy found on Oct 23 2026: each team's EPA per dropback allowed, an exponentially
+    weighted average of its previous games (half life 4 games, carried across seasons, pulled a third of the way back to the
+    league mean in a team's first 3 games of a season). Returns per game the home minus away gap (negative = home defense
+    better), the cutoff for "much better" (the best third of 2018 to 2025 gaps), and each team's latest form for upcoming games."""
+    import glob
+    parts = []
+    for f in sorted(glob.glob(J(os.path.join("data", "pbp_*.parquet")))):
+        if int(os.path.basename(f)[4:8]) < 2017: continue
+        p = pd.read_parquet(f, columns=["game_id", "season_type", "defteam", "qb_dropback", "epa", "play_type"])
+        p = p[(p.season_type == "REG") & (p.qb_dropback == 1) & p.play_type.isin(["pass", "run"]) & p.defteam.notna()]
+        parts.append(p.groupby(["game_id", "defteam"]).epa.mean().reset_index())
+    if not parts: return {}, None, {}
+    G = pd.read_csv(J(os.path.join("data", "games.csv")))
+    d = pd.concat(parts).rename(columns={"defteam": "team", "epa": "allowed"}).merge(G[["game_id", "season", "gameday"]], on="game_id")
+    d = d.sort_values(["team", "gameday"]).reset_index(drop=True)
+    d["f"] = d.groupby("team").allowed.transform(lambda v: v.shift().ewm(halflife=4, min_periods=1).mean())
+    first = d.groupby(["team", "season"]).cumcount() < 3
+    m = d.f.mean(); d.loc[first, "f"] = m + 0.67 * (d.loc[first, "f"] - m)
+    cur = d.groupby("team").allowed.apply(lambda v: v.ewm(halflife=4, min_periods=1).mean().iloc[-1]).to_dict()
+    f = d.set_index(["game_id", "team"]).f
+    G = G[G.game_type == "REG"]
+    gap = {}
+    for r in G.itertuples():
+        a, h = f.get((r.game_id, r.home_team)), f.get((r.game_id, r.away_team))
+        if a is not None and h is not None and not pd.isna(a) and not pd.isna(h): gap[r.game_id] = (float(a - h), int(r.season))
+    hist = [v for v, s_ in gap.values() if 2018 <= s_ <= 2025]
+    cut = float(np.quantile(hist, 1 / 3)) if hist else None
+    return {k: v for k, (v, _) in gap.items()}, cut, cur
+
+
+def retro(OD, gap, cut):
+    """Every finished regular season game since 2024 for retro bets and strategy replays: final score, nflverse closing lines and
+    prices, Gridline's pregame numbers (walk forward backtest for 2024 and 2025, the live 2026 projections after that),
+    weather flags, the pass defense flag, and FanDuel's last pull before kickoff when Steven's odds pulls have it."""
+    G = pd.read_csv(J(os.path.join("data", "games.csv")))
+    G = G[(G.season >= 2024) & (G.game_type == "REG") & G.home_score.notna()].sort_values(["gameday", "gametime", "game_id"])
+    F = pd.read_csv(J("games_features_all.csv"), usecols=lambda c: c in ("game_id", "wet", "dome", "wind_mph"), low_memory=False).drop_duplicates("game_id").set_index("game_id")
+    bt = pd.read_csv(J("backtest_games_final.csv")).drop_duplicates("game_id").set_index("game_id") if os.path.exists(J("backtest_games_final.csv")) else pd.DataFrame()
+    s26 = pd.read_csv(J("season_2026_games.csv")).set_index("game_id")
+    v = lambda x, n=1: None if x is None or pd.isna(x) else round(float(x), n)
+    o = lambda x: None if x is None or pd.isna(x) else int(round(float(x)))
+    rows = []
+    for r in G.itertuples():
+        pm = pt = None
+        if r.season == SEASON and r.game_id in s26.index:
+            q = s26.loc[r.game_id]; pm = q.p_margin; pt = q.m_total if not pd.isna(q.m_total) else q.p_total
+        elif r.game_id in bt.index:
+            q = bt.loc[r.game_id]; pm = q.m_final; pt = q.tm_final
+        w = F.loc[r.game_id] if r.game_id in F.index else None
+        g_ = gap.get(r.game_id)
+        rows.append({"id": r.game_id, "s": int(r.season), "wk": int(r.week), "d": str(r.gameday), "a": r.away_team, "h": r.home_team,
+                     "as": int(r.away_score), "hs": int(r.home_score), "sl": v(r.spread_line), "hso": o(r.home_spread_odds), "aso": o(r.away_spread_odds),
+                     "tl": v(r.total_line), "oo": o(r.over_odds), "uo": o(r.under_odds), "hml": o(r.home_moneyline), "aml": o(r.away_moneyline),
+                     "pm": v(pm), "pt": v(pt), "dome": int(w.dome) if w is not None and not pd.isna(w.dome) else 0,
+                     "wind": v(w.wind_mph, 0) if w is not None else None, "wet": int(w.wet) if w is not None and not pd.isna(w.wet) else 0,
+                     "pd": int(g_ is not None and cut is not None and g_ <= cut)})
+    fd = {}
+    for gid, e in OD.items():
+        if "close" not in e: continue
+        for l in e.get("lines", []):
+            if l.get("book") == "FanDuel": fd[gid] = {k: l.get(k) for k in ("hs", "hs_p", "as_p", "tot", "ov_p", "un_p", "hml", "aml")}
+    return {"games": rows, "fd": fd}
+
 if MODE == "calc":
     g = pd.read_csv(J("games_features_all.csv"), parse_dates=["gameday"], low_memory=False)
     cur = set(g[g.season == SEASON].home_team)
@@ -189,7 +254,7 @@ if MODE == "calc":
             "bt": pd.read_csv(J("backtest_summary_final.csv")).to_dict("records"), "wind": wind, "rain": rain,
             "st": st.to_dict("records"), "cand": cand.to_dict("records"), "qbs": qbs, "backup_epa": round(float(bk.median()), 3),
             "updated": pd.Timestamp.now(tz="America/New_York").strftime("%a %b %d, %I:%M %p ET")}
-    data["blowouts"] = blowouts(); data["avoid"] = settings().get("avoid", []); data["trust"] = settings().get("trust", []); data["vsVegas"] = vs_vegas(); data["vol"] = volatility()
+    data["blowouts"] = blowouts(); data["avoid"] = settings().get("avoid", []); data["trust"] = settings().get("trust", []); data["flags"] = settings().get("flags", []); data["vsVegas"] = vs_vegas(); data["vol"] = volatility()
     if os.path.exists(J("mkt_ratings.csv")):
         data["mkt"] = {r.team: float(r.mkt_rating) for r in pd.read_csv(J("mkt_ratings.csv")).itertuples()}
     if os.path.exists(J("last_snaps.csv")):
@@ -227,7 +292,7 @@ elif MODE == "season":
         e["id"] = r.game_id
         if r.game_id in OD: e["odds"] = OD[r.game_id]
         games.append(e)
-    data = {"games": games, "proj": p.round(3).to_dict("records"), "grade": gr, "blowouts": blowouts(), "avoid": settings().get("avoid", []), "trust": settings().get("trust", []), "vsVegas": vs_vegas(), "vol": volatility(), "mvv": model_vs_vegas(), **players(),
+    data = {"games": games, "proj": p.round(3).to_dict("records"), "grade": gr, "blowouts": blowouts(), "avoid": settings().get("avoid", []), "trust": settings().get("trust", []), "flags": settings().get("flags", []), "vsVegas": vs_vegas(), "vol": volatility(), "mvv": model_vs_vegas(), **players(),
             "updated": pd.Timestamp.now(tz="America/New_York").strftime("%a %b %d, %I:%M %p ET")}
     json.dump(data, open(J("season_data.json"), "w"))
     html = open(template("season_template.html")).read().replace("__DATA__", json.dumps(data))
@@ -265,9 +330,13 @@ elif MODE == "betlog":
         if not e: return {}
         if "close" in e: return {"cl": e["close"]}
         return {"bn": e["best"], "bk": e["books"], "bas": e["asof"]}
-    games = [dict(wk=int(r.week), d=str(r.gameday), a=r.away_team, h=r.home_team, pm=f1(r.p_margin), sl=f1(r.spread_line, 2),
+    gap, cut, cur = pass_d_form()
+    def pd_now(r):   # pass defense flag for a game not played yet, from each team's latest form
+        if not pd.isna(r.home_score) or cut is None or r.home_team not in cur or r.away_team not in cur: return 0
+        return int(cur[r.home_team] - cur[r.away_team] <= cut)
+    games = [dict(id=r.game_id, wk=int(r.week), d=str(r.gameday), a=r.away_team, h=r.home_team, pm=f1(r.p_margin), sl=f1(r.spread_line, 2),
                   tl=f1(r.total_line, 2), tot=f1(r.m_total if not pd.isna(r.m_total) else r.p_total), done=not pd.isna(r.home_score),
-                  **book_info(r.game_id))
+                  dome=int(not pd.isna(r.dome) and r.dome >= 0.5), pd=pd_now(r), **book_info(r.game_id))
              for r in x.itertuples()]
     props, psd = [], {}
     if os.path.exists(J("player_props_2026.csv")):
@@ -284,7 +353,9 @@ elif MODE == "betlog":
     if os.path.exists(J("player_quarter_backtest.json")):
         psd.update(json.load(open(J("player_quarter_backtest.json"))).get("sd", {}))
     model = {"asof": pd.Timestamp.now(tz="America/New_York").strftime("%a %b %d"), "sdM": round(sdM, 2), "sdT": round(sdT, 2),
-             "k": {kk: round(v, 3) for kk, v in k.items()}, "games": games, "props": props, "psd": psd}
+             "k": {kk: round(v, 3) for kk, v in k.items()}, "games": games, "props": props, "psd": psd, "retro": retro(OD, gap, cut)}
     html = open(template("bet_log.html")).read().replace("__MODEL__", json.dumps(model))
     open(J("gridline_bet_log.html"), "w").write(html)
     print("bet log built:", len(games), "games |", len(props), "player props |", sum("cl" in g for g in games), "closing lines |", sum("bn" in g for g in games), "games with live odds | calibration", model["k"])
+    print("retro:", len(model["retro"]["games"]), "finished games since 2024 |", len(model["retro"]["fd"]), "with FanDuel closing lines |",
+          sum(g["pd"] for g in model["retro"]["games"]), "pass defense flags | this week:", [f"{g['a']}@{g['h']}" for g in games if g["pd"] and not g["done"] and (g["sl"] or 0) > 0])

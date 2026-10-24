@@ -81,6 +81,15 @@ table.bt{width:100%;border-collapse:collapse;font:400 .82rem var(--f-mono);font-
 .empty{border:1px dashed var(--line);border-radius:10px;padding:16px;color:var(--muted);text-align:center}
 .local{border:1px solid var(--line);border-radius:10px;padding:10px 12px;display:grid;gap:8px;background:var(--bg)}
 .local .row button{padding:6px 12px;font-size:.85rem}
+.outcome{border:1px solid var(--line);border-radius:10px;padding:12px;background:var(--bg);display:grid;gap:4px}
+.outcome .big{font:700 1.7rem/1.1 var(--f-display);letter-spacing:.02em;font-variant-numeric:tabular-nums}
+.outcome .big.pos{color:var(--good)} .outcome .big.neg{color:var(--bad)}
+.outcome .line{font:400 .82rem var(--f-mono);color:var(--muted);font-variant-numeric:tabular-nums}
+.chip.sim{background:var(--chip);color:var(--muted)}
+details summary{cursor:pointer;font:600 .85rem var(--f-body);color:var(--accent);padding:4px 0}
+.bt td.pos{color:var(--good)} .bt td.neg{color:var(--bad)}
+.bt tr.tot td{font-weight:600}
+#s-table th,#s-table td{padding:6px 4px;font-size:.78rem}
 </style>
 
 <div class="wrap">
@@ -120,6 +129,7 @@ table.bt{width:100%;border-collapse:collapse;font:400 .82rem var(--f-mono);font-
       <label class="field"><span>Game date</span><input id="f-date" type="date"></label>
       <label class="field"><span>Result</span><select id="f-result"><option value="pending">Pending</option><option value="win">Win</option><option value="loss">Loss</option><option value="push">Push</option></select></label>
       <label class="field"><span>Model edge (pts, optional)</span><input id="f-edge" type="number" step="0.1" inputmode="decimal"></label>
+      <label class="field full" id="f-kind-w"><span>Real or practice</span><select id="f-kind"><option value="real">Real bet (goes in the ledger)</option><option value="sim">Simulated bet (practice, kept separate)</option></select></label>
       <label class="field full"><span>Notes</span><input id="f-notes" type="text" autocomplete="off" placeholder="Why you liked it"></label>
       <div class="meter full" id="meter" aria-live="polite"></div>
       <div class="row full"><button type="submit" class="primary" id="f-save">Save bet</button><button type="button" id="f-cancel" hidden>Cancel edit</button><span class="msg" id="f-msg"></span></div>
@@ -138,6 +148,45 @@ table.bt{width:100%;border-collapse:collapse;font:400 .82rem var(--f-mono);font-
       </div>
     </div>
     <div class="bets" id="bets"><div class="empty">Loading your bets…</div></div>
+  </section>
+
+  <section class="panel" id="retro-panel">
+    <h2>Retro bet</h2>
+    <p class="note">Pick any finished game since 2024 and see what a bet would have paid. The line and price start at the close; change them to the number you would have gotten.</p>
+    <form id="r" class="grid2" novalidate>
+      <label class="field"><span>Season</span><select id="r-season"></select></label>
+      <label class="field"><span>Week</span><select id="r-week"></select></label>
+      <label class="field full"><span>Game</span><select id="r-game"></select></label>
+      <label class="field"><span>Bet type</span><select id="r-market"><option value="spread">Spread</option><option value="over">Total: over</option><option value="under">Total: under</option><option value="ml">Moneyline</option></select></label>
+      <label class="field" id="r-team-w"><span>Team</span><select id="r-team"></select></label>
+      <label class="field"><span>Number from</span><select id="r-src"></select></label>
+      <label class="field" id="r-line-w"><span id="r-line-l">Line (your side)</span><input id="r-line" type="number" step="0.5" inputmode="decimal"></label>
+      <label class="field"><span>Odds (American)</span><input id="r-odds" type="number" step="1" inputmode="numeric"></label>
+      <label class="field"><span>Stake ($)</span><input id="r-stake" type="number" step="1" min="0" value="20" inputmode="decimal"></label>
+      <div class="outcome full" id="r-out" aria-live="polite"></div>
+      <div class="row full"><button type="submit" class="primary" id="r-save">Save as simulated bet</button><span class="msg" id="r-msg"></span></div>
+    </form>
+  </section>
+
+  <section class="panel" id="strat-panel">
+    <h2>Strategy replay</h2>
+    <p class="note">Bet one rule on every game it fits, the same stake each time, and see how it would have done in each season.</p>
+    <div class="grid2">
+      <label class="field full"><span>Strategy</span><select id="s-rule"></select></label>
+      <label class="field"><span>Weeks</span><select id="s-weeks"><option value="all">All weeks</option><option value="early">Weeks 1 to 6</option><option value="late">Week 7 on</option></select></label>
+      <label class="field"><span>Price</span><select id="s-price"><option value="close">Closing odds</option><option value="flat">Flat −110</option></select></label>
+      <label class="field"><span>Stake per bet ($)</span><input id="s-stake" type="number" step="1" min="1" value="20" inputmode="decimal"></label>
+    </div>
+    <p class="note" id="s-desc"></p>
+    <div class="scroll"><table class="bt" id="s-table"></table></div>
+    <details id="s-list-w"><summary id="s-sum">Every bet</summary><div class="scroll"><table class="bt" id="s-list"></table></div></details>
+  </section>
+
+  <section class="panel">
+    <h2>Simulated bets</h2>
+    <p class="note">Practice bets and saved retro bets. They stay out of your real ledger and the scoreboard above. Spreads, totals and moneylines grade themselves once the final score is in the data.</p>
+    <div class="kpis" id="sim-kpis"></div>
+    <div class="bets" id="sims"><div class="empty">No simulated bets yet. Pick "Simulated bet" when you log one above, or save a retro bet.</div></div>
   </section>
 </div>
 
@@ -403,7 +452,7 @@ function fillForm(b){
   if (b.market === "prop") { $("f-prop").value = b.prop || "td1"; if (b.side && b.side !== "yes") $("f-side").value = b.side; }
   setMarketLabels();
 }
-function resetForm(){ editing = null; const wk = $("f-week").value, gm = $("f-game").value; $("f").reset(); $("f-week").value = wk; fillGames(wk, gm); $("form-title").textContent = "Log a bet"; $("f-cancel").hidden = true; $("f-save").textContent = "Save bet"; setMarketLabels(); }
+function resetForm(){ editing = null; const wk = $("f-week").value, gm = $("f-game").value; $("f").reset(); $("f-week").value = wk; fillGames(wk, gm); $("form-title").textContent = "Log a bet"; $("f-cancel").hidden = true; $("f-kind-w").hidden = false; $("f-save").textContent = "Save bet"; setMarketLabels(); }
 function msg(t, err){ $("f-msg").textContent = t; $("f-msg").className = "msg" + (err ? " err" : ""); }
 
 $("f").addEventListener("submit", async e => {
@@ -418,6 +467,12 @@ $("f").addEventListener("submit", async e => {
   $("f-save").disabled = true;
   try {
     if (editing) { await db.collection("bets").doc(editing).set({...b, createdAt: (bets.find(x => x.id === editing)||{}).createdAt || Date.now()}); msg("Bet updated."); }
+    else if ($("f-kind").value === "sim") {
+      if (!simColl) throw new Error("no sims");
+      const g = findGame(b.game, b.date);
+      await simColl.add({...b, gid: g ? g.id : null, kind: "practice", createdAt: Date.now()});
+      msg("Simulated bet saved. It's under Simulated bets below, not in your ledger.");
+    }
     else { await db.collection("bets").add({...b, createdAt: Date.now()}); msg("Bet saved."); }
     resetForm();
   } catch (err) { msg(err && err.code === "invalid_argument" ? "You don't have permission to save to this log." : "Couldn't save. Try again in a moment.", true); }
@@ -429,7 +484,7 @@ let pendingDelete = null;
 $("bets").addEventListener("click", async e => {
   const btn = e.target.closest("button"); if (!btn || !db) return;
   const id = btn.closest(".bet").dataset.id, act = btn.dataset.act, b = bets.find(x => x.id === id);
-  if (act === "edit") { editing = id; fillForm(b); $("form-title").textContent = "Edit bet"; $("f-cancel").hidden = false; $("f-save").textContent = "Save changes"; $("form-panel").scrollIntoView({behavior: "smooth"}); return; }
+  if (act === "edit") { editing = id; fillForm(b); $("f-kind-w").hidden = true; $("form-title").textContent = "Edit bet"; $("f-cancel").hidden = false; $("f-save").textContent = "Save changes"; $("form-panel").scrollIntoView({behavior: "smooth"}); return; }
   if (act === "del") {
     if (pendingDelete !== id) { pendingDelete = id; btn.textContent = "Tap again to delete"; return; }
     pendingDelete = null; try { await db.collection("bets").doc(id).delete(); } catch (err) { btn.textContent = "Couldn't delete"; } return;
@@ -437,16 +492,229 @@ $("bets").addEventListener("click", async e => {
   if (["win","loss","push"].includes(act)) { btn.disabled = true; try { await db.collection("bets").doc(id).update({result: act}); } catch (err) { btn.disabled = false; } }
 });
 
+// ---------- retro bets, strategy replay and simulated bets ----------
+// MODEL.retro holds every finished regular season game since 2024 (closing lines and prices from nflverse, final scores,
+// Gridline's pregame numbers, weather and the pass defense flag) plus FanDuel's last pull before kickoff where the odds pulls have it.
+const SIM_KEY = "gridline-sim-log-v1";
+let simColl = null, sims = [];
+const R = MODEL.retro || {games: [], fd: {}};
+const RG = R.games, RBY = new Map(RG.map(g => [g.id, g]));
+const lineTxt = v => v == null ? "?" : Math.abs(v) < 0.01 ? "PK" : (v > 0 ? "+" : "") + v;
+const oddsTxt = o => o == null ? "" : (o > 0 ? "+" : "−") + Math.abs(Math.round(o));
+const plTxt = v => (v < 0 ? "−$" : v > 0 ? "+$" : "$") + Math.abs(v).toFixed(2);
+const longDay = d => new Date(d + "T12:00:00").toLocaleDateString("en-US", {weekday: "short", month: "short", day: "numeric", year: "numeric"});
+// the number and price for one side of a game: src "close" = nflverse closing line, "fd" = FanDuel's last pull before kickoff
+function numbers(g, mkt, team, src){
+  const f = src === "fd" ? (R.fd[g.id] || null) : null, home = team === g.h;
+  if (mkt === "spread") return f ? {line: home ? f.hs : -f.hs, odds: home ? f.hs_p : f.as_p} : {line: g.sl == null ? null : (home ? -g.sl : g.sl), odds: home ? g.hso : g.aso};
+  if (mkt === "over" || mkt === "under") return f ? {line: f.tot, odds: mkt === "over" ? f.ov_p : f.un_p} : {line: g.tl, odds: mkt === "over" ? g.oo : g.uo};
+  return {line: null, odds: f ? (home ? f.hml : f.aml) : (home ? g.hml : g.aml)};
+}
+// win, loss or push for a bet on a finished game, and the margin it won or lost by
+function gradeOn(g, mkt, team, line){
+  if (!g || g.hs == null || g.as == null) return null;
+  const tm = team === g.h ? g.hs - g.as : g.as - g.hs, tot = g.hs + g.as;
+  if (mkt !== "ml" && line == null) return null;
+  const x = mkt === "spread" ? tm + line : mkt === "over" ? tot - line : mkt === "under" ? line - tot : tm;
+  return {res: x > 0 ? "win" : x < 0 ? "loss" : "push", by: x};
+}
+const pnl = (res, stake, odds) => res === "win" ? stake * payout(odds || -110) : res === "loss" ? -stake : 0;
+const finalTxt = g => `${g.a} ${g.as}, ${g.h} ${g.hs}`;
+const favTxt = (g, m) => m == null ? null : Math.abs(m) < 0.05 ? "even" : `${m > 0 ? g.h : g.a} by ${Math.abs(m).toFixed(1)}`;
+
+// ----- retro bet form -----
+const RSEASONS = [...new Set(RG.map(g => g.s))].sort((a, b) => b - a);
+$("r-season").innerHTML = RSEASONS.map(s => `<option value="${s}">${s}</option>`).join("");
+function rWeeks(){
+  const s = +$("r-season").value, wks = [...new Set(RG.filter(g => g.s === s).map(g => g.wk))].sort((a, b) => a - b);
+  $("r-week").innerHTML = wks.map(w => `<option value="${w}">Week ${w}</option>`).join("");
+  if (wks.length) $("r-week").value = wks[wks.length - 1];
+  rGames();
+}
+function rGames(){
+  const s = +$("r-season").value, w = +$("r-week").value, gs = RG.filter(g => g.s === s && g.wk === w);
+  $("r-game").innerHTML = gs.map(g => `<option value="${g.id}">${g.a} @ ${g.h} · ${fmtDay(g.d)}</option>`).join("");
+  rGame();
+}
+function rGame(){
+  const g = RBY.get($("r-game").value); if (!g) { $("r-out").innerHTML = `<div class="line">No finished games here yet.</div>`; return; }
+  const cur = $("r-team").value;
+  $("r-team").innerHTML = `<option value="${g.a}">${g.a} (away)</option><option value="${g.h}">${g.h} (home)</option>`;
+  if (cur === g.a || cur === g.h) $("r-team").value = cur;
+  const src = $("r-src").value;
+  $("r-src").innerHTML = `<option value="close">Closing line</option>` + (R.fd[g.id] ? `<option value="fd">FanDuel, last pull</option>` : "");
+  if (src === "fd" && R.fd[g.id]) $("r-src").value = "fd";
+  rFill();
+}
+function rFill(){
+  const g = RBY.get($("r-game").value); if (!g) return;
+  const m = $("r-market").value;
+  $("r-team-w").hidden = !(m === "spread" || m === "ml"); $("r-line-w").hidden = m === "ml";
+  $("r-line-l").textContent = m === "spread" ? "Line (your side)" : "Total";
+  const n = numbers(g, m, $("r-team").value, $("r-src").value);
+  $("r-line").value = n.line ?? ""; $("r-odds").value = n.odds ?? -110;
+  rShow();
+}
+function rRead(){
+  const m = $("r-market").value;
+  return {g: RBY.get($("r-game").value), m, team: m === "spread" || m === "ml" ? $("r-team").value : null,
+          line: m === "ml" ? null : num("r-line"), odds: num("r-odds") ?? -110, stake: num("r-stake") ?? 0};
+}
+const betTxt = (m, team, line) => m === "spread" ? `${team} ${lineTxt(line)}` : m === "ml" ? `${team} moneyline` : `${m === "over" ? "Over" : "Under"} ${line ?? "?"}`;
+function rShow(){
+  const x = rRead(), g = x.g; if (!g) return;
+  const r = gradeOn(g, x.m, x.team, x.line);
+  if (!r) { $("r-out").innerHTML = `<div class="line">Add the line to see how it would have gone.</div>`; return; }
+  const p = pnl(r.res, x.stake, x.odds);
+  const head = r.res === "win" ? `Would have won ${plTxt(p)}` : r.res === "loss" ? `Would have lost $${x.stake.toFixed(2)}` : "Push: stake back";
+  const tot = g.hs + g.as, by = Math.abs(r.by);
+  const how = x.m === "spread" ? (r.res === "push" ? "Landed exactly on the number" : `${r.res === "win" ? "Covered" : "Missed"} by ${by}`)
+    : x.m === "ml" ? (r.res === "push" ? "Tie" : `${r.res === "win" ? "Won" : "Lost"} by ${by}`)
+    : `Total ${tot}, ${r.res === "push" ? "right on the number" : `${x.m === "over" ? (r.res === "win" ? "over" : "under") : (r.res === "win" ? "under" : "over")} by ${by}`}`;
+  const gl = g.pm != null || g.pt != null ? `Gridline before kickoff${g.s < 2026 ? " (backtest)" : ""}: ${[favTxt(g, g.pm), g.pt != null ? `total ${g.pt}` : null].filter(Boolean).join(", ")}` : "";
+  const close = `Close: ${g.sl == null ? "no line" : favTxt(g, g.sl).replace(" by ", " −").replace("even", "pick'em")}, total ${g.tl ?? "?"}${R.fd[g.id] ? ` · FanDuel last pull: ${R.fd[g.id].hs > 0 ? g.a : g.h} −${Math.abs(R.fd[g.id].hs)}, total ${R.fd[g.id].tot}` : ""}`;
+  $("r-out").innerHTML = `<div class="big ${p > 0 ? "pos" : p < 0 ? "neg" : ""}">${head}</div>
+    <div class="line">${esc(betTxt(x.m, x.team, x.line))} at ${oddsTxt(x.odds)} for $${x.stake.toFixed(0)} · ${how}</div>
+    <div class="line">Final: ${esc(finalTxt(g))} · Week ${g.wk}, ${longDay(g.d)}</div>
+    <div class="line">${esc(close)}</div>${gl ? `<div class="line">${esc(gl)}</div>` : ""}`;
+}
+$("r-season").addEventListener("change", rWeeks); $("r-week").addEventListener("change", rGames); $("r-game").addEventListener("change", rGame);
+["r-market", "r-team", "r-src"].forEach(id => $(id).addEventListener("change", rFill));
+["r-line", "r-odds", "r-stake"].forEach(id => $(id).addEventListener("input", rShow));
+const rmsg = (t, err) => { $("r-msg").textContent = t; $("r-msg").className = "msg" + (err ? " err" : ""); };
+$("r").addEventListener("submit", async e => {
+  e.preventDefault();
+  const x = rRead();
+  if (!simColl) { rmsg("Saving isn't available in this view.", true); return; }
+  if (!x.g || (x.m !== "ml" && x.line == null)) { rmsg("Pick a game and add the line.", true); return; }
+  if (!x.stake) { rmsg("Add a stake.", true); return; }
+  const r = gradeOn(x.g, x.m, x.team, x.line);
+  $("r-save").disabled = true;
+  try {
+    await simColl.add({date: x.g.d, game: `${x.g.a} @ ${x.g.h}`, gid: x.g.id, season: x.g.s, market: x.m, pick: x.team || "", line: x.line, odds: x.odds,
+      stake: x.stake, result: r ? r.res : "pending", kind: "retro", src: $("r-src").value, notes: "", createdAt: Date.now()});
+    rmsg("Saved to Simulated bets.");
+  } catch (err) { rmsg("Couldn't save. Try again in a moment.", true); }
+  $("r-save").disabled = false;
+});
+if (RG.length) rWeeks(); else { $("retro-panel").hidden = true; $("strat-panel").hidden = true; }
+
+// ----- strategy replay -----
+const favOf = g => g.sl == null || g.sl === 0 ? null : g.sl > 0 ? g.h : g.a;   // nflverse spread_line: positive = home favored
+const dogOf = g => { const f = favOf(g); return f == null ? null : f === g.h ? g.a : g.h; };
+const FOUND = " Found by searching 2026 results (Oct 23), so 2026 flatters it: judge it on 2024 and 2025.";
+const STRATS = [
+  {id: "passd", name: "Road team vs a home favorite with the much better pass defense", pick: g => g.sl > 0 && g.pd ? {m: "spread", t: g.a} : null,
+   desc: "Home team favored and its pass defense (EPA per dropback allowed, recent form) rates much better than the visitor's: the best third of matchups since 2018. Bet the road team." + FOUND},
+  {id: "fadehf", name: "Road team vs every home favorite", pick: g => g.sl > 0 ? {m: "spread", t: g.a} : null, desc: "Every game where the home team is favored, bet the road team."},
+  {id: "hf", name: "Every home favorite", pick: g => g.sl > 0 ? {m: "spread", t: g.h} : null, desc: "Every game where the home team is favored, bet the home team."},
+  {id: "dog6", name: "Underdogs of 6+ points", pick: g => g.sl != null && Math.abs(g.sl) >= 6 ? {m: "spread", t: dogOf(g)} : null, desc: "Every underdog getting 6 or more points."},
+  {id: "fav6", name: "Favorites of 6+ points", pick: g => g.sl != null && Math.abs(g.sl) >= 6 ? {m: "spread", t: favOf(g)} : null, desc: "Every favorite laying 6 or more points."},
+  {id: "homedog", name: "Home underdogs", pick: g => g.sl < 0 ? {m: "spread", t: g.h} : null, desc: "Every home team getting points."},
+  {id: "roadfav", name: "Road favorites", pick: g => g.sl < 0 ? {m: "spread", t: g.a} : null, desc: "Every road team laying points."},
+  {id: "domefade", name: "Road team vs home teams in a dome or closed roof", pick: g => g.dome && g.sl != null ? {m: "spread", t: g.a} : null, desc: "Indoor home games, bet the visitor." + FOUND},
+  {id: "gsp", name: "Gridline spread side, 3+ points off Vegas", pick: g => g.pm == null || g.sl == null ? null : g.pm - g.sl >= 3 ? {m: "spread", t: g.h} : g.pm - g.sl <= -3 ? {m: "spread", t: g.a} : null,
+   desc: "Gridline's stats model disagrees with the closing spread by 3 or more points; bet its side. 2024 and 2025 use the walk forward backtest (each season predicted by a model trained only on earlier seasons); 2026 uses the live pregame numbers."},
+  {id: "gtot", name: "Gridline total lean, 1.5+ points off Vegas", pick: g => g.pt == null || g.tl == null ? null : g.pt - g.tl >= 1.5 ? {m: "over"} : g.pt - g.tl <= -1.5 ? {m: "under"} : null,
+   desc: "Gridline's Vegas plus adjustments total differs from the closing total by 1.5 or more; bet its side. 2024 and 2025 are the walk forward backtest; 2026 is live."},
+  {id: "rainu", name: "Under in rain or snow", pick: g => g.wet ? {m: "under"} : null, desc: "Rain or snow reported at kickoff (actual conditions, so a forecast will do a bit worse)."},
+  {id: "windu", name: "Under with wind 15+ mph", pick: g => !g.dome && g.wind != null && g.wind >= 15 ? {m: "under"} : null, desc: "Outdoor games with sustained wind of 15 mph or more at kickoff."},
+  {id: "under", name: "Every under", pick: g => g.tl != null ? {m: "under"} : null, desc: "The baseline: every game under the closing total."},
+  {id: "over", name: "Every over", pick: g => g.tl != null ? {m: "over"} : null, desc: "The baseline: every game over the closing total."},
+];
+$("s-rule").innerHTML = STRATS.map(s => `<option value="${s.id}">${esc(s.name)}</option>`).join("");
+let lastRun = [];
+function replay(){
+  const S = STRATS.find(x => x.id === $("s-rule").value), wk = $("s-weeks").value, flat = $("s-price").value === "flat", stake = num("s-stake") || 20;
+  const out = [];
+  for (const g of RG) {
+    if ((wk === "early" && g.wk > 6) || (wk === "late" && g.wk < 7)) continue;
+    const p = S.pick(g); if (!p || (p.m === "spread" && !p.t)) continue;
+    const n = numbers(g, p.m, p.t, "close"), odds = flat ? -110 : (n.odds ?? -110), r = gradeOn(g, p.m, p.t, n.line);
+    if (!r) continue;
+    out.push({g, p, line: n.line, odds, r, pl: pnl(r.res, stake, odds), stake});
+  }
+  lastRun = out;
+  const row = (lab, b, cls) => {
+    const w = b.filter(x => x.r.res === "win").length, l = b.filter(x => x.r.res === "loss").length, pu = b.length - w - l;
+    const pl = b.reduce((a, x) => a + x.pl, 0), risk = b.reduce((a, x) => a + x.stake, 0);
+    return `<tr${cls ? ` class="${cls}"` : ""}><td>${lab}</td><td>${w}-${l}${pu ? "-" + pu : ""}</td><td>${w + l ? Math.round(100 * w / (w + l)) + "%" : "–"}</td>
+      <td class="${pl > 0 ? "pos" : pl < 0 ? "neg" : ""}">${b.length ? (pl < 0 ? "−$" : pl > 0 ? "+$" : "$") + Math.abs(Math.round(pl)) : "–"}</td><td>${risk ? (pl < 0 ? "−" : "") + Math.abs(100 * pl / risk).toFixed(1) + "%" : "–"}</td></tr>`;
+  };
+  const last26 = Math.max(0, ...RG.filter(g => g.s === 2026).map(g => g.wk));
+  $("s-table").innerHTML = `<tr><th>Season</th><th>W-L</th><th>Win</th><th>Profit</th><th>Return</th></tr>` +
+    RSEASONS.slice().reverse().map(s => row(String(s), out.filter(x => x.g.s === s))).join("") + row("All", out, "tot");
+  const up = MODEL.games.filter(g => !g.done && g.wk === OPEN_WK).map(g => ({...g, s: 2026, pt: g.tot})).filter(g => !["rainu", "windu"].includes(S.id) && S.pick(g));
+  const upTxt = up.length ? ` This week it fits: ${up.map(g => { const p = S.pick(g); return p.m === "spread" ? `${p.t} ${lineTxt(p.t === g.h ? -g.sl : g.sl)} (${g.a} @ ${g.h})` : `${p.m === "over" ? "Over" : "Under"} ${g.tl} (${g.a} @ ${g.h})`; }).join(", ")}.` : "";
+  $("s-desc").textContent = S.desc + ` 2026 runs through week ${last26}. Breakeven at −110 is 52.4%.` + upTxt;
+  $("s-sum").textContent = `Every bet (${out.length})`;
+  if ($("s-list-w").open) listBets();
+}
+function listBets(){
+  $("s-list").innerHTML = `<tr><th>Date</th><th>Game</th><th>Bet</th><th>Final</th><th>Result</th><th>P/L</th></tr>` + lastRun.slice().reverse().map(x =>
+    `<tr><td>${x.g.d}</td><td>${x.g.a} @ ${x.g.h}</td><td>${esc(betTxt(x.p.m, x.p.t, x.line))} ${oddsTxt(x.odds)}</td><td>${x.g.as}-${x.g.hs}</td><td>${x.r.res}</td>
+     <td class="${x.pl > 0 ? "pos" : x.pl < 0 ? "neg" : ""}">${plTxt(x.pl)}</td></tr>`).join("");
+}
+$("s-list-w").addEventListener("toggle", () => { if ($("s-list-w").open) listBets(); });
+["s-rule", "s-weeks", "s-price"].forEach(id => $(id).addEventListener("change", replay));
+$("s-stake").addEventListener("input", replay);
+if (RG.length) replay();
+
+// ----- simulated bets: practice bets and saved retro bets, kept apart from the real ledger -----
+function simResult(b){
+  if (b.result && b.result !== "pending") return b.result;
+  if (b.market === "prop") return "pending";
+  const g = RBY.get(b.gid); if (!g) return "pending";
+  const t = b.market === "spread" || b.market === "ml" ? (teamsIn(b.pick)[0] || b.pick) : null;
+  const r = gradeOn(g, b.market, t, b.line); return r ? r.res : "pending";
+}
+function renderSims(){
+  const graded = sims.map(b => ({...b, result: simResult(b)}));
+  const st = graded.filter(b => b.result !== "pending");
+  const w = st.filter(b => b.result === "win").length, l = st.filter(b => b.result === "loss").length, p = st.length - w - l;
+  const risked = st.reduce((a, b) => a + (b.stake || 0), 0), pl = st.reduce((a, b) => a + profit(b), 0);
+  $("sim-kpis").innerHTML = [["Record", `${w}-${l}${p ? "-" + p : ""}`, `${graded.length - st.length} pending`], ["Profit", plTxt(pl), `on $${risked.toFixed(0)} simulated`],
+    ["Return", risked ? (100 * pl / risked).toFixed(1) + "%" : "–", "profit ÷ risked"], ["Retro / practice", `${graded.filter(b => b.kind === "retro").length} / ${graded.filter(b => b.kind !== "retro").length}`, "saved bets"]]
+    .map(([k, v, d]) => `<div class="kpi"><div class="k">${k}</div><div class="v">${v}</div><div class="d">${d}</div></div>`).join("");
+  if (!graded.length) { $("sims").innerHTML = `<div class="empty">No simulated bets yet. Pick "Simulated bet" when you log one above, or save a retro bet.</div>`; return; }
+  $("sims").innerHTML = graded.map(b => {
+    const pr = profit(b), g = RBY.get(b.gid);
+    return `<article class="bet" data-id="${esc(b.id)}">
+      <div class="top"><span class="pick">${esc(pickText(b))}</span><span class="row"><span class="chip sim">${b.kind === "retro" ? "retro" : "practice"}</span><span class="chip ${esc(b.result)}">${esc(b.result)}</span></span></div>
+      <div class="meta">${esc(b.date || "")} · ${esc(b.game || "")} · ${b.odds ? oddsTxt(b.odds) : "odds needed"} · $${(b.stake || 0).toFixed(0)}${b.src === "fd" ? " · FanDuel number" : ""}${g ? ` · final ${esc(finalTxt(g))}` : ""}</div>
+      ${b.result !== "pending" ? `<div class="pl ${pr > 0 ? "pos" : pr < 0 ? "neg" : ""}">${money(pr)}</div>` : ""}
+      ${b.notes ? `<div class="note">${esc(b.notes)}</div>` : ""}
+      ${canWrite ? `<div class="settle">${b.result === "pending" ? `<button type="button" data-act="win">Won</button><button type="button" data-act="loss">Lost</button><button type="button" data-act="push">Push</button>` : ""}<button type="button" data-act="del" class="danger">Delete</button></div>` : ""}
+    </article>`;
+  }).join("");
+}
+let pendingSimDelete = null;
+$("sims").addEventListener("click", async e => {
+  const btn = e.target.closest("button"); if (!btn || !simColl) return;
+  const id = btn.closest(".bet").dataset.id, act = btn.dataset.act;
+  if (act === "del") {
+    if (pendingSimDelete !== id) { pendingSimDelete = id; btn.textContent = "Tap again to delete"; return; }
+    pendingSimDelete = null; try { await simColl.doc(id).delete(); } catch (err) { btn.textContent = "Couldn't delete"; } return;
+  }
+  if (["win", "loss", "push"].includes(act)) { btn.disabled = true; try { await simColl.doc(id).update({result: act}); } catch (err) { btn.disabled = false; } }
+});
+function watchSims(){
+  if (!simColl) { $("sims").innerHTML = `<div class="empty">Simulated bets can't load here.</div>`; return; }
+  simColl.orderBy("createdAt", "desc").onSnapshot(snap => { sims = snap.docs.map(d => ({id: d.id, ...d.data()})); renderSims(); },
+    () => { $("sims").innerHTML = `<div class="empty">Simulated bets stopped updating. Reload the page to reconnect.</div>`; });
+}
+renderSims();
+
 // ---------- saving outside Claude: bets live in this browser ----------
 // Same small interface the page uses inside Claude (collection, add, doc().set/update/delete, orderBy().onSnapshot),
 // backed by localStorage, or by memory alone when the browser blocks storage.
 const LOCAL_KEY = "gridline-bet-log-v1";
-function localStore(){
+function localStore(key = LOCAL_KEY){
   let mem = [], persistent = true;
   try { const t = "__gridline_test__"; localStorage.setItem(t, "1"); localStorage.removeItem(t); } catch (e) { persistent = false; }
   const load = () => {
     if (!persistent) return mem.slice();
-    try { const v = JSON.parse(localStorage.getItem(LOCAL_KEY) || "[]"); return Array.isArray(v) ? v : []; } catch (e) { return []; }
+    try { const v = JSON.parse(localStorage.getItem(key) || "[]"); return Array.isArray(v) ? v : []; } catch (e) { return []; }
   };
   const subs = [];
   const emit = () => {
@@ -455,7 +723,7 @@ function localStore(){
     subs.forEach(f => f({docs}));
   };
   const save = list => {
-    if (persistent) { try { localStorage.setItem(LOCAL_KEY, JSON.stringify(list)); } catch (e) { persistent = false; mem = list; } }
+    if (persistent) { try { localStorage.setItem(key, JSON.stringify(list)); } catch (e) { persistent = false; mem = list; } }
     else mem = list;
     emit();
   };
@@ -474,6 +742,7 @@ function localStore(){
 function startLocal(){
   const store = localStore();
   db = store;
+  simColl = localStore(SIM_KEY).collection();
   $("local-tools").hidden = false;
   if (!store.persistent()) $("local-note").textContent = "This browser is blocking storage, so bets will disappear when you close the page. Export them before you leave.";
   const lmsg = (t, err) => { $("l-msg").textContent = t; $("l-msg").className = "msg" + (err ? " err" : ""); };
@@ -516,15 +785,18 @@ render();
     // Opened from GitHub Pages or a local file: save in this browser instead
     startLocal();
     db.collection("bets").orderBy("createdAt", "desc").onSnapshot(snap => { bets = snap.docs.map(d => ({id: d.id, ...d.data()})); render(); });
+    watchSims();
     return;
   }
   db = await claude.use("db");
   const user = await claude.use("user");
-  if (user) { const c = await user.can("data.write"); if (c === false) { canWrite = false; $("form-panel").hidden = true; } }
+  if (user) { const c = await user.can("data.write"); if (c === false) { canWrite = false; $("form-panel").hidden = true; $("r-save").hidden = true; } }
   if (!db) { $("bets").innerHTML = `<div class="empty">The log can't load here. Open it in Claude while signed in to see and save your bets.</div>`; $("f-save").disabled = true; return; }
   db.collection("bets").orderBy("createdAt", "desc").onSnapshot(snap => {
     bets = snap.docs.map(d => ({id: d.id, ...d.data()}));
     render();
   }, () => { $("bets").innerHTML = `<div class="empty">The log stopped updating. Reload the page to reconnect.</div>`; });
+  simColl = db.collection("sims");
+  watchSims();
 })();
 </script>

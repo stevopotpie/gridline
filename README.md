@@ -159,6 +159,8 @@ Scheduled runs grade each weekend on Tuesday, pull in lines and final injury rep
 
 The bet log tracks every bet, its result and its closing line value. As a bet is entered, a meter runs from red (long shot) to green (safe) showing its chance to win, and says whether Gridline's chance beats the price the odds imply. Spreads and totals start from the Vegas line and add only the share of Gridline's disagreement that has shown up in results: fit on the 2018 to 2025 backtest, a 3 point gap from the Vegas spread is worth about 52%, not the 59% a raw projection would suggest. Safe means likely, not good value. Opened from the public site or a local file, the log saves bets in that browser (localStorage) with export and import buttons; nothing is sent anywhere.
 
+The bet log also has a retro bet tool (pick any finished game since 2024 and see what a bet would have paid at the closing line, or at FanDuel's number when the odds pulls caught it), a strategy replay that bets one rule on every game it fits and shows the record and profit for each season side by side, and a separate list of simulated practice bets that grade themselves.
+
 ## Run it yourself
 
 Requires Python 3.10 or newer.
