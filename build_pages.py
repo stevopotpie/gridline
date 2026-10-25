@@ -254,7 +254,7 @@ if MODE == "calc":
             "bt": pd.read_csv(J("backtest_summary_final.csv")).to_dict("records"), "wind": wind, "rain": rain,
             "st": st.to_dict("records"), "cand": cand.to_dict("records"), "qbs": qbs, "backup_epa": round(float(bk.median()), 3),
             "updated": pd.Timestamp.now(tz="America/New_York").strftime("%a %b %d, %I:%M %p ET")}
-    data["blowouts"] = blowouts(); data["avoid"] = settings().get("avoid", []); data["trust"] = settings().get("trust", []); data["flags"] = settings().get("flags", []); data["vsVegas"] = vs_vegas(); data["vol"] = volatility()
+    data["vsVegas"] = vs_vegas(); data["vol"] = volatility()
     if os.path.exists(J("mkt_ratings.csv")):
         data["mkt"] = {r.team: float(r.mkt_rating) for r in pd.read_csv(J("mkt_ratings.csv")).itertuples()}
     if os.path.exists(J("last_snaps.csv")):
@@ -292,7 +292,7 @@ elif MODE == "season":
         e["id"] = r.game_id
         if r.game_id in OD: e["odds"] = OD[r.game_id]
         games.append(e)
-    data = {"games": games, "proj": p.round(3).to_dict("records"), "grade": gr, "blowouts": blowouts(), "avoid": settings().get("avoid", []), "trust": settings().get("trust", []), "flags": settings().get("flags", []), "vsVegas": vs_vegas(), "vol": volatility(), "mvv": model_vs_vegas(), **players(),
+    data = {"games": games, "proj": p.round(3).to_dict("records"), "grade": gr, "vsVegas": vs_vegas(), "vol": volatility(), "mvv": model_vs_vegas(), **players(),
             "updated": pd.Timestamp.now(tz="America/New_York").strftime("%a %b %d, %I:%M %p ET")}
     json.dump(data, open(J("season_data.json"), "w"))
     html = open(template("season_template.html")).read().replace("__DATA__", json.dumps(data))

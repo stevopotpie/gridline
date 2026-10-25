@@ -170,7 +170,7 @@ pip install -r requirements.txt
 bash run_all.sh "$(pwd)"
 ```
 
-The first run downloads about 250 MB of nflverse data into `data/` and takes a few minutes. It writes the projections, backtest results and coefficients as CSV and JSON files, and builds `gridline_model.html` (the matchup calculator), `gridline_2026.html` (the season board) and `gridline_bet_log.html` (the bet log), which open in any browser. To flag teams on the pages, copy `settings.example.json` to `settings.json` and list team abbreviations under `avoid` or `trust`.
+The first run downloads about 250 MB of nflverse data into `data/` and takes a few minutes. It writes the projections, backtest results and coefficients as CSV and JSON files, and builds `gridline_model.html` (the matchup calculator), `gridline_2026.html` (the season board) and `gridline_bet_log.html` (the bet log), which open in any browser.
 
 ### Repository layout
 

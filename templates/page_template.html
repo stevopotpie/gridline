@@ -58,7 +58,6 @@ table.inj{width:100%;border-collapse:collapse;font-size:.9rem}
 .verdict{display:flex;flex-wrap:wrap;gap:6px}
 .pill{font:600 .78rem var(--f-body);border-radius:999px;padding:3px 10px;background:rgba(255,255,255,.1)}
 .pill.lean{background:var(--amber);color:#1a1405}
-.pill.trust{background:var(--good);color:var(--panel)}
 .pill.pass{background:rgba(255,255,255,.12)}
 table.bt{width:100%;border-collapse:collapse;font:400 .82rem var(--f-mono);font-variant-numeric:tabular-nums}
 .bt th,.bt td{padding:6px 8px;border-top:1px solid var(--line);text-align:right;white-space:nowrap}
@@ -68,7 +67,6 @@ table.bt{width:100%;border-collapse:collapse;font:400 .82rem var(--f-mono);font-
 .weights{display:grid;grid-template-columns:1fr auto;gap:4px 12px;font-size:.9rem}
 .weights .n{font-family:var(--f-mono);font-variant-numeric:tabular-nums;text-align:right}
 .note{font-size:.82rem;color:var(--muted);margin:0}
-.flag{display:inline-block;font:600 .68rem var(--f-body);letter-spacing:.04em;text-transform:uppercase;background:var(--bad);color:var(--panel);border-radius:4px;padding:1px 6px;margin-left:4px}
 .kpis{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:10px}
 .kpi{background:var(--board);color:var(--board-ink);border-radius:10px;padding:10px 12px;min-width:0}
 .kpi .k{font:600 .64rem var(--f-body);letter-spacing:.08em;text-transform:uppercase;opacity:.75}
@@ -151,7 +149,7 @@ table.bt{width:100%;border-collapse:collapse;font:400 .82rem var(--f-mono);font-
     <h2>Team profiles</h2>
     <div class="scroll"><table class="bt" id="prof"></table></div>
     <p class="note" id="st-impact"></p>
-    <p class="note">Ranks are out of 32, from recent form weighted toward the last 8 games. Lower is better for defense stats and for seconds per snap. Punting and kicking rows are shown for reference; the model found they do not move scores. "2026 against Vegas" rows describe the season so far only. Game to game volatility combines swings in points, EPA per play and yards; ±x/±y is the typical swing in points scored and allowed. Neither volatility nor early results against the line have carried over in past seasons; since 2015, early-season results against the line have not carried over to the rest of the season. A repeat offender has lost by 17+ in 2 of its last 5 games or 3+ times this season. Since 2015 those teams got blown out again 19% of the time (others 11%), but Vegas lines already account for it: they covered 49%.</p>
+    <p class="note">Ranks are out of 32, from recent form weighted toward the last 8 games. Lower is better for defense stats and for seconds per snap. Punting and kicking rows are shown for reference; the model found they do not move scores. "2026 against Vegas" rows describe the season so far only. Game to game volatility combines swings in points, EPA per play and yards; ±x/±y is the typical swing in points scored and allowed. Neither volatility nor early results against the line have carried over in past seasons; since 2015, early-season results against the line have not carried over to the rest of the season.</p>
   </section>
 
   <section class="panel">
@@ -338,21 +336,6 @@ function render(){
     const q = qbState(side), reg = info.qbs.reduce((a,b) => b.starts26 > a.starts26 ? b : a, info.qbs[0]);
     if (q.backup && reg && q.name !== reg.name) pills.unshift(`<span class="pill lean">QB change: ${q.name} starting for ${team}, not ${reg.name}</span>`);
   }
-  const AV = (D.avoid || []).filter(t => t === x.away || t === x.home);
-  if (AV.length) pills.unshift(`<span class="pill lean">On your avoid list: ${AV.join(" and ")}</span>`);
-  for (const [team, side] of [[x.away,"away"],[x.home,"home"]]) {
-    if (!(D.trust || []).includes(team)) continue;
-    const q = qbState(side);
-    pills.unshift(q.backup ? `<span class="pill lean">On your trust list: ${team}, but ${q.name} is starting, not the regular QB. Trust with caution.</span>`
-                           : `<span class="pill trust">On your trust list: ${team} with ${q.name} at QB</span>`);
-  }
-  const BL = D.blowouts || {};
-  for (const [team, side] of [[x.away,"away"],[x.home,"home"]]) {
-    const b = BL[team]; if (!b || !b.flag) continue;
-    const teamLine = side === "home" ? x.vline : -x.vline;   // + means this team is the underdog
-    const big = teamLine >= 6.5;
-    pills.push(`<span class="pill lean">Blowout repeat offender: ${team} (${b.last5} of last 5, ${b.season} this season lost by 17+)${big ? ". Flagged teams as 6.5+ pt dogs covered 46% since 2015; not proven" : ""}</span>`);
-  }
   $("verdict").innerHTML = pills.join("");
   $("st-impact").textContent = `QB matchup is worth ${Math.abs(r.qbPts).toFixed(1)} pts to ${r.qbPts >= 0 ? x.home : x.away}. Return units are worth ${Math.abs(r.st).toFixed(1)} pts to ${r.st >= 0 ? x.home : x.away}. Both are already in the model line.`;
   renderProfiles(x);
@@ -395,14 +378,12 @@ function renderProfiles(x){
     ["Special teams", null], ["Start after kickoffs, own yd","ko_ret_start",v=>v.toFixed(1),1,S], ["Punt return, yds per punt","pr_avg",v=>v.toFixed(1),1,S],
     ["Punts inside the 10","punt_in10",v=>pct(v),1,S], ["Net punt, yds","punt_net",v=>v.toFixed(1),1,S],
     ["Kicker FG pts over expected","fg_poe_pg",v=>sgn(v,2),1,S]];
-  const B = D.blowouts || {}, bt = t => B[t] || {season:0,last5:0,prior3:0,flag:0};
   const list = src => src === K ? D.cand : D.st;
   const rank = (src,k,dir,v) => 1 + list(src).filter(t => dir > 0 ? t[k] > v : t[k] < v).length;
   $("prof").innerHTML = `<tr><th>Stat</th><th>${x.away}</th><th>${x.home}</th></tr>` + P.map(([n,k,f,dir,src]) => {
     if (!k) return `<tr><td colspan="3" class="label" style="padding-top:10px">${n}</td></tr>`;
     const a = src[x.away][k], h = src[x.home][k];
     return `<tr><td>${n}</td><td>${f(a)} <span class="note" style="display:inline">#${rank(src,k,dir,a)}</span></td><td>${f(h)} <span class="note" style="display:inline">#${rank(src,k,dir,h)}</span></td></tr>`; }).join("");
-  const bf = t => bt(t).flag ? ` <span class="flag">Repeat offender</span>` : "";
   const MK = D.mkt || {}, SN = D.snaps || {};
   const mrank = t => 1 + Object.values(MK).filter(v => v > MK[t]).length;
   $("prof").innerHTML += `<tr><td colspan="3" class="label" style="padding-top:10px">Market and workload</td></tr>` +
@@ -420,9 +401,6 @@ function renderProfiles(x){
     `<tr><td>Over/under record</td><td>${vv(x.away).overs||0}-${vv(x.away).unders||0}</td><td>${vv(x.home).overs||0}-${vv(x.home).unders||0}</td></tr>` +
     `<tr><td>Pts vs posted total, per game</td><td>${sgn(vv(x.away).ou_net||0,1)}</td><td>${sgn(vv(x.home).ou_net||0,1)}</td></tr>` +
     `<tr><td>Pts vs posted total, season total</td><td>${sgn(vv(x.away).ou_sum||0,1)}</td><td>${sgn(vv(x.home).ou_sum||0,1)}</td></tr>`;
-  $("prof").innerHTML += `<tr><td colspan="3" class="label" style="padding-top:10px">Blowout losses (17+ pts)</td></tr>` +
-    [["This season","season"],["Last 5 games","last5"],["2023 to 2025 combined","prior3"]].map(([n,k]) =>
-      `<tr><td>${n}</td><td>${bt(x.away)[k]}${k==="season"?bf(x.away):""}</td><td>${bt(x.home)[k]}${k==="season"?bf(x.home):""}</td></tr>`).join("");
 }
 
 

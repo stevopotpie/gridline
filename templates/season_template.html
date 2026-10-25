@@ -240,11 +240,6 @@ function card(g){
     const tt = ov === 0 ? "Total: push" : `Total: ${tot} went ${ov > 0 ? "over" : "under"} by ${Math.abs(ov).toFixed(1)}`;
     vs = `<div class="vs"><span>${sp}</span><span>${tt}</span></div>`;
   }
-  const av = (D.avoid || []).filter(t => t === g.a || t === g.h);
-  if (av.length) tags.unshift(`<span class="badge lean">Your avoid list: ${av.join(", ")}</span>`);
-  const tr = (D.trust || []).filter(t => t === g.a || t === g.h);
-  if (tr.length) tags.unshift(`<span class="badge win">Your trust list: ${tr.join(", ")}</span>`);
-  if (!done) for (const tm of [g.a, g.h]) { const b = (D.blowouts || {})[tm]; if (b && b.flag) tags.push(`<span class="badge loss">${tm}: blowout repeat offender (${b.last5} of last 5)</span>`); }
   if (!done && g.fcT != null) tags.push(`<span class="badge ${(g.fcW >= 15 || g.fcP) && !g.fcRoof ? "lean" : "muted"}">${g.fcRoof ? "Roof closed" : `Forecast ${Math.round(g.fcT)}°F, wind ${Math.round(g.fcW)} mph${g.fcP ? ", rain or snow" : ""}`} · ${g.fcAsOf}</span>`);
   else if (!done && g.est) tags.push(`<span class="badge muted">${g.dome >= 0.99 ? "Indoors" : g.dome > 0.01 ? "Retractable roof, typical weather" : "Typical weather for this stadium and month"}</span>`);
   const score = done ? `<span class="score">${g.as_}–${g.hs}</span>` : `<span class="when">${g.day} · ${g.time}</span>`;
@@ -290,7 +285,7 @@ function renderATN(){
   const rows = Object.entries(V).map(([team, v]) => ({team, ...v, ats:v.covers - v.fails, ou:v.overs - v.unders, vol:(VO[team] || {index:0}).index}));
   rows.sort((a,b) => atnKey === "team" ? atnDir*a.team.localeCompare(b.team) : atnDir*(a[atnKey]-b[atnKey]));
   $("atn").innerHTML = `<tr>${ATN_COLS.map(([k,n]) => `<th class="sort" data-k="${k}"${k===atnKey?` aria-sort="${atnDir>0?"ascending":"descending"}"`:""}>${n}${k===atnKey?(atnDir>0?" ▲":" ▼"):""}</th>`).join("")}</tr>` +
-    rows.map(r => `<tr><td>${r.team}${(D.avoid||[]).includes(r.team)?' <span class="note" style="display:inline">avoid</span>':""}${(D.trust||[]).includes(r.team)?' <span class="note" style="display:inline;color:var(--good)">trust</span>':""}</td><td>${r.covers}-${r.fails}${r.pushes?"-"+r.pushes:""}</td><td>${sg(r.sum)}</td><td>${volCell(r.team)}</td><td>${r.miss >= lgVol + 3 ? '<span class="volhi">high</span>' : r.miss <= lgVol - 3 ? '<span class="note" style="display:inline">steady</span>' : "normal"} <span class="note" style="display:inline">${r.miss.toFixed(1)} pts</span></td><td>${r.overs}-${r.unders}${r.ou_push?"-"+r.ou_push:""}</td><td>${sg(r.ou_sum)}</td><td>${sg(r.ou_net)}</td></tr>`).join("");
+    rows.map(r => `<tr><td>${r.team}</td><td>${r.covers}-${r.fails}${r.pushes?"-"+r.pushes:""}</td><td>${sg(r.sum)}</td><td>${volCell(r.team)}</td><td>${r.miss >= lgVol + 3 ? '<span class="volhi">high</span>' : r.miss <= lgVol - 3 ? '<span class="note" style="display:inline">steady</span>' : "normal"} <span class="note" style="display:inline">${r.miss.toFixed(1)} pts</span></td><td>${r.overs}-${r.unders}${r.ou_push?"-"+r.ou_push:""}</td><td>${sg(r.ou_sum)}</td><td>${sg(r.ou_net)}</td></tr>`).join("");
 }
 $("atn").addEventListener("click", e => { const th = e.target.closest("th"); if (!th) return; const k = th.dataset.k;
   atnDir = k === atnKey ? -atnDir : (k === "team" ? 1 : -1); atnKey = k; renderATN(); });
