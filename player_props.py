@@ -3,6 +3,8 @@
 Uses the winning setup from player_experiments.py: ridge regression on usage, efficiency, game script,
 opponent and weather for the mean; a normal spread that widens with the mean for yardage milestones;
 Poisson for touchdowns; then a calibration layer fitted on walk forward predictions from 2019 on.
+Players listed Questionable, or returning from an injury absence, get the multipliers in return_effects.json
+(measured by research/return_test.py; skipped if the file is missing).
 
 Usage: python player_props.py DATA_DIR WORK_DIR
 Writes player_props_2026.csv, player_season_2026.csv, player_weather_splits.csv, player_backtest.json
@@ -16,7 +18,9 @@ import pandas as pd
 from scipy import stats
 from sklearn.linear_model import LogisticRegression, Ridge
 
-sys.path.insert(0, os.path.dirname(os.path.abspath(__file__)))
+HERE = os.path.dirname(os.path.abspath(__file__))
+sys.path.insert(0, HERE)
+sys.path.insert(1, os.path.join(HERE, "research"))
 import player_features as F
 
 D, W = sys.argv[1], sys.argv[2]
@@ -114,6 +118,32 @@ if bk.any():
 hist_rows = pg[pg.played & (pg.season >= 2016) & (pg.n_prior >= 3)]
 new = pg[~pg.played].copy()
 
+# ---------- Questionable and first games back from injury (research/return_test.py) ----------
+# Measured against walk forward projections 2019 to 2026: players who suit up while Questionable, or in their first
+# games back after missing time listed Out or Doubtful, land below projection for rushing, receiving and TDs.
+# Each group's effect is shrunk toward no change by its sample size. Passing barely moves.
+# Looks next to this script first, then in the repo clone odds.py makes (data/oddsrepo), like live_model.json.
+REPO_COPY = os.path.join(D, "oddsrepo")
+EFFECTS_FILE = next((f for f in (os.path.join(HERE, "return_effects.json"), os.path.join(REPO_COPY, "return_effects.json"))
+                     if os.path.exists(f)), None)
+EFFECTS = json.load(open(EFFECTS_FILE)) if EFFECTS_FILE else None
+for p in (os.path.join(REPO_COPY, "research"), REPO_COPY):
+    if os.path.isdir(p):
+        sys.path.append(p)
+ret_group = pd.Series("normal", index=new.index)
+if EFFECTS:
+    try:
+        import return_test as RT
+        import glob
+        inj_all = pd.concat([pd.read_csv(f, low_memory=False) for f in sorted(glob.glob(f"{D}/injuries_*.csv"))])
+        fl = RT.return_flags(allp.assign(season_type=allp.season_type.fillna("REG")), allt, inj_all)
+        fl["group"] = fl.apply(RT.group_of, axis=1)
+        fl = fl.drop_duplicates(["game_id", "player_id"]).set_index(["game_id", "player_id"]).group
+        ret_group = pd.Series([fl.get((g, p), "normal") for g, p in zip(new.game_id, new.player_id)], index=new.index)
+        print("return groups on the slate:", ret_group[ret_group != "normal"].value_counts().to_dict())
+    except Exception as e:      # never let this side adjustment break the pipeline
+        print(f"return effects skipped: {e}")
+
 # ---------- fit, walk forward for calibration, then project ----------
 MARKETS = ["pass_yds", "pass_td", "rush_yds", "rec_yds", "receptions", "tds"]
 MILE = {"pass_yds": [("p_pass300", 300)], "rush_yds": [("p_rush100", 100)], "rec_yds": [("p_rec100", 100)],
@@ -170,6 +200,9 @@ for m in MARKETS:
     bt["sd"] = [float(sdf[0]), float(sdf[1])]   # spread of outcomes = a + b x projection (used by the bet log meter)
     e = F.eligible(new, m)
     new.loc[e, f"proj_{m}"] = f(new[e])
+    if EFFECTS and m in EFFECTS:
+        mult = ret_group[e].map(lambda g: EFFECTS[m].get(g, {}).get("applied", 1.0))
+        new.loc[e, f"proj_{m}"] = new.loc[e, f"proj_{m}"] * mult
     for name, k in MILE.get(m, []):
         y = (oos[m] >= k).astype(int).values
         # Platt calibration on the walk forward probabilities (2019 to 2025) corrects any systematic lean
@@ -208,6 +241,10 @@ props["wx_temp"] = props.weather.map(lambda w: w["temp"]); props["wx_wind"] = pr
 props["wx_roof"] = props.weather.map(lambda w: w["roof"]); props["wx_source"] = props.weather.map(lambda w: w["wx_source"])
 props["lines"] = props.game_id.map(dict(zip(slate.game_id, slate.lines)))
 props["injury"] = props.player_id.map(inj_note).fillna("")
+props.loc[props.week != inj.week.max(), "injury"] = ""      # a report only describes its own week's game
+RET_NOTE = {"back1_missed1": "1st game back", "back1_missed2plus": "1st game back", "back2": "2nd game back"}
+props["injury"] = [" · ".join(x for x in (i, RET_NOTE.get(ret_group.get(ix, ""), "")) if x)
+                   for i, ix in zip(props.injury, props.index)]
 props = props.drop(columns="weather").sort_values(["week", "game_id", "team", "p_td1"], ascending=[True, True, True, False])
 props.to_csv(f"{W}/player_props_2026.csv", index=False)
 
