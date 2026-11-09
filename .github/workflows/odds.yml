@@ -1,0 +1,76 @@
+# Pulls NFL odds from The Odds API, commits them to odds/, then rebuilds the site.
+# Replaces the Windows Task Scheduler pulls on Steven's PC, so the PC no longer has to be on.
+#
+# Times are UTC. GitHub can start scheduled runs 5 to 30 minutes late, so each pull is set
+# about 30 to 45 minutes before kickoff, and off the top of the hour (the busiest time).
+# Eastern Standard Time (Nov to early Mar):
+#   Tue 9:47 AM    early week lines
+#   Thu 7:32 PM    close for Thursday night
+#   Sat 9:47 AM    weekend lines
+#   Sun 8:47 AM    close for London games
+#   Sun 12:17 PM   close for 1 PM games
+#   Sun 3:32 PM    close for 4 PM games
+#   Sun 7:32 PM    close for Sunday night
+#   Mon 7:32 PM    close for Monday night
+# In daylight time (Sept, Oct) each of these runs one hour later in Eastern time.
+# About 3 credits a pull, 8 a week: about 105 credits a month of the free 500.
+name: Pull odds
+
+on:
+  schedule:
+    - cron: "47 14 * * 2"
+    - cron: "32 0 * * 5"
+    - cron: "47 14 * * 6"
+    - cron: "47 13 * * 0"
+    - cron: "17 17 * * 0"
+    - cron: "32 20 * * 0"
+    - cron: "32 0 * * 1"
+    - cron: "32 0 * * 2"
+  workflow_dispatch:
+
+permissions:
+  contents: write
+  actions: write
+
+concurrency:
+  group: odds
+  cancel-in-progress: false
+
+jobs:
+  pull:
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.11"
+
+      - name: Pull odds
+        id: pull
+        env:
+          ODDS_API_KEY: ${{ secrets.ODDS_API_KEY }}
+        run: python3 -I actions/fetch_odds.py odds
+
+      - name: Commit and push
+        id: push
+        run: |
+          git config user.name "Steven Sutcliffe"
+          git config user.email "stevopotpie@users.noreply.github.com"
+          git add -f odds
+          if git diff --cached --quiet; then
+            echo "Nothing new to push."
+            exit 0
+          fi
+          git commit -q -m "Odds snapshot ${{ steps.pull.outputs.stamp }}"
+          git pull -q --rebase origin main
+          git push -q origin HEAD:main
+          echo "pushed=1" >> "$GITHUB_OUTPUT"
+
+      # A push made by this workflow does not start other workflows on its own, so start the site build here.
+      - name: Rebuild the site
+        if: steps.push.outputs.pushed == '1'
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: gh workflow run pages.yml --ref main
