@@ -52,9 +52,12 @@ jobs:
           python3 -I site/assemble.py "$GITHUB_WORKSPACE" _site
           ls -la _site
 
+      # A unique name per attempt: a re-run keeps the earlier attempt's artifact, and deploy-pages fails
+      # when it finds two with the same name in one run.
       - uses: actions/upload-pages-artifact@v3
         with:
           path: _site
+          name: github-pages-${{ github.run_attempt }}
 
   deploy:
     needs: build
@@ -65,3 +68,5 @@ jobs:
     steps:
       - id: deployment
         uses: actions/deploy-pages@v4
+        with:
+          artifact_name: github-pages-${{ github.run_attempt }}
