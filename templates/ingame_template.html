@@ -1,0 +1,252 @@
+<title>Gridline In-game</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Barlow+Condensed:wght@600;700&family=IBM+Plex+Sans:wght@400;500;600&family=IBM+Plex+Mono:wght@400;500&display=swap">
+<style>
+/* Layout: one column of live game cards, each a mini scoreboard with the live win chance and a price check. */
+:root{
+  --bg:#eef1ee; --panel:#fbfcfb; --ink:#18201b; --muted:#5b665f; --line:#d5dcd7;
+  --accent:#1f6b45; --accent-ink:#ffffff; --board:#141a16; --board-ink:#f1f5f2; --amber:#c98a12;
+  --good:#1f7a4a; --bad:#b23b2e; --chip:#e3e9e5;
+  --f-display:"Barlow Condensed","Arial Narrow",system-ui,sans-serif;
+  --f-body:"IBM Plex Sans",system-ui,-apple-system,"Segoe UI",sans-serif;
+  --f-mono:"IBM Plex Mono",ui-monospace,Menlo,Consolas,monospace;
+  color-scheme:light;
+}
+@media (prefers-color-scheme: dark){:root:not([data-theme="light"]){
+  --bg:#101512; --panel:#171e1a; --ink:#e6ece8; --muted:#9aa7a0; --line:#2b352f;
+  --accent:#4fbf83; --accent-ink:#08130d; --board:#0a0e0c; --board-ink:#eef4f0; --amber:#e6a933;
+  --good:#5fd394; --bad:#ef7d6f; --chip:#222b26; color-scheme:dark}}
+:root[data-theme="dark"]{
+  --bg:#101512; --panel:#171e1a; --ink:#e6ece8; --muted:#9aa7a0; --line:#2b352f;
+  --accent:#4fbf83; --accent-ink:#08130d; --board:#0a0e0c; --board-ink:#eef4f0; --amber:#e6a933;
+  --good:#5fd394; --bad:#ef7d6f; --chip:#222b26; color-scheme:dark}
+body{margin:0;background:var(--bg);color:var(--ink);font:15px/1.5 var(--f-body)}
+.wrap{max-width:980px;margin:0 auto;padding-inline:max(16px,env(safe-area-inset-left,0px)) max(16px,env(safe-area-inset-right,0px));padding-block:20px 48px;display:grid;gap:16px}
+h1{font:700 2.3rem/1 var(--f-display);letter-spacing:.01em;margin:0;text-transform:uppercase}
+h2{font:700 1.3rem var(--f-display);text-transform:uppercase;letter-spacing:.03em;margin:0}
+.sub{color:var(--muted);margin:.4rem 0 0;max-width:65ch}
+.label{font:600 .72rem var(--f-body);letter-spacing:.08em;text-transform:uppercase;color:var(--muted)}
+.note{color:var(--muted);font-size:.86rem;margin:0;max-width:75ch}
+a{color:var(--accent)}
+.status{display:flex;flex-wrap:wrap;gap:8px 12px;align-items:center}
+.status .dot{width:9px;height:9px;border-radius:50%;background:var(--muted)}
+.status .dot.live{background:var(--good);box-shadow:0 0 0 4px color-mix(in srgb,var(--good) 22%,transparent)}
+.status .dot.err{background:var(--bad)}
+.btn{font:600 .85rem var(--f-body);border:1px solid var(--line);background:var(--panel);color:var(--ink);border-radius:999px;padding:6px 12px;cursor:pointer}
+.btn:hover{border-color:var(--accent)}
+.fmt{display:inline-flex;border:1px solid var(--line);border-radius:999px;padding:2px;background:var(--chip)}
+.fmt button{font:600 .76rem var(--f-mono);border:0;background:transparent;color:var(--muted);border-radius:999px;padding:4px 9px;cursor:pointer}
+.fmt button[aria-pressed="true"]{background:var(--ink);color:var(--bg)}
+button:focus-visible,input:focus-visible{outline:2px solid var(--accent);outline-offset:2px}
+.games{display:grid;gap:12px;grid-template-columns:repeat(auto-fill,minmax(min(100%,22rem),1fr))}
+.g{background:var(--panel);border:1px solid var(--line);border-radius:12px;padding:14px;display:grid;gap:10px;min-width:0}
+.g.live{border-color:var(--accent)}
+.g-top{display:flex;justify-content:space-between;gap:8px;flex-wrap:wrap;align-items:baseline}
+.g-state{font:600 .78rem var(--f-mono);letter-spacing:.06em;text-transform:uppercase;color:var(--muted)}
+.g.live .g-state{color:var(--accent)}
+.row{display:grid;grid-template-columns:minmax(0,1fr) auto auto;gap:2px 14px;align-items:baseline}
+.row .tm{font-weight:600;min-width:0;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.row .tm .ball{color:var(--amber);font-size:.8rem;margin-left:4px}
+.row .sc{font:600 1.6rem var(--f-mono);font-variant-numeric:tabular-nums;text-align:right}
+.row .ch{font:600 1rem var(--f-mono);font-variant-numeric:tabular-nums;text-align:right;min-width:4.2rem}
+.bar{display:flex;height:8px;border-radius:999px;overflow:hidden;background:var(--chip)}
+.bar span{display:block;height:100%;transition:width .4s ease}
+.bar .a{background:var(--muted)}.bar .h{background:var(--accent)}
+.sit{font:500 .85rem var(--f-mono);color:var(--muted)}
+.prices{display:grid;grid-template-columns:1fr 1fr;gap:8px}
+.prices input{width:100%;box-sizing:border-box;font:500 1rem var(--f-mono);padding:8px 10px;border:1px solid var(--line);border-radius:8px;background:var(--bg);color:var(--ink);min-width:0}
+.v{font-size:.9rem;display:grid;gap:3px}
+.good{color:var(--good);font-weight:600}.bad{color:var(--bad);font-weight:600}
+.panel{background:var(--panel);border:1px solid var(--line);border-radius:12px;padding:14px;display:grid;gap:10px}
+@media (prefers-reduced-motion:reduce){.bar span{transition:none}}
+</style>
+<div class="wrap">
+  <header>
+    <div class="label">In-game · live</div>
+    <h1>Live win chances</h1>
+    <p class="sub">This week's NFL games with live scores and game situation from ESPN, Gridline's chance that each team wins from here, and a check for any live moneyline you are looking at.</p>
+  </header>
+  <div class="status"><span class="dot" id="dot" aria-hidden="true"></span><span class="note" id="status">Loading live scores…</span>
+    <button type="button" class="btn" id="refresh">Refresh now</button><span class="note">Prices as</span>
+    <span class="fmt" role="group" aria-label="Odds format"><button type="button" data-fmt="am" aria-pressed="true" title="American odds">&minus;110</button><button type="button" data-fmt="dec" aria-pressed="false" title="Decimal odds">1.91x</button></span></div>
+  <div class="games" id="games"><div class="panel"><p class="note">Loading this week's games…</p></div></div>
+  <section class="panel">
+    <h2>How the live chance works</h2>
+    <p class="note" id="how"></p>
+    <p class="note">Live scores, possession, down and distance, field position and timeouts come from ESPN's public scoreboard, read by your browser every 30 seconds; the model runs right here on the page. Between plays it uses the last known situation. For a live spread or total, or to set any game state by hand, use the live panel on the <a href="model.html">calculator</a>.</p>
+  </section>
+</div>
+<script>
+const D = __DATA__, LV = D.live, $ = id => document.getElementById(id);
+const URL_ = "https://site.api.espn.com/apis/site/v2/sports/football/nfl/scoreboard";
+const ESPN_FIX = {WSH: "WAS", LAR: "LA"};
+const fix = ab => ESPN_FIX[ab] || ab;
+const esc = s => String(s == null ? "" : s).replace(/[&<>"']/g, c => ({"&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;", "'": "&#39;"}[c]));
+const pc = p => (100 * p).toFixed(1) + "%";
+// ---------- odds format (shared with Courtline through the same browser storage key) ----------
+const FKEY = "courtline-odds-format";
+let fmtPref = "am"; try { const v = localStorage.getItem(FKEY); if (v === "am" || v === "dec") fmtPref = v; } catch (e) {}
+const toDec = am => am > 0 ? 1 + am / 100 : 1 + 100 / Math.abs(am);
+const toAm = d => d >= 2 ? Math.round((d - 1) * 100) : Math.round(-100 / (d - 1));
+const fmt = am => am == null || isNaN(am) ? "–" : fmtPref === "dec" ? toDec(am).toFixed(2) + "x" : (am > 0 ? "+" : "−") + Math.abs(Math.round(am));
+const fair = p => p <= 0 || p >= 1 ? null : p >= 0.5 ? -100 * p / (1 - p) : 100 * (1 - p) / p;
+const implied = am => 1 / toDec(am);
+const show = am => am == null ? "" : fmtPref === "dec" ? toDec(am).toFixed(2) : String(Math.round(am));
+function readPrice(el){ let v = el.value; if (v === "" || isNaN(+v)) return null; v = +v; if (fmtPref === "dec") return v > 1 ? toAm(v) : null; return (v >= 100 || v <= -100) ? v : null; }
+function paintFmt(){ document.querySelectorAll(".fmt button").forEach(b => b.setAttribute("aria-pressed", String(b.dataset.fmt === fmtPref))); }
+document.addEventListener("click", e => {
+  const b = e.target.closest && e.target.closest(".fmt button"); if (!b) return;
+  const old = fmtPref; fmtPref = b.dataset.fmt; try { localStorage.setItem(FKEY, fmtPref); } catch (err) {}
+  document.querySelectorAll(".prices input").forEach(el => { const v = el.value; if (v === "" || isNaN(+v)) return;
+    const am = old === "dec" ? (+v > 1 ? toAm(+v) : null) : +v; el.value = am == null ? "" : show(am); });
+  paintFmt(); Object.keys(cards).forEach(paint);
+});
+// ---------- the live game model (live_model.py), same trees as the calculator's live panel ----------
+function gbm(e, x){ let s = e.base; for (const t of e.trees) { let k = 0; while (!t.leaf[k]) k = x[t.f[k]] <= t.t[k] ? t.l[k] : t.r[k]; s += t.v[k]; } return s; }
+const sig = z => 1 / (1 + Math.exp(-z));
+function logitModel(e, x){ let z = e.b; for (let i = 0; i < x.length; i++) z += e.coef[i] * (x[i] - e.mean[i]) / e.scale[i]; return z; }
+function regWin(st, homeBall, ko){
+  const {diff, secs, half, ydl, down, togo, hto, ato, spread, total, cur} = st, el = (3600 - secs) / 3600;
+  const f = {diff, secs, half_secs: half, home_ball: homeBall, ydl, down, togo, home_to: hto, away_to: ato, spread, total_line: total,
+    lead_per_min: diff / Math.sqrt(secs / 60 + 1), cur_total: cur, spread_time: spread * Math.exp(-4 * el), diff_time: diff * Math.exp(4 * el), home_gets_2h: ko};
+  const vec = LV.features.map(k => f[k]);
+  return {p: sig(gbm(LV.models.win, vec)), m: gbm(LV.models.margin, vec), t: gbm(LV.models.total, vec)};
+}
+function otWin(st, homeBall, playoff){
+  const len = playoff ? 900 : 600, c = Math.min(len, st.clock), spread = st.spread;
+  const f = {diff: st.diff, ot_left: c / len, home_ball: homeBall, home_field_pos: homeBall ? 1 - st.ydl / 100 : st.ydl / 100, down: st.down, togo: st.togo,
+    home_to: st.hto, away_to: st.ato, spread, home_had: homeBall ? 1 : 0, away_had: homeBall ? 0 : 1, both_rule: 1, playoff: playoff ? 1 : 0};
+  const pNoTie = sig(logitModel(LV.models.ot_win, LV.ot_features.map(k => f[k])));
+  let pTie = 0;
+  if (st.diff === 0 && !playoff) {
+    const el = (3600 - c) / 3600, g = {diff: 0, secs: c, half_secs: c, home_ball: homeBall, ydl: st.ydl, down: st.down, togo: st.togo, home_to: st.hto, away_to: st.ato,
+      spread, total_line: st.total, lead_per_min: 0, cur_total: st.cur, spread_time: spread * Math.exp(-4 * el), diff_time: 0, home_gets_2h: 0.5};
+    pTie = sig(LV.ot_tie.a + LV.ot_tie.b * -gbm(LV.models.more, LV.features.map(k => g[k])));
+  }
+  return {p: (1 - pTie) * pNoTie, pNoTie, pTie};
+}
+// averages over what the scoreboard cannot tell us (who has the ball between plays, who gets the 2nd half kickoff)
+function winNow(st){
+  const balls = st.homeBall == null ? [1, 0] : [st.homeBall];
+  if (st.ot) { let p = 0, pn = 0, pt = 0; balls.forEach(b => { const r = otWin(st, b, st.playoff); p += r.p; pn += r.pNoTie; pt += r.pTie; });
+    return {p: p / balls.length, pNoTie: pn / balls.length, pTie: pt / balls.length}; }
+  const kos = st.q <= 2 ? [1, 0] : [0.5];
+  let p = 0, m = 0, t = 0, n = 0;
+  balls.forEach(b => kos.forEach(k => { const r = regWin(st, b, k); p += r.p; m += r.m; t += r.t; n++; }));
+  return {p: p / n, pNoTie: p / n, pTie: 0, m: m / n, t: t / n};
+}
+// ---------- pregame numbers: this week's lines from Gridline's data, else ESPN's posted odds ----------
+const SL = {}; (D.slate || []).forEach(e => { SL[e.away + "@" + e.home] = e; });
+function pregame(away, home, comp){
+  const e = SL[away + "@" + home];
+  if (e && e.homeLine != null) return {spread: -e.homeLine, total: e.total || 44, src: "Vegas close", line: e.homeLine};
+  const o = (comp.odds || [])[0];
+  if (o && o.details) { const m = o.details.match(/^([A-Z]{2,3})\s+(-?[\d.]+)$/), tot = o.overUnder || 44;
+    if (m) { const fav = fix(m[1]), pts = Math.abs(+m[2]); return {spread: fav === home ? pts : -pts, total: tot, src: "ESPN", line: fav === home ? -pts : pts}; }
+    if (/even|pk/i.test(o.details)) return {spread: 0, total: tot, src: "ESPN", line: 0}; }
+  return {spread: 0, total: 44, src: "none", line: null};
+}
+function verdict(away, home, w, pa, ph){
+  const ia = pa != null ? implied(pa) : null, ih = ph != null ? implied(ph) : null;
+  if (ia == null && ih == null) return '<span class="note">Type a live price to check it.</span>';
+  const both = ia != null && ih != null, sum = both ? ia + ih : null; let out = "";
+  [[away, pa, ia, 1 - w.pNoTie], [home, ph, ih, w.pNoTie]].forEach(([t, price, imp, mine]) => {
+    if (price == null) return; const d = 100 * (mine - imp);
+    out += `<div><strong>${esc(t)} ${fmt(price)}</strong>: needs ${pc(imp)}${both ? `, market ${pc(imp / sum)} without the cut` : ""}, Gridline ${pc(mine)}. ` +
+      (d >= 0 ? `<span class="good">Worth it by ${d.toFixed(1)} pts</span>` : `<span class="bad">Short by ${(-d).toFixed(1)} pts</span>`) + "</div>";
+  });
+  if (both) out += `<div class="note">The book’s cut on these two prices: ${(100 * (sum - 1)).toFixed(1)}%.</div>`;
+  if (w.pTie > 0.005) out += `<div class="note">Moneyline chances leave out a tie (${pc(w.pTie)}), since most books refund it.</div>`;
+  return out;
+}
+// ---------- live board ----------
+const cards = {}, games = {};
+function stateOf(g){
+  const q = g.period, clock = g.clock, ot = q >= 5;
+  const secs = g.state === "pre" ? 3600 : ot ? 0 : Math.max(0, (4 - q) * 900 + clock);
+  const half = g.state === "pre" ? 1800 : ot ? 0 : (q <= 2 ? 2 - q : 4 - q) * 900 + clock;
+  const s = g.sit || {};
+  return {q: g.state === "pre" ? 1 : q, clock, ot, playoff: g.playoff, secs, half, diff: g.hs - g.as_, cur: g.hs + g.as_,
+    homeBall: g.state === "pre" ? null : s.homeBall, ydl: s.ydl || 75, down: s.down || 1, togo: Math.min(30, Math.max(1, s.togo || 10)),
+    hto: s.hto == null ? 3 : s.hto, ato: s.ato == null ? 3 : s.ato, spread: g.pre.spread, total: g.pre.total};
+}
+function cardHTML(id){
+  return `<article class="g" id="g-${id}"><div class="g-top"><span class="g-state"></span><span class="note g-pre"></span></div>
+    <div class="row"><span class="tm g-an"></span><span class="sc g-as"></span><span class="ch g-ac"></span></div>
+    <div class="row"><span class="tm g-hn"></span><span class="sc g-hs"></span><span class="ch g-hc"></span></div>
+    <div class="bar" aria-hidden="true"><span class="a"></span><span class="h"></span></div>
+    <div class="sit"></div><div class="note g-fair"></div>
+    <div class="prices"><input type="number" step="any" inputmode="decimal" class="pa" aria-label="Away live moneyline"><input type="number" step="any" inputmode="decimal" class="ph" aria-label="Home live moneyline"></div>
+    <div class="v"></div></article>`;
+}
+const qq = (c, cls) => c.querySelector("." + cls);
+function paint(id){
+  const g = games[id], c = cards[id]; if (!g || !c) return;
+  const st = stateOf(g), done = g.state === "post";
+  const w = done ? {p: g.hs > g.as_ ? 1 : g.hs < g.as_ ? 0 : 0.5, pNoTie: 0.5, pTie: 0} : winNow(st);
+  c.classList.toggle("live", g.state === "in");
+  qq(c, "g-state").textContent = g.detail;
+  qq(c, "g-pre").textContent = done ? "" : g.pre.line == null ? "No pregame line" : `Pregame: ${g.pre.line === 0 ? "Pick'em" : (g.pre.line < 0 ? g.home + " −" + Math.abs(g.pre.line) : g.away + " −" + g.pre.line)}, total ${g.pre.total}`;
+  const ball = side => !done && g.state === "in" && st.homeBall != null && (side === "home" ? st.homeBall === 1 : st.homeBall === 0) ? ' <span class="ball" title="Has the ball">●</span>' : "";
+  qq(c, "g-an").innerHTML = esc(g.an) + ball("away"); qq(c, "g-hn").innerHTML = esc(g.hn) + ball("home");
+  qq(c, "g-as").textContent = g.state === "pre" ? "" : g.as_; qq(c, "g-hs").textContent = g.state === "pre" ? "" : g.hs;
+  const pa = done ? 1 - w.p : 1 - w.p - w.pTie;
+  qq(c, "g-ac").textContent = pc(pa); qq(c, "g-hc").textContent = pc(w.p);
+  qq(c, "a").style.width = (100 * pa).toFixed(1) + "%"; qq(c, "h").style.width = (100 * w.p).toFixed(1) + "%";
+  qq(c, "sit").textContent = g.state === "in" ? (g.sit && g.sit.text ? g.sit.text : "Between plays") + (st.homeBall == null ? " · possession unknown, averaged" : "") : "";
+  qq(c, "prices").hidden = done;
+  qq(c, "pa").placeholder = g.away + " price"; qq(c, "ph").placeholder = g.home + " price";
+  qq(c, "g-fair").textContent = done ? "Final." : `Fair price now: ${g.away} ${fmt(fair(1 - w.pNoTie))} · ${g.home} ${fmt(fair(w.pNoTie))}` +
+    (w.m != null && g.state === "in" ? ` · projected final ${Math.max(g.as_, Math.round((g.hs + g.as_ + w.t - (g.hs - g.as_ + w.m)) / 2))}–${Math.max(g.hs, Math.round((g.hs + g.as_ + w.t + g.hs - g.as_ + w.m) / 2))}` : "") +
+    (g.state === "pre" ? ". Before kickoff this is the chance from the pregame line." : "");
+  qq(c, "v").innerHTML = done ? "" : verdict(g.away, g.home, w, readPrice(qq(c, "pa")), readPrice(qq(c, "ph")));
+}
+function situation(comp, home, away){
+  const s = comp.situation; if (!s) return null;
+  let homeBall = null;
+  if (s.possession) homeBall = String(s.possession) === String(home.team.id) ? 1 : String(s.possession) === String(away.team.id) ? 0 : null;
+  let ydl = null; const pt = (s.possessionText || "").trim(), m = pt.match(/^([A-Z]{2,3})\s+(\d{1,2})$/);
+  if (m && homeBall != null) { const side = fix(m[1]), yl = +m[2], poss = homeBall ? fix(home.team.abbreviation) : fix(away.team.abbreviation); ydl = side === poss ? 100 - yl : yl; }
+  else if (/^50$/.test(pt)) ydl = 50;
+  return {homeBall, ydl, down: s.down > 0 ? s.down : null, togo: s.distance > 0 ? s.distance : null, hto: s.homeTimeouts, ato: s.awayTimeouts,
+    text: s.downDistanceText || s.shortDownDistanceText || ""};
+}
+function setStatus(cls, text){ $("dot").className = "dot " + cls; $("status").textContent = text; }
+function load(){
+  setStatus("", "Updating…");
+  fetch(URL_, {cache: "no-store"}).then(r => { if (!r.ok) throw new Error("HTTP " + r.status); return r.json(); }).then(j => {
+    const rank = {in: 0, pre: 1, post: 2};
+    const evs = (j.events || []).slice().sort((a, b) => rank[a.status.type.state] - rank[b.status.type.state] || (a.date < b.date ? -1 : 1));
+    const wrap = $("games"); let live = 0;
+    if (!evs.length) { wrap.innerHTML = '<div class="panel"><p class="note">No NFL games on ESPN’s board right now. Use the live panel on the calculator to set a game by hand.</p></div>'; return setStatus("", "No games on the board."); }
+    if (!wrap.querySelector(".g")) wrap.innerHTML = "";
+    const playoff = (j.season && j.season.type === 3);
+    evs.forEach(ev => {
+      const comp = ev.competitions[0], st = ev.status; let home = null, away = null;
+      comp.competitors.forEach(x => { if (x.homeAway === "home") home = x; else away = x; });
+      if (!home || !away) return;
+      const id = String(ev.id), H = fix(home.team.abbreviation), A = fix(away.team.abbreviation);
+      games[id] = {home: H, away: A, hn: home.team.shortDisplayName || home.team.displayName, an: away.team.shortDisplayName || away.team.displayName,
+        hs: +home.score || 0, as_: +away.score || 0, state: st.type.state, period: st.period || 0, clock: +st.clock || 0, playoff,
+        detail: st.type.state === "pre" ? new Date(ev.date).toLocaleString("en-US", {weekday: "short", hour: "numeric", minute: "2-digit", timeZone: "America/New_York"}) + " ET" : (st.type.shortDetail || st.type.detail || ""),
+        sit: st.type.state === "in" ? situation(comp, home, away) : null, pre: pregame(A, H, comp)};
+      if (st.type.state === "in") live++;
+      if (!cards[id]) { wrap.insertAdjacentHTML("beforeend", cardHTML(id)); cards[id] = $("g-" + id);
+        ["pa", "ph"].forEach(cls => qq(cards[id], cls).addEventListener("input", () => paint(id))); }
+      paint(id);
+    });
+    setStatus(live ? "live" : "", (live ? `${live} ${live === 1 ? "game" : "games"} live` : "No games live right now") + `. From ESPN, updated ${new Date().toLocaleTimeString("en-US", {hour: "numeric", minute: "2-digit", second: "2-digit"})}, refreshing every 30 seconds.`);
+  }).catch(err => {
+    setStatus("err", `Live scores did not load (${err.message}). Try Refresh now, or set the game by hand on the calculator.`);
+    if (!$("games").querySelector(".g")) $("games").innerHTML = '<div class="panel"><p class="note">Live scores are not available right now. The live panel on the calculator works without them.</p></div>';
+  });
+}
+const T = LV.test || {};
+$("how").textContent = `Gridline's live model learned from every snap since 2010: the score, the clock, who has the ball, field position, down and distance, timeouts, and the pregame spread and total, whose pull fades as the game goes on. ` +
+  (T.games ? `Tested on ${T.games.toLocaleString()} games from ${T.years} with models trained only on earlier seasons, its win chances scored a log loss of ${T.win_logloss} against ${T.win_logloss_nflverse} for nflverse's own win probability model (lower is better). ` : "") +
+  `Live books run models like this on every snap, so treat a gap here as a reason to look closer, not a sure edge.`;
+$("refresh").addEventListener("click", load);
+document.addEventListener("visibilitychange", () => { if (document.visibilityState === "visible") load(); });
+setInterval(() => { if (document.visibilityState === "visible") load(); }, 30000);
+paintFmt(); load();
+</script>

@@ -19,6 +19,7 @@ GH = "https://github.com/stevopotpie/gridline"
 PAGES = [
     ("index.html",    None,                    "Home",       "Home",                "What Gridline is and how it has done"),
     ("season.html",   "gridline_2026.html",    "Season",     "2026 Season Board",   "Every game graded or projected, book odds, props, playoff odds"),
+    ("in-game.html",  "gridline_ingame.html",  "In-game",    "In-game",             "Live scores, Gridline's live win chance for each team, and a live moneyline check"),
     ("model.html",    "gridline_model.html",   "Calculator", "Matchup Calculator",  "Set any matchup, line, weather, QBs and injuries"),
     ("bet-log.html",  "gridline_bet_log.html", "Bet log",    "Bet Log",             "Red to green risk meter, a ledger saved in your browser, retro bets and strategy replays"),
 ]
@@ -97,11 +98,13 @@ def meta(f):
     title = {"index.html": "Gridline: NFL Predictions, Spread & Over/Under Picks Tested Against Vegas",
              "season.html": "NFL 2026 Season Predictions, Odds & Player Props | Gridline Season Board",
              "model.html": "NFL Matchup Calculator: Spread, Total & Live Win Probability | Gridline",
-             "bet-log.html": "Sports Bet Tracker with Win Probability Meter | Gridline Bet Log"}[f]
+             "bet-log.html": "Sports Bet Tracker with Win Probability Meter | Gridline Bet Log",
+             "in-game.html": "Live NFL Win Probability and Live Moneyline Check | Gridline In-game"}[f]
     desc = {"index.html": "Free NFL predictions for every game: projected scores, spread and over/under picks and player props from public play by play data, graded honestly against the betting market.",
             "season.html": "Every 2026 NFL game projected or graded: Gridline vs Vegas spreads and totals, the best odds at the books, player props, anytime touchdown odds and playoff chances.",
             "model.html": "Set any NFL matchup, line, weather, quarterbacks and injuries and see the projected spread, total and score, plus a live in-game win probability model.",
-            "bet-log.html": "Log your NFL bets and see each one's chance to win on a red to green meter, whether the model beats the price, and your closing line value."}[f]
+            "bet-log.html": "Log your NFL bets and see each one's chance to win on a red to green meter, whether the model beats the price, and your closing line value.",
+            "in-game.html": "Live NFL scores with Gridline's live win probability from the score, clock, possession, field position and down and distance, plus a check for any live moneyline."}[f]
     url = BASE + ("" if f == "index.html" else f)
     ld = ""
     if f == "index.html":

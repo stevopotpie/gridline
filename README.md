@@ -10,6 +10,7 @@ No install needed. The pages rebuild automatically from the latest data and odds
 
 - **[Gridline home](https://stevopotpie.github.io/gridline/)**
 - **[2026 season board](https://stevopotpie.github.io/gridline/season.html)**: every game graded or projected, the best number at the books, player props and playoff odds
+- **[In-game](https://stevopotpie.github.io/gridline/in-game.html)**: live scores and game situation from ESPN every 30 seconds, Gridline's live win chance for each team, and a check for any live moneyline you type in
 - **[Matchup calculator](https://stevopotpie.github.io/gridline/model.html)**: set any matchup, line, weather, quarterbacks and injuries
 - **[Bet log](https://stevopotpie.github.io/gridline/bet-log.html)**: enter a bet and a meter runs from red to green with its chance to win, and whether Gridline's chance beats the price. Bets are saved in your own browser only, with export and import to back them up.
 - **[Courtline](https://stevopotpie.github.io/courtline/)**: the NBA companion model, built and tested the same way

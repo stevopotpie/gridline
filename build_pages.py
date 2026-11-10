@@ -270,6 +270,13 @@ if MODE == "calc":
     html = open(template("page_template.html")).read().replace("__DATA__", json.dumps(data))
     open(J("gridline_model.html"), "w").write(html)
     print("calculator built: week", wk, "|", len(slate), "games on the slate |", sum("temp" in e for e in slate), "with forecasts")
+    # In-game page: the same live model, fed live scores and game situation from ESPN in the viewer's browser
+    if data.get("live"):
+        num = lambda v: None if v is None or (isinstance(v, float) and v != v) else float(v)
+        ig = {"live": data["live"], "week": wk,
+              "slate": [dict(away=e["away"], home=e["home"], homeLine=num(e["homeLine"]), total=num(e["total"]), when=e["when"]) for e in slate]}
+        open(J("gridline_ingame.html"), "w").write(open(template("ingame_template.html")).read().replace("__DATA__", json.dumps(ig)))
+        print("in-game page built:", len(slate), "games with pregame lines")
 
 elif MODE == "season":
     x = pd.read_csv(J("season_2026_games.csv"), parse_dates=["gameday"]).sort_values(["week", "gameday", "gametime"])
