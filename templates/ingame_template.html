@@ -245,7 +245,7 @@ function load(){
 const T = LV.test || {};
 $("how").textContent = `Gridline's live model learned from every snap since 2010: the score, the clock, who has the ball, field position, down and distance, timeouts, and the pregame spread and total, whose pull fades as the game goes on. ` +
   (T.games ? `Tested on ${T.games.toLocaleString()} games from ${T.years} with models trained only on earlier seasons, its win chances scored a log loss of ${T.win_logloss} against ${T.win_logloss_nflverse} for nflverse's own win probability model (lower is better). ` : "") +
-  `Live books run models like this on every snap, so treat a gap here as a reason to look closer, not a sure edge.`;
+  `Live books run models like this on every snap, so treat a gap here as a reason to look closer, not a sure edge. If gambling stops being fun, call or text 1-800-GAMBLER.`;
 $("refresh").addEventListener("click", load);
 document.addEventListener("visibilitychange", () => { if (document.visibilityState === "visible") load(); });
 setInterval(() => { if (document.visibilityState === "visible") load(); }, 30000);

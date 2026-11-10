@@ -89,7 +89,7 @@ def sitemap_footer(current, up=""):
             + (f'<nav aria-label="This week" style="grid-column:1/-1"><h2>This week\'s games</h2><ul style="grid-template-columns:repeat(auto-fill,minmax(210px,1fr))">{week}</ul></nav>' if week else '') +
             f'<div class="gl-foot"><span>Built by Steven Sutcliffe</span>'
             f'<a href="https://linkedin.com/in/steven-sutcliffe">LinkedIn</a><a href="https://github.com/stevopotpie">GitHub</a>'
-            f'<span>Research, not betting advice. Sports betting is not legal in every state.</span></div>'
+            f'<span>Projections are research, not betting advice. Sports betting is not legal in every state. If gambling stops being fun, call or text 1-800-GAMBLER.</span></div>'
             f'</div></footer>')
 
 
