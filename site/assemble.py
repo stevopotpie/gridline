@@ -29,6 +29,7 @@ ABOUT = [
     ("Player props model", f"{GH}#player-props"),
     ("Run it yourself", f"{GH}#run-it-yourself"),
     ("Source code", GH),
+    ("Courtline, the NBA companion model", "https://stevopotpie.github.io/courtline/"),
 ]
 
 STYLE = """<style>
@@ -66,6 +67,7 @@ def nav(current, up=""):
     here = ' aria-current="page"'
     items = [(f, label) for f, _, label, _, _ in PAGES[1:2]] + [(f, label) for f, label, _, _ in HUBS] + [(f, label) for f, _, label, _, _ in PAGES[2:]]
     links = "".join(f'<a href="{up}{f}"{here if f == current else ""}>{label}</a>' for f, label in items)
+    links += '<a href="https://stevopotpie.github.io/courtline/">Courtline (NBA)</a>'
     links += f'<a href="{GH}">GitHub</a>'
     return (f'<nav class="gl-nav" aria-label="Gridline pages"><div class="gl-in">'
             f'<a class="gl-brand" href="{up or "./"}"{here if current == "index.html" else ""}>Gridline</a>'
