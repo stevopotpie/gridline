@@ -78,7 +78,8 @@ button:focus-visible,input:focus-visible{outline:2px solid var(--accent);outline
 </div>
 <script>
 const D = __DATA__, LV = D.live, $ = id => document.getElementById(id);
-const URL_ = "https://site.api.espn.com/apis/site/v2/sports/football/nfl/scoreboard";
+// ESPN's default board stays on last week's finals until midweek, so ask for Gridline's current week during the regular season
+const URL_ = "https://site.api.espn.com/apis/site/v2/sports/football/nfl/scoreboard" + (D.week && D.week <= 18 ? `?seasontype=2&week=${D.week}` : "");
 const ESPN_FIX = {WSH: "WAS", LAR: "LA"};
 const fix = ab => ESPN_FIX[ab] || ab;
 const esc = s => String(s == null ? "" : s).replace(/[&<>"']/g, c => ({"&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;", "'": "&#39;"}[c]));
