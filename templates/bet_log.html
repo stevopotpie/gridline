@@ -95,7 +95,7 @@ details summary{cursor:pointer;font:600 .85rem var(--f-body);color:var(--accent)
 <div class="wrap">
   <header>
     <h1>Gridline Bet Log</h1>
-    <p class="sub">Every bet you place, graded two ways: whether it won, and whether you got a better number than the closing line. Beating the close consistently is the clearest early sign of a real edge.</p>
+    <p class="sub">A sandbox for testing a bet before you place it: see Gridline's chance and whether the price is worth it, log it as practice if you're not sure, and grade everything against the closing line. Beating the close consistently is the clearest early sign of a real edge.</p>
   </header>
 
   <section class="panel">
@@ -128,6 +128,7 @@ details summary{cursor:pointer;font:600 .85rem var(--f-body);color:var(--accent)
       <label class="field"><span id="f-close-l">Closing line (fills in after kickoff)</span><input id="f-close" type="number" step="0.5" inputmode="decimal"></label>
       <label class="field"><span>Game date</span><input id="f-date" type="date"></label>
       <label class="field"><span>Result</span><select id="f-result"><option value="pending">Pending</option><option value="win">Win</option><option value="loss">Loss</option><option value="push">Push</option></select></label>
+      <label class="field"><span>Cashed out for ($ paid back, optional)</span><input id="f-cashout" type="number" step="0.01" min="0" inputmode="decimal"></label>
       <label class="field"><span>Model edge (pts, optional)</span><input id="f-edge" type="number" step="0.1" inputmode="decimal"></label>
       <label class="field full" id="f-kind-w"><span>Real or practice</span><select id="f-kind"><option value="real">Real bet (goes in the ledger)</option><option value="sim">Simulated bet (practice, kept separate)</option></select></label>
       <label class="field full"><span>Notes</span><input id="f-notes" type="text" autocomplete="off" placeholder="Why you liked it"></label>
@@ -201,7 +202,11 @@ $("f-date").value = today();
 const payout = o => o > 0 ? o/100 : 100/Math.abs(o);                 // profit per $1 risked
 const implied = o => o > 0 ? 100/(o+100) : Math.abs(o)/(Math.abs(o)+100);
 const money = v => (v < 0 ? "−$" : "+$") + Math.abs(v).toFixed(2);
+// a bet cashed out early pays the cash-out amount; fullPayout (optional) is what riding it to the end would have paid
+const cashed = b => b.cashout != null && b.cashout !== "" && b.result !== "pending";
+const fullPay = b => b.fullPayout != null ? b.fullPayout : (b.stake || 0) * (1 + payout(b.odds || -110));
 function profit(b){
+  if (cashed(b)) return b.cashout - (b.stake || 0);
   if (b.result === "win") return b.stake * payout(b.odds || -110);
   if (b.result === "loss") return -b.stake;
   return 0;
@@ -234,6 +239,7 @@ const isTdProp = b => b.market === "prop" && YES_NO.has(b.prop);
 // early-game yardage props: the field in the model snapshot that holds each projection
 const EARLY = {pass_yds_h1: "pyh", rush_yds_h1: "ryh", rec_yds_h1: "cyh", pass_yds_q1: "py1", rush_yds_q1: "ry1", rec_yds_q1: "cy1"};
 function pickText(b){
+  if (b.market === "parlay") return b.pick || "Parlay";
   if (b.market === "prop") return isTdProp(b) ? `${b.pick} ${PROP_NAMES[b.prop]}` : `${b.pick} ${b.side === "under" ? "under" : "over"} ${b.line ?? "?"} ${PROP_NAMES[b.prop] || ""}`;
   if (b.market === "ml") return `${b.pick} moneyline`;
   if (b.market === "over" || b.market === "under") return `${b.market === "over" ? "Over" : "Under"} ${b.line ?? "?"}`;
@@ -402,9 +408,12 @@ function render(){
     ["Record", `${w}-${l}${p ? "-" + p : ""}`, `${bets.length - settled.length} pending`],
     ["Profit", settled.length ? money(pl) : "$0.00", `on $${risked.toFixed(0)} risked`],
     ["Return", risked ? ((pl/risked)*100).toFixed(1) + "%" : "–", "profit ÷ risked"],
-    ["Beat the close", withClv.length ? `${beat} of ${withClv.length}` : "–", ptsClv.length ? `avg ${(ptsClv.reduce((a,b)=>a+b,0)/ptsClv.length).toFixed(1)} pts` : "add closing lines"]
+    ["Beat the close", withClv.length ? `${beat} of ${withClv.length}` : "–", ptsClv.length ? `avg ${(ptsClv.reduce((a,b)=>a+b,0)/ptsClv.length).toFixed(1)} pts` : "add closing lines"],
+    ...(() => { const co = settled.filter(cashed); if (!co.length) return [];
+      const rode = co.filter(b => b.fullPayout != null || b.result === "win"), diff = rode.reduce((a,b) => a + b.cashout - fullPay(b), 0);
+      return [["Cash-outs", String(co.length), rode.length ? `${money(diff)} vs riding them out` : "add what riding would have paid"]]; })()
   ].map(([k,v,d]) => `<div class="kpi"><div class="k">${k}</div><div class="v">${v}</div><div class="d">${d}</div></div>`).join("");
-  const names = {spread:"Spread", over:"Total: over", under:"Total: under", ml:"Moneyline", prop:"Player prop"};
+  const names = {spread:"Spread", over:"Total: over", under:"Total: under", ml:"Moneyline", prop:"Player prop", parlay:"Parlay"};
   const rows = Object.keys(names).map(m => {
     const s = bets.filter(b => b.market === m); if (!s.length) return "";
     const st = s.filter(b => b.result !== "pending"), ww = st.filter(b => b.result === "win").length, ll = st.filter(b => b.result === "loss").length;
@@ -425,9 +434,10 @@ function render(){
       <div class="meta">${esc(b.date || "")} · ${esc(b.game || "")} · ${b.odds ? (b.odds > 0 ? "+" : "") + b.odds : "odds needed"} · $${(b.stake||0).toFixed(0)}${b.edge != null && b.edge !== "" ? ` · model edge ${esc(b.edge)}` : ""}</div>
       ${meterHTML(r, false)}
       ${b.result !== "pending" ? `<div class="pl ${pr > 0 ? "pos" : pr < 0 ? "neg" : ""}">${money(pr)}</div>` : ""}
+      ${cashed(b) ? `<div class="note">Cashed out for $${Number(b.cashout).toFixed(2)}${b.fullPayout != null || b.result === "win" ? ` · riding it out would have paid $${fullPay(b).toFixed(2)} (${money(b.cashout - fullPay(b))})` : ""}</div>` : ""}
       <div class="clv ${c > 0 ? "pos" : c < 0 ? "neg" : ""}">${clvTxt}</div>
       ${b.notes ? `<div class="note">${esc(b.notes)}</div>` : ""}
-      ${canWrite ? `<div class="settle">${b.result === "pending" ? `<button type="button" data-act="win">Won</button><button type="button" data-act="loss">Lost</button><button type="button" data-act="push">Push</button>` : ""}<button type="button" data-act="edit">Edit</button><button type="button" data-act="del" class="danger">Delete</button></div>` : ""}
+      ${canWrite ? `<div class="settle">${b.result === "pending" ? `<button type="button" data-act="win">Won</button><button type="button" data-act="loss">Lost</button><button type="button" data-act="push">Push</button>` : ""}${b.market === "parlay" ? "" : `<button type="button" data-act="edit">Edit</button>`}<button type="button" data-act="del" class="danger">Delete</button></div>` : ""}
     </article>`;
   }).join("");
 }
@@ -437,7 +447,7 @@ function readForm(){
   const b = { date: $("f-date").value || today(), game: $("f-game").value, market: m,
     pick: m === "spread" || m === "ml" ? $("f-team").value : $("f-pick").value.trim(),
     line: m === "ml" || tdProp ? null : num("f-line"), odds: num("f-odds") ?? (m === "ml" || tdProp ? null : -110), stake: num("f-stake") ?? 0,
-    closing: num("f-close"), result: $("f-result").value, edge: num("f-edge"), notes: $("f-notes").value.trim() };
+    closing: num("f-close"), result: $("f-result").value, cashout: num("f-cashout"), edge: num("f-edge"), notes: $("f-notes").value.trim() };
   if (m === "prop") { b.prop = prop; b.side = tdProp ? "yes" : $("f-side").value; }
   return b;
 }
@@ -447,7 +457,7 @@ function fillForm(b){
   else if (b.game) { $("f-game").insertAdjacentHTML("afterbegin", `<option value="${esc(b.game)}">${esc(b.game)}</option>`); $("f-game").value = b.game; onGame(); }
   $("f-date").value = b.date || $("f-date").value; $("f-market").value = b.market;
   if (b.market === "spread" || b.market === "ml") { const t = teamsIn(b.pick)[0]; if (t) $("f-team").value = t; $("f-pick").value = ""; } else $("f-pick").value = b.pick || "";
-  $("f-line").value = b.line ?? ""; $("f-odds").value = b.odds ?? ""; $("f-stake").value = b.stake ?? ""; $("f-close").value = b.closing ?? "";
+  $("f-line").value = b.line ?? ""; $("f-odds").value = b.odds ?? ""; $("f-stake").value = b.stake ?? ""; $("f-close").value = b.closing ?? ""; $("f-cashout").value = b.cashout ?? "";
   $("f-result").value = b.result || "pending"; $("f-edge").value = b.edge ?? ""; $("f-notes").value = b.notes || "";
   if (b.market === "prop") { $("f-prop").value = b.prop || "td1"; if (b.side && b.side !== "yes") $("f-side").value = b.side; }
   setMarketLabels();
@@ -466,7 +476,8 @@ $("f").addEventListener("submit", async e => {
   if (!b.stake) { msg("Add your stake.", true); return; }
   $("f-save").disabled = true;
   try {
-    if (editing) { await db.collection("bets").doc(editing).set({...b, createdAt: (bets.find(x => x.id === editing)||{}).createdAt || Date.now()}); msg("Bet updated."); }
+    if (editing) { const {id: _id, ...old} = bets.find(x => x.id === editing) || {};   // keep fields the form doesn't show (fullPayout, notes from Claude)
+      await db.collection("bets").doc(editing).set({...old, ...b, createdAt: old.createdAt || Date.now()}); msg("Bet updated."); }
     else if ($("f-kind").value === "sim") {
       if (!simColl) throw new Error("no sims");
       const g = findGame(b.game, b.date);

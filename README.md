@@ -4,6 +4,8 @@ Gridline is a model I built to project NFL point spreads, over/unders, final sco
 
 The goal was never to find a magic system. It was to find out which factors actually move outcomes, measure them on games the model had not seen, and keep only what earned its place.
 
+The best way to use it is as a sandbox for betting: a place to test a bet before deciding whether to actually place it. The bet log shows Gridline's chance that a bet wins and whether the price is worth it, lets you log it as a practice bet when you are not sure, and replays strategies on past seasons before you trust them with money.
+
 ## Try it
 
 No install needed. The pages rebuild automatically from the latest data and odds:
@@ -131,6 +133,10 @@ Live books run models like this on every snap, so a gap between Gridline and a l
 - **Blowout repeat offenders.** Teams that keep losing by 17+ do get blown out more often (19% vs 11%), but the lines already account for it.
 - **Fourth quarter scoring.** Teams trailing by 15 or more after three quarters outscore the leader by 1.6 points in the fourth quarter on average, and teams down 9 to 14 score the most (7.2 points), as leaders protect the lead. That matters for live totals and backdoor covers. A team's own fourth quarter edge carries over only modestly (first 8 games vs the rest of the season: correlation 0.22).
 - **Volatility.** Early season swings in a team's scores and stats did not carry into the rest of the season (correlation 0.04).
+- **Garbage time.** Of 619 teams down 17+ after three quarters and not covering, only 4.8% came back to cover; trailing teams outscore the leader by just 1.4 points in the fourth, because both sides rest starters (a backup QB played in about 28% of those fourth quarters). No team repeats it (correlation 0.05).
+- **Turnover deficits.** Teams down 14+ in the first half mainly because of turnovers did not bounce back more than other trailing teams (+0.3 points vs +2.3 against the pregame expectation, 955 games). Each turnover is worth about 4 expected points, but only about 3 get scored directly off it.
+- **Two-point tries.** 47.7% (0.95 points) against 94.4% for extra points (0.94): a dead heat on points, with about 6 times the injury notes in the play text.
+- **Cumulative workload.** Snaps over the last 3 or 4 games, season-long snap load and late-season fading added nothing beyond last week's snap count: fatigue is a one-week effect.
 
 ## The weekly pipeline
 
@@ -159,7 +165,7 @@ Scheduled runs grade each weekend on Tuesday, pull in lines and final injury rep
 
 ## Bet log and risk meter
 
-The bet log tracks every bet, its result and its closing line value. As a bet is entered, a meter runs from red (long shot) to green (safe) showing its chance to win, and says whether Gridline's chance beats the price the odds imply. Spreads and totals start from the Vegas line and add only the share of Gridline's disagreement that has shown up in results: fit on the 2018 to 2025 backtest, a 3 point gap from the Vegas spread is worth about 52%, not the 59% a raw projection would suggest. Safe means likely, not good value. Opened from the public site or a local file, the log saves bets in that browser (localStorage) with export and import buttons; nothing is sent anywhere.
+The bet log is the sandbox: test a bet here first, and log it as practice (kept apart from real bets) when the meter says it is only a coin flip or the price is steep. It also takes parlays and early cash-outs, recording what you were paid and what riding the bet out would have paid. It tracks every bet, its result and its closing line value. As a bet is entered, a meter runs from red (long shot) to green (safe) showing its chance to win, and says whether Gridline's chance beats the price the odds imply. Spreads and totals start from the Vegas line and add only the share of Gridline's disagreement that has shown up in results: fit on the 2018 to 2025 backtest, a 3 point gap from the Vegas spread is worth about 52%, not the 59% a raw projection would suggest. Safe means likely, not good value. Opened from the public site or a local file, the log saves bets in that browser (localStorage) with export and import buttons; nothing is sent anywhere.
 
 The bet log also has a retro bet tool (pick any finished game since 2024 and see what a bet would have paid at the closing line, or at FanDuel's number when the odds pulls caught it), a strategy replay that bets one rule on every game it fits and shows the record and profit for each season side by side, and a separate list of simulated practice bets that grade themselves.
 
