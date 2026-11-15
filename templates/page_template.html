@@ -82,6 +82,13 @@ table.bt{width:100%;border-collapse:collapse;font:400 .82rem var(--f-mono);font-
 .lv-row .track{grid-column:1/-1;height:8px;border-radius:999px;background:var(--chip);overflow:hidden}
 .lv-row .track i{display:block;height:100%;border-radius:999px}
 .val.pos{color:var(--good)} .val.neg{color:var(--bad)}
+.wrap{max-width:1200px;grid-template-columns:minmax(0,1fr)}
+.duo{display:grid;gap:16px;grid-template-columns:minmax(0,1fr);align-items:start}
+.col{display:grid;gap:16px;min-width:0;grid-template-columns:minmax(0,1fr)}
+.colhead{font:700 1.15rem var(--f-display);text-transform:uppercase;letter-spacing:.03em;margin:0;color:var(--muted)}
+.rest{display:grid;gap:16px;grid-template-columns:minmax(0,1fr)}
+@media (min-width:1000px){.duo{grid-template-columns:minmax(0,1fr) minmax(0,1fr)}.rest{grid-template-columns:repeat(2,minmax(0,1fr));align-items:start}.wrap>header,.wrap>.warn{max-width:820px}}
+#live-panel{border-top:3px solid var(--accent)}
 @media (max-width:420px){.board .row{grid-template-columns:repeat(3,minmax(0,1fr))}.cell .v{font-size:1.4rem}}
 </style>
 
@@ -98,53 +105,101 @@ table.bt{width:100%;border-collapse:collapse;font:400 .82rem var(--f-mono);font-
     <div class="slate" id="slate"></div>
   </div>
 
-  <div class="board" aria-live="polite">
-    <div class="row">
-      <div class="cell"><div class="k">Model line</div><div class="v" id="o-line">–</div><div class="d" id="o-line-d"></div></div>
-      <div class="cell"><div class="k">Model total</div><div class="v" id="o-total">–</div><div class="d" id="o-total-d"></div></div>
-      <div class="cell"><div class="k">Vegas + adj total</div><div class="v" id="o-mtotal">–</div><div class="d" id="o-mtotal-d"></div></div>
+  <div class="duo">
+    <div class="col col-live">
+    <section class="panel" id="live-panel">
+      <h2>Live game</h2>
+      <p class="note" style="color:var(--ink)">Enter where the game stands right now. Pick a game above, or set the teams in the pregame calculator; it uses their pregame Vegas line and total. Type in any live lines you see to check them.</p>
+      <div class="grid2">
+        <label class="field"><span id="lv-as-l">Away score</span><input id="lv-as" type="number" min="0" step="1" value="0" inputmode="numeric"></label>
+        <label class="field"><span id="lv-hs-l">Home score</span><input id="lv-hs" type="number" min="0" step="1" value="0" inputmode="numeric"></label>
+        <label class="field"><span>Quarter</span><select id="lv-q"><option value="1">1st</option><option value="2">2nd</option><option value="3">3rd</option><option value="4">4th</option><option value="5">Overtime</option></select></label>
+        <label class="field"><span id="lv-clock-l">Clock left in quarter (min:sec)</span><div class="lv-teams"><input id="lv-min" type="number" min="0" max="15" step="1" value="15" inputmode="numeric" aria-label="Minutes"><input id="lv-sec" type="number" min="0" max="59" step="1" value="0" inputmode="numeric" aria-label="Seconds"></div></label>
+        <label class="field"><span>Ball with</span><select id="lv-ball"><option value="away">Away</option><option value="home">Home</option></select></label>
+        <label class="field"><span>Ball on</span><div class="lv-teams"><select id="lv-side"><option value="own">Own</option><option value="opp">Their</option></select><input id="lv-yl" type="number" min="1" max="50" step="1" value="25" inputmode="numeric" aria-label="Yard line"></div></label>
+        <label class="field"><span>Down</span><select id="lv-down"><option>1</option><option>2</option><option>3</option><option>4</option></select></label>
+        <label class="field"><span>Yards to go</span><input id="lv-togo" type="number" min="1" max="30" step="1" value="10" inputmode="numeric"></label>
+        <label class="field"><span id="lv-ato-l">Away timeouts</span><select id="lv-ato"><option>3</option><option>2</option><option>1</option><option>0</option></select></label>
+        <label class="field"><span id="lv-hto-l">Home timeouts</span><select id="lv-hto"><option>3</option><option>2</option><option>1</option><option>0</option></select></label>
+        <label class="field" id="lv-ko-w"><span>Gets the 2nd half kickoff</span><select id="lv-ko"><option value="home">Home</option><option value="away">Away</option></select></label>
+      </div>
+      <div id="lv-ot" hidden>
+        <div class="label">Overtime</div>
+        <div class="toggles">
+          <label class="tog"><input type="checkbox" id="lv-ahad"> <span id="lv-ahad-l">Away has had the ball in OT</span></label>
+          <label class="tog"><input type="checkbox" id="lv-hhad"> <span id="lv-hhad-l">Home has had the ball in OT</span></label>
+          <label class="tog"><input type="checkbox" id="lv-po"> Playoff game</label>
+        </div>
+        <p class="note">Both teams are guaranteed a possession (regular season since 2025, playoffs since 2022), then it is sudden death. Regular season overtime is 10 minutes and can end in a tie; playoff overtime is 15 minute periods until someone wins.</p>
+      </div>
+      <div class="kpis" id="lv-out"></div>
+      <div class="label">Live lines (optional)</div>
+      <div class="grid2">
+        <label class="field"><span id="lv-sp-l">Live spread, home</span><input id="lv-sp" type="number" step="0.5" inputmode="decimal" placeholder="-2.5"></label>
+        <label class="field"><span>Spread price</span><input id="lv-spo" type="number" step="1" inputmode="numeric" placeholder="-110"></label>
+        <label class="field"><span>Live total</span><input id="lv-tot" type="number" step="0.5" inputmode="decimal" placeholder="44.5"></label>
+        <label class="field"><span>Total price</span><input id="lv-toto" type="number" step="1" inputmode="numeric" placeholder="-110"></label>
+        <label class="field"><span id="lv-aml-l">Away moneyline</span><input id="lv-aml" type="number" step="1" inputmode="numeric" placeholder="+150"></label>
+        <label class="field"><span id="lv-hml-l">Home moneyline</span><input id="lv-hml" type="number" step="1" inputmode="numeric" placeholder="-170"></label>
+      </div>
+      <div id="lv-bets"></div>
+      <p class="note" id="lv-note"></p>
+    </section>
+
     </div>
-    <div class="pscore" id="o-score"></div>
-    <div class="verdict" id="verdict"></div>
+    <div class="col col-calc">
+      <h2 class="colhead">Pregame calculator</h2>
+    <div class="board" aria-live="polite">
+      <div class="row">
+        <div class="cell"><div class="k">Model line</div><div class="v" id="o-line">–</div><div class="d" id="o-line-d"></div></div>
+        <div class="cell"><div class="k">Model total</div><div class="v" id="o-total">–</div><div class="d" id="o-total-d"></div></div>
+        <div class="cell"><div class="k">Vegas + adj total</div><div class="v" id="o-mtotal">–</div><div class="d" id="o-mtotal-d"></div></div>
+      </div>
+      <div class="pscore" id="o-score"></div>
+      <div class="verdict" id="verdict"></div>
+    </div>
+
+    <section class="panel">
+      <h2>Matchup</h2>
+      <div class="grid2">
+        <label class="field"><span>Away team</span><select id="away"></select><div class="form" id="away-form"></div></label>
+        <label class="field"><span>Home team</span><select id="home"></select><div class="form" id="home-form"></div></label>
+        <label class="field"><span>Vegas line, home team</span><input id="vline" type="number" step="0.5" inputmode="decimal"></label>
+        <label class="field"><span>Vegas total</span><input id="vtotal" type="number" step="0.5" inputmode="decimal"></label>
+        <label class="field"><span>Rest days, home minus away</span><input id="rest" type="number" step="1" inputmode="numeric"></label>
+      </div>
+      <div class="toggles">
+        <label class="tog"><input type="checkbox" id="div"> Division game</label>
+        <label class="tog"><input type="checkbox" id="neutral"> Neutral site</label>
+      </div>
+      <p class="note">Enter the line the way a sportsbook shows it for the home team: -3 means home favored by 3.</p>
+    </section>
+
+    <section class="panel">
+      <h2>Weather</h2>
+      <div class="toggles"><label class="tog"><input type="checkbox" id="dome"> Indoors (dome or roof closed)</label><label class="tog"><input type="checkbox" id="wet"> Rain or snow at kickoff</label></div>
+      <div class="grid2">
+        <label class="field"><span>Kickoff temp, °F</span><input id="temp" type="number" step="1" inputmode="numeric"></label>
+        <label class="field"><span>Wind, mph</span><input id="wind" type="number" step="1" inputmode="numeric"></label>
+      </div>
+      <p class="note" id="wx-note">Enter the kickoff forecast. Wind only starts to matter above 15 mph; cold matters below 45°F; rain or snow takes about 2.4 points off the total.</p>
+    </section>
+
+    <section class="panel">
+      <h2>Quarterbacks and injuries</h2>
+      <div class="grid2">
+        <label class="field"><span id="aqb-l">Away starting QB</span><select id="aqbsel"></select><div class="form" id="aqb-form"></div></label>
+        <label class="field"><span id="hqb-l">Home starting QB</span><select id="hqbsel"></select><div class="form" id="hqb-form"></div></label>
+      </div>
+      <p class="note">QB rating is EPA per dropback, weighted toward his last 12 starts. A typical NFL starter is about +0.07; a typical backup about −0.06.</p>
+      <div class="label">Regular starters ruled Out or Doubtful</div>
+      <div class="scroll"><table class="inj" id="inj"></table></div>
+    </section>
+
+    </div>
   </div>
 
-  <section class="panel">
-    <h2>Matchup</h2>
-    <div class="grid2">
-      <label class="field"><span>Away team</span><select id="away"></select><div class="form" id="away-form"></div></label>
-      <label class="field"><span>Home team</span><select id="home"></select><div class="form" id="home-form"></div></label>
-      <label class="field"><span>Vegas line, home team</span><input id="vline" type="number" step="0.5" inputmode="decimal"></label>
-      <label class="field"><span>Vegas total</span><input id="vtotal" type="number" step="0.5" inputmode="decimal"></label>
-      <label class="field"><span>Rest days, home minus away</span><input id="rest" type="number" step="1" inputmode="numeric"></label>
-    </div>
-    <div class="toggles">
-      <label class="tog"><input type="checkbox" id="div"> Division game</label>
-      <label class="tog"><input type="checkbox" id="neutral"> Neutral site</label>
-    </div>
-    <p class="note">Enter the line the way a sportsbook shows it for the home team: -3 means home favored by 3.</p>
-  </section>
-
-  <section class="panel">
-    <h2>Weather</h2>
-    <div class="toggles"><label class="tog"><input type="checkbox" id="dome"> Indoors (dome or roof closed)</label><label class="tog"><input type="checkbox" id="wet"> Rain or snow at kickoff</label></div>
-    <div class="grid2">
-      <label class="field"><span>Kickoff temp, °F</span><input id="temp" type="number" step="1" inputmode="numeric"></label>
-      <label class="field"><span>Wind, mph</span><input id="wind" type="number" step="1" inputmode="numeric"></label>
-    </div>
-    <p class="note" id="wx-note">Enter the kickoff forecast. Wind only starts to matter above 15 mph; cold matters below 45°F; rain or snow takes about 2.4 points off the total.</p>
-  </section>
-
-  <section class="panel">
-    <h2>Quarterbacks and injuries</h2>
-    <div class="grid2">
-      <label class="field"><span id="aqb-l">Away starting QB</span><select id="aqbsel"></select><div class="form" id="aqb-form"></div></label>
-      <label class="field"><span id="hqb-l">Home starting QB</span><select id="hqbsel"></select><div class="form" id="hqb-form"></div></label>
-    </div>
-    <p class="note">QB rating is EPA per dropback, weighted toward his last 12 starts. A typical NFL starter is about +0.07; a typical backup about −0.06.</p>
-    <div class="label">Regular starters ruled Out or Doubtful</div>
-    <div class="scroll"><table class="inj" id="inj"></table></div>
-  </section>
-
+  <div class="rest">
   <section class="panel">
     <h2>Team profiles</h2>
     <div class="scroll"><table class="bt" id="prof"></table></div>
@@ -169,45 +224,6 @@ table.bt{width:100%;border-collapse:collapse;font:400 .82rem var(--f-mono);font-
     <p class="note">"Gets within one score" means cutting the deficit to 8 or fewer at any point, which is when live spreads and second half bets on the trailing team cash. "Lets teams back" is how often an average team down 17 gets within one score against this team. From 1,239 second half deficits of 17+ points, 2015 to 2026.</p>
   </section>
 
-  <section class="panel" id="live-panel">
-    <h2>Live game</h2>
-    <p class="note" style="color:var(--ink)">Enter where the game stands right now. Uses the two teams and the pregame Vegas line and total from the matchup above; type in any live lines you see to check them.</p>
-    <div class="grid2">
-      <label class="field"><span id="lv-as-l">Away score</span><input id="lv-as" type="number" min="0" step="1" value="0" inputmode="numeric"></label>
-      <label class="field"><span id="lv-hs-l">Home score</span><input id="lv-hs" type="number" min="0" step="1" value="0" inputmode="numeric"></label>
-      <label class="field"><span>Quarter</span><select id="lv-q"><option value="1">1st</option><option value="2">2nd</option><option value="3">3rd</option><option value="4">4th</option><option value="5">Overtime</option></select></label>
-      <label class="field"><span id="lv-clock-l">Clock left in quarter (min:sec)</span><div class="lv-teams"><input id="lv-min" type="number" min="0" max="15" step="1" value="15" inputmode="numeric" aria-label="Minutes"><input id="lv-sec" type="number" min="0" max="59" step="1" value="0" inputmode="numeric" aria-label="Seconds"></div></label>
-      <label class="field"><span>Ball with</span><select id="lv-ball"><option value="away">Away</option><option value="home">Home</option></select></label>
-      <label class="field"><span>Ball on</span><div class="lv-teams"><select id="lv-side"><option value="own">Own</option><option value="opp">Their</option></select><input id="lv-yl" type="number" min="1" max="50" step="1" value="25" inputmode="numeric" aria-label="Yard line"></div></label>
-      <label class="field"><span>Down</span><select id="lv-down"><option>1</option><option>2</option><option>3</option><option>4</option></select></label>
-      <label class="field"><span>Yards to go</span><input id="lv-togo" type="number" min="1" max="30" step="1" value="10" inputmode="numeric"></label>
-      <label class="field"><span id="lv-ato-l">Away timeouts</span><select id="lv-ato"><option>3</option><option>2</option><option>1</option><option>0</option></select></label>
-      <label class="field"><span id="lv-hto-l">Home timeouts</span><select id="lv-hto"><option>3</option><option>2</option><option>1</option><option>0</option></select></label>
-      <label class="field" id="lv-ko-w"><span>Gets the 2nd half kickoff</span><select id="lv-ko"><option value="home">Home</option><option value="away">Away</option></select></label>
-    </div>
-    <div id="lv-ot" hidden>
-      <div class="label">Overtime</div>
-      <div class="toggles">
-        <label class="tog"><input type="checkbox" id="lv-ahad"> <span id="lv-ahad-l">Away has had the ball in OT</span></label>
-        <label class="tog"><input type="checkbox" id="lv-hhad"> <span id="lv-hhad-l">Home has had the ball in OT</span></label>
-        <label class="tog"><input type="checkbox" id="lv-po"> Playoff game</label>
-      </div>
-      <p class="note">Both teams are guaranteed a possession (regular season since 2025, playoffs since 2022), then it is sudden death. Regular season overtime is 10 minutes and can end in a tie; playoff overtime is 15 minute periods until someone wins.</p>
-    </div>
-    <div class="kpis" id="lv-out"></div>
-    <div class="label">Live lines (optional)</div>
-    <div class="grid2">
-      <label class="field"><span id="lv-sp-l">Live spread, home</span><input id="lv-sp" type="number" step="0.5" inputmode="decimal" placeholder="-2.5"></label>
-      <label class="field"><span>Spread price</span><input id="lv-spo" type="number" step="1" inputmode="numeric" placeholder="-110"></label>
-      <label class="field"><span>Live total</span><input id="lv-tot" type="number" step="0.5" inputmode="decimal" placeholder="44.5"></label>
-      <label class="field"><span>Total price</span><input id="lv-toto" type="number" step="1" inputmode="numeric" placeholder="-110"></label>
-      <label class="field"><span id="lv-aml-l">Away moneyline</span><input id="lv-aml" type="number" step="1" inputmode="numeric" placeholder="+150"></label>
-      <label class="field"><span id="lv-hml-l">Home moneyline</span><input id="lv-hml" type="number" step="1" inputmode="numeric" placeholder="-170"></label>
-    </div>
-    <div id="lv-bets"></div>
-    <p class="note" id="lv-note"></p>
-  </section>
-
   <section class="panel">
     <h2>Biggest needle movers</h2>
     <div class="weights" id="weights"></div>
@@ -224,6 +240,7 @@ table.bt{width:100%;border-collapse:collapse;font:400 .82rem var(--f-mono);font-
     <div class="scroll"><table class="bt" id="bt"></table></div>
     <p class="note">Each season was predicted by a model trained only on earlier seasons. "Before" is the PPG, weather, injury and returns model; "after" adds QB rating, success rate, passing efficiency, explosive plays, pace and penalties. Records count bets where the model and Vegas differed by at least the edge shown; pushes excluded. The added factors were picked by testing on these same seasons, so treat the "after" records as a best case.</p>
   </section>
+  </div>
 </div>
 
 <script>
