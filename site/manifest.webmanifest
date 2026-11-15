@@ -1,0 +1,81 @@
+{
+ "name": "Gridline",
+ "short_name": "Gridline",
+ "description": "NFL spreads, totals, live win chances and player props, tested honestly against the betting market. A sandbox for testing a bet before you place it.",
+ "id": "/gridline/",
+ "start_url": "/gridline/?source=app",
+ "scope": "/gridline/",
+ "display": "standalone",
+ "orientation": "any",
+ "background_color": "#141a16",
+ "theme_color": "#141a16",
+ "categories": [
+  "sports"
+ ],
+ "icons": [
+  {
+   "src": "icon-192.png",
+   "sizes": "192x192",
+   "type": "image/png",
+   "purpose": "any"
+  },
+  {
+   "src": "icon-512.png",
+   "sizes": "512x512",
+   "type": "image/png",
+   "purpose": "any"
+  },
+  {
+   "src": "icon-maskable-512.png",
+   "sizes": "512x512",
+   "type": "image/png",
+   "purpose": "maskable"
+  }
+ ],
+ "shortcuts": [
+  {
+   "name": "In-game",
+   "short_name": "In-game",
+   "url": "/gridline/in-game.html",
+   "icons": [
+    {
+     "src": "icon-192.png",
+     "sizes": "192x192"
+    }
+   ]
+  },
+  {
+   "name": "Season board",
+   "short_name": "Season",
+   "url": "/gridline/season.html",
+   "icons": [
+    {
+     "src": "icon-192.png",
+     "sizes": "192x192"
+    }
+   ]
+  },
+  {
+   "name": "Calculator",
+   "short_name": "Calculator",
+   "url": "/gridline/model.html",
+   "icons": [
+    {
+     "src": "icon-192.png",
+     "sizes": "192x192"
+    }
+   ]
+  },
+  {
+   "name": "Bet log",
+   "short_name": "Bet log",
+   "url": "/gridline/bet-log.html",
+   "icons": [
+    {
+     "src": "icon-192.png",
+     "sizes": "192x192"
+    }
+   ]
+  }
+ ]
+}

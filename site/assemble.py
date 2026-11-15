@@ -135,8 +135,15 @@ def meta(f):
         f'<meta property="og:image:width" content="2400">\n<meta property="og:image:height" content="1254">\n'
         f'<meta property="og:image:alt" content="Gridline: spreads, totals and player props, tested honestly against the betting market">\n'
         f'<meta name="twitter:card" content="summary_large_image">\n'
-        f'<link rel="canonical" href="{url}">\n<link rel="icon" type="image/png" href="icon.png?v=2">\n<link rel="apple-touch-icon" href="icon.png?v=2">\n')
+        f'<link rel="canonical" href="{url}">\n<link rel="icon" type="image/png" href="icon.png?v=2">\n' + PWA)
 
+
+# Installable app (Nov 15 2026): manifest, phone home screen settings and the service worker, on every page
+PWA = ('<link rel="manifest" href="/gridline/manifest.webmanifest">\n<meta name="theme-color" content="#141a16">\n'
+       '<meta name="mobile-web-app-capable" content="yes">\n<meta name="apple-mobile-web-app-capable" content="yes">\n'
+       '<meta name="apple-mobile-web-app-title" content="Gridline">\n<meta name="apple-mobile-web-app-status-bar-style" content="black">\n'
+       '<link rel="apple-touch-icon" href="/gridline/apple-touch-icon.png">\n'
+       "<script>if('serviceWorker' in navigator)addEventListener('load',()=>navigator.serviceWorker.register('/gridline/sw.js',{scope:'/gridline/'}).catch(()=>{}))</script>\n")
 
 HEAD = ('<!doctype html>\n<html lang="en">\n<meta charset="utf-8">\n'
         '<meta name="viewport" content="width=device-width, initial-scale=1">\n')
@@ -144,7 +151,7 @@ HEAD = ('<!doctype html>\n<html lang="en">\n<meta charset="utf-8">\n'
 os.makedirs(OUT, exist_ok=True)
 # static pages for search: games, weeks, teams, research (site/seo.py); fills THIS_WEEK for the footer first
 SEO_HEAD = ('<!doctype html>\n<html lang="en">\n<head>\n<meta charset="utf-8">\n'
-            '<meta name="viewport" content="width=device-width, initial-scale=1">\n' + STYLE + "\n")
+            '<meta name="viewport" content="width=device-width, initial-scale=1">\n' + PWA + STYLE + "\n")
 extra_pages = []
 if os.path.exists(os.path.join(REPO, "season_data.json")):
     extra_pages, cur_wk, THIS_WEEK[:] = seo.build(REPO, OUT, BASE, SEO_HEAD, lambda up: nav("", up), lambda up: sitemap_footer("", up), GH)
@@ -170,6 +177,6 @@ open(os.path.join(OUT, "sitemap.xml"), "w").write(
     f'<?xml version="1.0" encoding="UTF-8"?>\n<urlset xmlns="http://www.sitemaps.org/schemas/sitemap/0.9">\n{urls}</urlset>\n')
 open(os.path.join(OUT, "robots.txt"), "w").write(f"User-agent: *\nAllow: /\nSitemap: {BASE}sitemap.xml\n")
 open(os.path.join(OUT, ".nojekyll"), "w").close()
-for asset in ("og.png", "icon.png"):
+for asset in ("og.png", "icon.png", "icon-192.png", "icon-512.png", "icon-maskable-512.png", "apple-touch-icon.png", "manifest.webmanifest", "sw.js"):
     shutil.copy(os.path.join(REPO, "site", asset), os.path.join(OUT, asset))
 print("site assembled:", ", ".join(f for f, *_ in PAGES), f"+ {len(extra_pages)} search pages, sitemap.xml, robots.txt")
