@@ -1,0 +1,106 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>About Gridline: Built by Steven Sutcliffe</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Barlow+Condensed:wght@600;700&family=IBM+Plex+Sans:wght@400;500;600&family=IBM+Plex+Mono:wght@400;500&display=swap">
+<style>
+:root{
+  --bg:#eef1ee; --panel:#fbfcfb; --ink:#18201b; --muted:#5b665f; --line:#d5dcd7;
+  --accent:#1f6b45; --accent-ink:#ffffff; --board:#141a16; --board-ink:#f1f5f2; --amber:#c98a12;
+  --f-display:"Barlow Condensed","Arial Narrow",system-ui,sans-serif;
+  --f-body:"IBM Plex Sans",system-ui,-apple-system,"Segoe UI",sans-serif;
+  --f-mono:"IBM Plex Mono",ui-monospace,Menlo,Consolas,monospace;
+  color-scheme:light;
+}
+@media (prefers-color-scheme: dark){:root{
+  --bg:#101512; --panel:#171e1a; --ink:#e6ece8; --muted:#9aa7a0; --line:#2b352f;
+  --accent:#4fbf83; --accent-ink:#08130d; --board:#0a0e0c; --board-ink:#eef4f0; --amber:#e6a933; color-scheme:dark}}
+*{box-sizing:border-box}
+body{margin:0;background:var(--bg);color:var(--ink);font:16px/1.6 var(--f-body)}
+.wrap{max-width:760px;margin:0 auto;padding:28px 16px 56px;display:grid;gap:22px}
+.eyebrow{font:600 .72rem var(--f-body);letter-spacing:.1em;text-transform:uppercase;color:var(--muted);margin:0 0 6px}
+h1{font:700 3rem/0.95 var(--f-display);text-transform:uppercase;letter-spacing:.01em;margin:0;text-wrap:balance}
+.sub{color:var(--muted);margin:.6rem 0 0;max-width:60ch;font-size:1.05rem}
+h2{font:700 1.25rem var(--f-display);text-transform:uppercase;letter-spacing:.04em;margin:0 0 8px}
+section{max-width:65ch}
+section p{margin:0 0 10px}
+section p:last-child{margin-bottom:0}
+.quotes{list-style:none;margin:6px 0 12px;padding:0;display:grid;gap:6px}
+.quotes li{font:600 1.15rem/1.2 var(--f-display);letter-spacing:.01em;border-left:3px solid var(--amber);padding:2px 0 2px 12px}
+.board{background:var(--board);color:var(--board-ink);border-radius:12px;padding:16px 18px;display:grid;gap:8px;max-width:none}
+.board h2{color:var(--board-ink)}
+.board p{margin:0;font-size:.95rem;opacity:.9}
+.facts{display:grid;grid-template-columns:repeat(auto-fit,minmax(150px,1fr));gap:12px;margin-top:6px}
+.k{font:600 .64rem var(--f-body);letter-spacing:.08em;text-transform:uppercase;opacity:.75}
+.v{font:700 1.6rem/1.1 var(--f-display);font-variant-numeric:tabular-nums}
+a{color:var(--accent);font-weight:600}
+.board a{color:var(--board-ink)}
+.links{display:flex;flex-wrap:wrap;gap:8px;margin-top:4px}
+.links a{display:inline-block;text-decoration:none;border:1px solid var(--accent);border-radius:999px;padding:6px 14px;font:600 .9rem var(--f-body)}
+.links a:hover{background:var(--accent);color:var(--accent-ink)}
+a:focus-visible{outline:2px solid var(--accent);outline-offset:2px}
+.care{border:1px solid var(--amber);border-radius:12px;padding:14px 16px;background:color-mix(in srgb,var(--amber) 8%,var(--panel));max-width:none}
+.care p{font-size:.93rem}
+</style>
+</head>
+<body>
+<!-- gridline:nav -->
+<div class="wrap">
+  <header>
+    <p class="eyebrow">About Gridline</p>
+    <h1>The bar was a forum</h1>
+    <p class="sub">Gridline is built by Steven Sutcliffe, an analyst in Atlanta who spent twelve years behind a bar listening to football theories, and now puts them to an actual test.</p>
+  </header>
+
+  <section>
+    <h2>Where the questions came from</h2>
+    <p>For twelve years I tended bar in Georgia, most of it on game days with the games on behind me. I served tens of thousands of fans, and every Sunday the bar turned into a forum. People traded theories about what wins games and what covers spreads:</p>
+    <ul class="quotes">
+      <li>"Big underdogs always get the backdoor cover."</li>
+      <li>"They turned it over three times. They'll bounce back."</li>
+      <li>"That team never quits. They always rally late."</li>
+    </ul>
+    <p>I had plenty of my own. What I didn't have was any way to find out which ones were true.</p>
+  </section>
+
+  <section>
+    <h2>Putting them to a test</h2>
+    <p>In 2024 I started learning data analysis, earned the IBM Data Analyst certificate, and learned to code. Gridline is where those bar questions finally get answered: public NFL play by play data back to 2015, every idea tested on seasons the model had never seen, and kept only if it earned its place.</p>
+    <p>Most ideas don't. Wind and rain hold up. Backdoor covers from garbage time, turnover bounce-backs and teams that "always" rally late do not. The ones that failed stay on the site with their numbers, because knowing what doesn't work is half the value.</p>
+  </section>
+
+  <div class="board">
+    <h2>What it is, and what it isn't</h2>
+    <p>Gridline is a sandbox: a place to test a bet or an idea before you put money on it, see its chance to win, and see whether the price is worth it. It is not a picks service. It shows its record, including where it has no edge: the spread model has never beaten the 52.4% you need at -110, and Vegas is still more accurate on average.</p>
+    <div class="facts">
+      <div><div class="k">Plays analyzed</div><div class="v">540,000+</div></div>
+      <div><div class="k">Seasons tested</div><div class="v">2018 to 2025</div></div>
+      <div><div class="k">Books tracked</div><div class="v">About 9</div></div>
+    </div>
+  </div>
+
+  <section>
+    <h2>How it's built</h2>
+    <p>Python (pandas, scikit-learn, SciPy) on public <a href="https://github.com/nflverse/nflverse-data">nflverse</a> data, live lines from about nine sportsbooks pulled several times a week, walk-forward backtests, and pages that rebuild on their own through GitHub Actions. <a href="https://stevopotpie.github.io/courtline/">Courtline</a>, the NBA companion model, is built and tested the same way. All of the code is <a href="https://github.com/stevopotpie/gridline">on GitHub</a>.</p>
+  </section>
+
+  <section>
+    <h2>Work with me</h2>
+    <p>I'm looking for my next role as a data analyst. If your team values ideas tested against reality, and an honest answer even when it's "that doesn't work," I'd like to talk.</p>
+    <div class="links">
+      <a href="https://linkedin.com/in/steven-sutcliffe">LinkedIn</a>
+      <a href="https://github.com/stevopotpie">GitHub</a>
+    </div>
+  </section>
+
+  <div class="care">
+    <h2>Play responsibly</h2>
+    <p>Gridline is for research and entertainment, not betting advice. Sports betting is legal only in some states, and you must be of legal age where you live (21 in most states). Bet only what you can afford to lose. If gambling stops being fun, call or text 1-800-GAMBLER.</p>
+  </div>
+</div>
+<!-- gridline:sitemap -->
+</body>
+</html>
