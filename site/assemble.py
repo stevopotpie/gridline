@@ -22,8 +22,10 @@ PAGES = [
     ("in-game.html",  "gridline_ingame.html",  "In-game",    "In-game",             "Live scores, Gridline's live win chance for each team, and a live moneyline check"),
     ("model.html",    "gridline_model.html",   "Calculator", "Matchup Calculator",  "Set any matchup, line, weather, QBs and injuries"),
     ("bet-log.html",  "gridline_bet_log.html", "Bet log",    "Bet Log",             "Red to green risk meter, a ledger saved in your browser, retro bets and strategy replays"),
+    ("about.html",    None,                    "About",      "About Gridline",      "Who built Gridline, why, and what it is and isn't"),
 ]
 ABOUT = [
+    ("About the builder", BASE + "about.html"),
     ("Results and method", f"{GH}#results-at-a-glance"),
     ("What moves the numbers", f"{GH}#what-moves-the-numbers"),
     ("What did not work", f"{GH}#what-did-not-work"),
@@ -87,7 +89,7 @@ def sitemap_footer(current, up=""):
             f'<nav aria-label="Site map"><h2>Site map</h2><ul>{tools}</ul></nav>'
             f'<nav aria-label="About Gridline"><h2>About</h2><ul>{about}</ul></nav>'
             + (f'<nav aria-label="This week" style="grid-column:1/-1"><h2>This week\'s games</h2><ul style="grid-template-columns:repeat(auto-fill,minmax(210px,1fr))">{week}</ul></nav>' if week else '') +
-            f'<div class="gl-foot"><span>Built by Steven Sutcliffe</span>'
+            f'<div class="gl-foot"><a href="{up}about.html">Built by Steven Sutcliffe</a>'
             f'<a href="https://linkedin.com/in/steven-sutcliffe">LinkedIn</a><a href="https://github.com/stevopotpie">GitHub</a>'
             f'<span>Projections are research, not betting advice. Sports betting is not legal in every state. If gambling stops being fun, call or text 1-800-GAMBLER.</span></div>'
             f'</div></footer>')
@@ -99,12 +101,14 @@ def meta(f):
              "season.html": "NFL 2026 Season Predictions, Odds & Player Props | Gridline Season Board",
              "model.html": "NFL Matchup Calculator: Spread, Total & Live Win Probability | Gridline",
              "bet-log.html": "Sports Bet Tracker with Win Probability Meter | Gridline Bet Log",
-             "in-game.html": "Live NFL Win Probability and Live Moneyline Check | Gridline In-game"}[f]
+             "in-game.html": "Live NFL Win Probability and Live Moneyline Check | Gridline In-game",
+             "about.html": "About Gridline: Built by Steven Sutcliffe"}[f]
     desc = {"index.html": "Free NFL predictions for every game: projected scores, spread and over/under picks and player props from public play by play data, graded honestly against the betting market.",
             "season.html": "Every 2026 NFL game projected or graded: Gridline vs Vegas spreads and totals, the best odds at the books, player props, anytime touchdown odds and playoff chances.",
             "model.html": "Set any NFL matchup, line, weather, quarterbacks and injuries and see the projected spread, total and score, plus a live in-game win probability model.",
             "bet-log.html": "Log your NFL bets and see each one's chance to win on a red to green meter, whether the model beats the price, and your closing line value.",
-            "in-game.html": "Live NFL scores with Gridline's live win probability from the score, clock, possession, field position and down and distance, plus a check for any live moneyline."}[f]
+            "in-game.html": "Live NFL scores with Gridline's live win probability from the score, clock, possession, field position and down and distance, plus a check for any live moneyline.",
+            "about.html": "Gridline is built by Steven Sutcliffe, a former bartender turned data analyst who puts game day football theories to an honest test against every NFL game since 2015."}[f]
     url = BASE + ("" if f == "index.html" else f)
     ld = ""
     if f == "index.html":
@@ -116,11 +120,15 @@ def meta(f):
              "description": "Weekly NFL spread, total and player projections built from nflverse play by play data, with walk-forward backtests 2018 to 2025.",
              "creator": {"@type": "Person", "name": "Steven Sutcliffe"}, "license": "https://opensource.org/licenses/MIT", "url": GH,
              "isBasedOn": "https://github.com/nflverse/nflverse-data"}]) + "</script>\n")
+    elif f == "about.html":
+        ld = ('<script type="application/ld+json">' + json.dumps({"@context": "https://schema.org", "@type": "AboutPage", "url": BASE + f, "description": desc,
+              "mainEntity": {"@type": "Person", "name": "Steven Sutcliffe", "jobTitle": "Data Analyst", "url": BASE + f,
+                             "sameAs": ["https://github.com/stevopotpie", "https://linkedin.com/in/steven-sutcliffe"]}}) + "</script>\n")
     else:
         ld = ('<script type="application/ld+json">' + json.dumps({"@context": "https://schema.org", "@type": "WebApplication", "name": title,
               "url": BASE + f, "applicationCategory": "SportsApplication", "operatingSystem": "Any", "description": desc,
               "offers": {"@type": "Offer", "price": "0", "priceCurrency": "USD"}}) + "</script>\n")
-    return ld + (f'<title>{title}</title>\n' if f != "index.html" else "") + f'<meta name="description" content="{desc}">\n' + (
+    return ld + (f'<title>{title}</title>\n' if f not in ("index.html", "about.html") else "") + f'<meta name="description" content="{desc}">\n' + (
         f'<meta property="og:type" content="website">\n<meta property="og:site_name" content="Gridline">\n'
         f'<meta property="og:title" content="{title}">\n<meta property="og:description" content="{desc}">\n'
         f'<meta property="og:url" content="{url}">\n<meta property="og:image" content="{BASE}og.png?v=2">\n'
@@ -142,7 +150,7 @@ if os.path.exists(os.path.join(REPO, "season_data.json")):
     extra_pages, cur_wk, THIS_WEEK[:] = seo.build(REPO, OUT, BASE, SEO_HEAD, lambda up: nav("", up), lambda up: sitemap_footer("", up), GH)
 for f, src, *_ in PAGES:
     if src is None:
-        html = open(os.path.join(REPO, "site", "index.html"), encoding="utf-8").read()
+        html = open(os.path.join(REPO, "site", f), encoding="utf-8").read()
         html = html.replace("</head>", meta(f) + STYLE + "\n</head>", 1)
         html = html.replace("<!-- gridline:nav -->", nav(f), 1).replace("<!-- gridline:sitemap -->", sitemap_footer(f), 1)
     else:
