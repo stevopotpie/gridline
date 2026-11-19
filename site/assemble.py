@@ -22,6 +22,7 @@ PAGES = [
     ("model.html",    "gridline_model.html",   "Calculator", "Matchup Calculator",  "Set any matchup, line, weather, QBs and injuries"),
     ("bet-log.html",  "gridline_bet_log.html", "Bet log",    "Bet Log",             "Red to green risk meter, a ledger saved in your browser, retro bets and strategy replays"),
     ("how-it-works.html", None,                "How it works", "How it works",      "What Gridline is, how it is built and how it has done"),
+    ("bartop.html",   None,                    "The Bartop", "The Bartop",          "Bar theories tested against the data, NFL and NBA, and a place to ask your own"),
     ("about.html",    None,                    "About",      "About Gridline",      "Who built Gridline, why, and what it is and isn't"),
 ]
 # The home page is this week's games (the live board, Nov 18 2026). The old landing page is how-it-works.html, and
@@ -72,7 +73,6 @@ def nav(current, up=""):
     here = ' aria-current="page"'
     items = [(f, label) for f, _, label, _, _ in PAGES[:2]] + [(f, label) for f, label, _, _ in HUBS] + [(f, label) for f, _, label, _, _ in PAGES[2:]]
     links = "".join(f'<a href="{up}{"" if f == "index.html" else f}"{here if f == current else ""}>{label}</a>' for f, label in items).replace('href=""', 'href="./"')
-    links += '<a href="https://claude.ai/artifact/PnwqjUsuYKyyWzaPuQuHyL">The Bartop</a>'   # shared NFL and NBA question board
     links += '<a href="https://stevopotpie.github.io/courtline/">Courtline (NBA)</a>'
     links += f'<a href="{GH}">GitHub</a>'
     return (f'<nav class="gl-nav" aria-label="Gridline pages"><div class="gl-in">'
@@ -105,12 +105,14 @@ def meta(f):
              "season.html": "NFL 2026 Season Predictions, Odds & Player Props | Gridline Season Board",
              "model.html": "NFL Matchup Calculator: Spread, Total & Live Win Probability | Gridline",
              "bet-log.html": "Sports Bet Tracker with Win Probability Meter | Gridline Bet Log",
-             "about.html": "About Gridline: Built by Steven Sutcliffe"}[f]
+             "about.html": "About Gridline: Built by Steven Sutcliffe",
+             "bartop.html": "The Bartop: Betting Theories Tested Against the Data | Gridline"}[f]
     desc = {"index.html": "The Ultimate Sports Betting Sandbox: every NFL game this week with the spread and total, live scores, Gridline's chance that each team wins, and game notes on injuries, weather, history, QBs and coaches.",
             "how-it-works.html": "Free NFL predictions for every game: projected scores, spread and over/under picks and player props from public play by play data, graded honestly against the betting market.",
             "season.html": "Every 2026 NFL game projected or graded: Gridline vs Vegas spreads and totals, the best odds at the books, player props, anytime touchdown odds and playoff chances.",
             "model.html": "Set any NFL matchup, line, weather, quarterbacks and injuries and see the projected spread, total and score, plus a live in-game win probability model.",
             "bet-log.html": "Log your NFL bets and see each one's chance to win on a red to green meter, whether the model beats the price, and your closing line value.",
+            "bartop.html": "Bar talk put to the test: NFL and NBA betting theories checked against every game in the data, with verdicts of held up, busted or partly. Ask your own.",
             "about.html": "Gridline is built by Steven Sutcliffe, a former bartender turned data analyst who puts game day football theories to an honest test against every NFL game since 2015."}[f]
     url = BASE + ("" if f == "index.html" else f)
     ld = ""
@@ -131,7 +133,7 @@ def meta(f):
         ld = ('<script type="application/ld+json">' + json.dumps({"@context": "https://schema.org", "@type": "WebApplication", "name": title,
               "url": BASE + f, "applicationCategory": "SportsApplication", "operatingSystem": "Any", "description": desc,
               "offers": {"@type": "Offer", "price": "0", "priceCurrency": "USD"}}) + "</script>\n")
-    return ld + (f'<title>{title}</title>\n' if f not in ("how-it-works.html", "about.html") else "") + f'<meta name="description" content="{desc}">\n' + (
+    return ld + (f'<title>{title}</title>\n' if f not in ("how-it-works.html", "about.html", "bartop.html") else "") + f'<meta name="description" content="{desc}">\n' + (
         f'<meta property="og:type" content="website">\n<meta property="og:site_name" content="Gridline">\n'
         f'<meta property="og:title" content="{title}">\n<meta property="og:description" content="{desc}">\n'
         f'<meta property="og:url" content="{url}">\n<meta property="og:image" content="{BASE}og.png?v=2">\n'
@@ -188,6 +190,6 @@ open(os.path.join(OUT, "sitemap.xml"), "w").write(
     f'<?xml version="1.0" encoding="UTF-8"?>\n<urlset xmlns="http://www.sitemaps.org/schemas/sitemap/0.9">\n{urls}</urlset>\n')
 open(os.path.join(OUT, "robots.txt"), "w").write(f"User-agent: *\nAllow: /\nSitemap: {BASE}sitemap.xml\n")
 open(os.path.join(OUT, ".nojekyll"), "w").close()
-for asset in ("og.png", "icon.png", "icon-192.png", "icon-512.png", "icon-maskable-512.png", "apple-touch-icon.png", "manifest.webmanifest", "sw.js"):
+for asset in ("bartop.json", "og.png", "icon.png", "icon-192.png", "icon-512.png", "icon-maskable-512.png", "apple-touch-icon.png", "manifest.webmanifest", "sw.js"):
     shutil.copy(os.path.join(REPO, "site", asset), os.path.join(OUT, asset))
 print("site assembled:", ", ".join(f for f, *_ in PAGES), f"+ {len(extra_pages)} search pages, sitemap.xml, robots.txt")

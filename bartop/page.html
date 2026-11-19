@@ -1,0 +1,142 @@
+<!-- The Bartop, public page body (shared by Gridline and Courtline; copy changes to both). __SITE__ is gridline or courtline.
+     Verdicts and the On tap list come from /gridline/bartop.json, updated after each weekly review.
+     ASK_URL is the Cloudflare Worker from bartop/worker.js; while it is empty the form says asking opens soon. -->
+<style>
+.bt{--bt-panel:var(--panel,#fbfcfb);--bt-line:var(--line,#d5dcd7);--bt-ink:var(--ink,#18201b);--bt-muted:var(--muted,#5b665f);--bt-chip:rgba(127,127,127,.12);
+  --bt-held:#1f7a4a;--bt-busted:#b23b2e;--bt-partly:#a86b08;--bt-brass:#9a6a12;display:grid;gap:18px}
+@media (prefers-color-scheme: dark){.bt{--bt-held:#5fd394;--bt-busted:#ef7d6f;--bt-partly:#e6a933;--bt-brass:#d9a441}}
+.bt h1{margin:0}
+.bt .sub{color:var(--bt-muted);margin:.4rem 0 0;max-width:62ch}
+.bt .eb{font:600 .72rem system-ui,sans-serif;letter-spacing:.1em;text-transform:uppercase;color:var(--bt-brass)}
+.bt .rail{display:flex;flex-wrap:wrap;gap:8px 22px;align-items:baseline;border:1px solid var(--bt-line);border-bottom:3px solid var(--bt-brass);border-radius:12px;padding:10px 14px;background:var(--bt-panel)}
+.bt .tally b{font:700 1.6rem/1 var(--f-display,var(--font-display,system-ui));font-variant-numeric:tabular-nums;margin-right:5px}
+.bt .tally span{font:600 .7rem system-ui,sans-serif;letter-spacing:.08em;text-transform:uppercase;color:var(--bt-muted)}
+.bt .tally.held b{color:var(--bt-held)}.bt .tally.busted b{color:var(--bt-busted)}.bt .tally.partly b{color:var(--bt-partly)}
+.bt .chips{display:flex;flex-wrap:wrap;gap:8px}
+.bt .chip{border:1px solid var(--bt-line);background:var(--bt-panel);color:var(--bt-ink);border-radius:999px;padding:6px 12px;font:500 .85rem system-ui,sans-serif;cursor:pointer}
+.bt .chip[aria-pressed="true"]{background:var(--bt-ink);color:var(--bt-panel);border-color:var(--bt-ink)}
+.bt .cards{display:grid;gap:12px;grid-template-columns:minmax(0,1fr)}
+@media (min-width:700px){.bt .cards{grid-template-columns:repeat(2,minmax(0,1fr))}}
+.bt .card{background:var(--bt-panel);border:1px solid var(--bt-line);border-radius:12px;padding:14px;display:grid;gap:8px;align-content:start;min-width:0}
+.bt .top{display:flex;justify-content:space-between;gap:8px;align-items:center;flex-wrap:wrap}
+.bt .stamp{font:700 .78rem var(--f-display,var(--font-display,system-ui));letter-spacing:.1em;text-transform:uppercase;border:2px solid currentColor;border-radius:4px;padding:1px 8px}
+.bt .stamp.held{color:var(--bt-held)}.bt .stamp.busted{color:var(--bt-busted)}.bt .stamp.partly{color:var(--bt-partly)}.bt .stamp.cant{color:var(--bt-muted)}
+.bt .tags{display:flex;gap:8px;align-items:center}
+.bt .lg{font:700 .7rem system-ui,sans-serif;letter-spacing:.08em;border-radius:4px;padding:1px 7px;background:var(--bt-ink);color:var(--bt-panel)}
+.bt .lg.NBA{background:var(--bt-brass);color:#fff}
+.bt .topic{font:600 .7rem system-ui,sans-serif;letter-spacing:.08em;text-transform:uppercase;color:var(--bt-muted)}
+.bt .q{font:600 1.3rem/1.15 var(--f-display,var(--font-display,system-ui));margin:0}
+.bt .stat{font:500 .86rem/1.45 ui-monospace,Menlo,monospace;background:var(--bt-chip);border-radius:8px;padding:8px 10px}
+.bt .line{margin:0;font-size:.9rem}
+.bt .line b{font:600 .7rem system-ui,sans-serif;letter-spacing:.08em;text-transform:uppercase;color:var(--bt-muted);margin-right:6px}
+.bt .foot{font:400 .76rem ui-monospace,Menlo,monospace;color:var(--bt-muted);border-top:1px dashed var(--bt-line);padding-top:6px}
+.bt .panel2{background:var(--bt-panel);border:1px solid var(--bt-line);border-radius:12px;padding:14px;display:grid;gap:12px}
+.bt h2{margin:0}
+.bt .note{font-size:.86rem;color:var(--bt-muted);margin:0}
+.bt form{display:grid;gap:10px}
+.bt label{display:grid;gap:4px;font-size:.82rem;color:var(--bt-muted)}
+.bt textarea,.bt input,.bt select{font:400 1rem system-ui,sans-serif;padding:9px 10px;border:1px solid var(--bt-line);border-radius:8px;background:transparent;color:var(--bt-ink);width:100%;box-sizing:border-box}
+.bt textarea{min-height:80px;resize:vertical}
+.bt .g3{display:grid;grid-template-columns:repeat(auto-fit,minmax(180px,1fr));gap:10px}
+.bt .hp{position:absolute;left:-9999px;width:1px;height:1px;overflow:hidden}
+.bt button.go{font:600 .95rem system-ui,sans-serif;border-radius:8px;padding:9px 16px;border:1px solid var(--bt-brass);background:var(--bt-brass);color:#fff;cursor:pointer;justify-self:start}
+.bt button.go:disabled{opacity:.5;cursor:default}
+.bt .msg{margin:0;font-size:.88rem}.bt .msg.err{color:var(--bt-busted)}
+.bt .tap{display:grid;gap:10px}
+.bt .tap div{border-top:1px solid var(--bt-line);padding-top:10px}.bt .tap div:first-child{border-top:0;padding-top:0}
+.bt .tap p{margin:0}
+</style>
+<div class="bt">
+  <header>
+    <div class="eb">The Ultimate Sports Betting Sandbox</div>
+    <h1>The Bartop</h1>
+    <p class="sub">Every game day the bar is a forum: people trade theories about what wins games and covers spreads. Here those theories get an honest test against every game in the data, not just the ones people remember. NFL questions run on Gridline's data, NBA questions on Courtline's.</p>
+  </header>
+  <div class="rail" id="bt-tally"></div>
+  <div class="chips" id="bt-leagues" role="group" aria-label="Filter by league"></div>
+  <div class="chips" id="bt-verdicts" role="group" aria-label="Filter by verdict"></div>
+  <div class="cards" id="bt-cards"><p class="note">Pouring the verdicts…</p></div>
+
+  <section class="panel2" id="ask">
+    <h2>Ask the bar</h2>
+    <p class="note">Got a theory you hear every game day? Send it in. Each week a few get picked, tested against the data, and posted here with your name on them. Plain words only: no links, ads or anything off topic.</p>
+    <form id="bt-form" novalidate>
+      <label>Your question or what if<textarea id="bt-q" maxlength="300" required placeholder="Do teams play worse the week after a Monday night road game?"></textarea></label>
+      <div class="g3">
+        <label>Why you think it's true (optional)<input id="bt-why" maxlength="200" autocomplete="off"></label>
+        <label>Name for credit (optional)<input id="bt-name" maxlength="40" autocomplete="off"></label>
+        <label>League<select id="bt-league"><option>NFL</option><option>NBA</option></select></label>
+      </div>
+      <div class="hp" aria-hidden="true"><label>Leave this empty<input id="bt-website" tabindex="-1" autocomplete="off"></label></div>
+      <button type="submit" class="go" id="bt-send">Send it to the bar</button>
+      <p class="msg" id="bt-msg" aria-live="polite"></p>
+    </form>
+  </section>
+
+  <section class="panel2">
+    <h2>On tap</h2>
+    <p class="note">Picked for testing. Results move up to the board when they're done.</p>
+    <div class="tap" id="bt-tap"><p class="note">Nothing on tap right now.</p></div>
+  </section>
+
+  <p class="note">How it works: NFL questions are tested on nflverse play by play and closing lines, mostly 2015 to 2025; NBA questions on hoopR box scores and closing lines. Each card shows its sample. "Held up" means the pattern is real and repeats; "Busted" means it doesn't; "Partly" means real but smaller or narrower than the bar version. Testing many ideas means some will look good by luck, so a new winner gets tracked before it gets trusted. If gambling stops being fun, call or text 1-800-GAMBLER.</p>
+</div>
+<script>
+(function () {
+  var SITE = "__SITE__", ASK_URL = "", DATA = "/gridline/bartop.json";
+  var V = {held: "Held up", busted: "Busted", partly: "Partly", cant: "Can't test"};
+  var $ = function (id) { return document.getElementById(id); };
+  var el = function (t, c, x) { var e = document.createElement(t); if (c) e.className = c; if (x != null) e.textContent = x; return e; };
+  var tested = [], league = "all", verdict = "all";
+  $("bt-league").value = SITE === "courtline" ? "NBA" : "NFL";
+  function chips(box, list, get, set) {
+    list.forEach(function (o) { var b = el("button", "chip", o[1]); b.type = "button"; b.setAttribute("aria-pressed", String(o[0] === get()));
+      b.addEventListener("click", function () { set(o[0]); [].forEach.call(box.children, function (x) { x.setAttribute("aria-pressed", String(x === b)); }); render(); });
+      box.appendChild(b); });
+  }
+  chips($("bt-leagues"), [["all", "All leagues"], ["NFL", "NFL"], ["NBA", "NBA"]], function () { return league; }, function (v) { league = v; });
+  chips($("bt-verdicts"), [["all", "All"], ["held", "Held up"], ["busted", "Busted"], ["partly", "Partly"]], function () { return verdict; }, function (v) { verdict = v; });
+  function render() {
+    var box = $("bt-cards"); box.innerHTML = "";
+    var list = tested.filter(function (v) { return (league === "all" || v.league === league) && (verdict === "all" || v.verdict === verdict); })
+      .sort(function (a, b) { return (b.order || 0) - (a.order || 0); });
+    if (!list.length) { box.appendChild(el("p", "note", tested.length ? "No verdicts match. Try another filter." : "The board fills as questions get tested.")); return; }
+    list.forEach(function (v) {
+      var c = el("article", "card"), top = el("div", "top"), tags = el("div", "tags");
+      tags.appendChild(el("span", "lg " + v.league, v.league)); tags.appendChild(el("span", "topic", v.topic || ""));
+      top.appendChild(el("span", "stamp " + (V[v.verdict] ? v.verdict : "cant"), V[v.verdict] || "Can't test")); top.appendChild(tags);
+      c.appendChild(top); c.appendChild(el("h3", "q", "“" + v.q + "”"));
+      if (v.stat) c.appendChild(el("div", "stat", v.stat));
+      [["Why", v.why], ["For a bet", v.bet]].forEach(function (p) { if (!p[1]) return; var l = el("p", "line"); l.appendChild(el("b", null, p[0])); l.appendChild(document.createTextNode(p[1])); c.appendChild(l); });
+      c.appendChild(el("div", "foot", [v.tested ? "Tested " + v.tested : "", v.asked ? "asked by " + v.asked : "", v.sample || ""].filter(Boolean).join(" · ")));
+      box.appendChild(c);
+    });
+  }
+  fetch(DATA, {cache: "no-cache"}).then(function (r) { return r.json(); }).then(function (d) {
+    tested = d.tested || [];
+    var n = function (k) { return tested.filter(function (v) { return v.verdict === k; }).length; }, t = $("bt-tally");
+    [["", tested.length, "tested"], ["held", n("held"), "held up"], ["busted", n("busted"), "busted"], ["partly", n("partly"), "partly"], ["", (d.on_tap || []).length, "on tap"]]
+      .forEach(function (x) { var s = el("div", "tally " + x[0]); s.appendChild(el("b", null, String(x[1]))); s.appendChild(el("span", null, x[2])); t.appendChild(s); });
+    var tap = $("bt-tap");
+    if ((d.on_tap || []).length) { tap.innerHTML = ""; d.on_tap.forEach(function (q) { var row = el("div"); row.appendChild(el("p", null, q.text));
+      row.appendChild(el("p", "note", [q.league, q.status === "testing" ? "testing now" : "on tap", q.name ? "asked by " + q.name : ""].filter(Boolean).join(" · "))); tap.appendChild(row); }); }
+    render();
+  }).catch(function () { $("bt-cards").innerHTML = '<p class="note">The board did not load. Reload the page to try again.</p>'; });
+
+  var msg = function (t, err) { $("bt-msg").textContent = t; $("bt-msg").className = "msg" + (err ? " err" : ""); };
+  if (!ASK_URL) { $("bt-send").disabled = true; msg("Asking opens soon."); }
+  $("bt-form").addEventListener("submit", function (e) {
+    e.preventDefault(); if (!ASK_URL) return;
+    var text = $("bt-q").value.trim();
+    if (text.length < 15) { msg("Write the theory out in a sentence so it can be tested.", true); return; }
+    $("bt-send").disabled = true; msg("Sending…");
+    fetch(ASK_URL, {method: "POST", headers: {"Content-Type": "application/json"}, body: JSON.stringify({text: text, why: $("bt-why").value, name: $("bt-name").value,
+      league: $("bt-league").value, site: SITE, website: $("bt-website").value})})
+      .then(function (r) { return r.json().catch(function () { return {}; }).then(function (j) { return {ok: r.ok && j.ok, err: j.error}; }); })
+      .then(function (r) { if (r.ok) { $("bt-q").value = ""; $("bt-why").value = ""; msg("Got it. If it gets picked, it goes on tap here with your name on it."); }
+        else msg(r.err || "Couldn't send that. Try again in a minute.", true); })
+      .catch(function () { msg("Couldn't send that. Try again in a minute.", true); })
+      .then(function () { $("bt-send").disabled = false; });
+  });
+})();
+</script>
