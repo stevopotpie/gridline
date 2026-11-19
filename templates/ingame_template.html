@@ -75,7 +75,7 @@ details.notes ul{margin:2px 0 0;padding-left:1.1rem}
   <header>
     <div class="label">Gridline · The Ultimate Sports Betting Sandbox</div>
     <h1>This week's games</h1>
-    <p class="sub">Every NFL game this week with the line, live scores and game situation from ESPN, Gridline's chance that each team wins from here, and game notes: injuries, history, QB vs QB and coach vs coach. Type a live price to see whether it is worth it. New here? <a href="how-it-works.html">How it works</a>.</p>
+    <p class="sub">Every NFL game this week with the line, live scores and game situation from ESPN, Gridline's chance that each team wins from here, and game notes: injuries, weather, history, QB vs QB and coach vs coach. Type a live price to see whether it is worth it. New here? <a href="how-it-works.html">How it works</a>.</p>
   </header>
   <div class="status"><span class="dot" id="dot" aria-hidden="true"></span><span class="note" id="status">Loading live scores…</span>
     <button type="button" class="btn" id="refresh">Refresh now</button><span class="note">Prices as</span>
@@ -197,6 +197,29 @@ function cardHTML(id){
 const qq = (c, cls) => c.querySelector("." + cls);
 // ---------- spread columns and game notes ----------
 const NOTES = D.notes || {};
+// Home stadiums, for the day-before kickoff forecast (Open-Meteo, free, read by the browser). Neutral site games are skipped.
+const STADIUM = {ARI: [33.528, -112.263], ATL: [33.755, -84.401], BAL: [39.278, -76.623], BUF: [42.774, -78.787], CAR: [35.226, -80.853],
+  CHI: [41.862, -87.617], CIN: [39.096, -84.516], CLE: [41.506, -81.700], DAL: [32.747, -97.095], DEN: [39.744, -105.020], DET: [42.340, -83.046],
+  GB: [44.501, -88.062], HOU: [29.685, -95.411], IND: [39.760, -86.164], JAX: [30.324, -81.637], KC: [39.049, -94.484], LV: [36.091, -115.183],
+  LA: [33.954, -118.339], LAC: [33.954, -118.339], MIA: [25.958, -80.239], MIN: [44.974, -93.258], NE: [42.091, -71.264], NO: [29.951, -90.081],
+  NYG: [40.814, -74.075], NYJ: [40.814, -74.075], PHI: [39.901, -75.168], PIT: [40.447, -80.016], SF: [37.403, -121.970], SEA: [47.595, -122.332],
+  TB: [27.976, -82.503], TEN: [36.167, -86.771], WAS: [38.908, -76.865]};
+const WX = {};
+function getForecast(key, home, kick, id){
+  if (WX[key]) return; WX[key] = {loading: true};
+  const ll = STADIUM[home]; if (!ll) { WX[key] = {err: true}; return; }
+  const u = `https://api.open-meteo.com/v1/forecast?latitude=${ll[0]}&longitude=${ll[1]}&hourly=temperature_2m,wind_speed_10m,wind_gusts_10m,precipitation_probability` +
+    `&temperature_unit=fahrenheit&wind_speed_unit=mph&timezone=GMT&forecast_days=4`;
+  fetch(u).then(r => r.json()).then(j => {
+    const want = new Date(kick).getTime(), H = j.hourly; let best = 0, gap = Infinity;
+    H.time.forEach((t, i) => { const d = Math.abs(new Date(t + "Z").getTime() - want); if (d < gap) { gap = d; best = i; } });
+    if (gap > 2 * 3.6e6) throw new Error("no hour");
+    WX[key] = {temp: H.temperature_2m[best], wind: H.wind_speed_10m[best], gust: H.wind_gusts_10m[best], pop: H.precipitation_probability[best], at: new Date()};
+  }).catch(() => { WX[key] = {err: true}; }).then(() => { const c = cards[id]; if (c) { qq(c, "g-notes").dataset.k = ""; paint(id); } });
+}
+const spTxt = x => x > 0 ? "+" + x : x < 0 ? "\u2212" + Math.abs(x) : "PK";
+const wl = r => `${r.w}\u2013${r.l}${r.t ? "\u2013" + r.t : ""}`;
+const ats = r => `${r.aw}\u2013${r.al}${r.ap ? "\u2013" + r.ap : ""} ATS`;
 function notesHTML(g, id){
   const key = g.away + "@" + g.home, n = NOTES[key] || {}, sl = SL[key] || {}, out = [];
   const sec = (h, body) => out.push(`<section><h4>${h}</h4>${body}</section>`);
@@ -208,6 +231,23 @@ function notesHTML(g, id){
     const any = ["a", "h"].some(s => ["Out", "Doubtful", "Questionable"].some(k => (n.inj[s][k] || []).length));
     sec("Injuries", any ? `<ul>${team(g.away, n.inj.a)}${team(g.home, n.inj.h)}</ul>` : `<p>Nobody listed yet. Teams post this week's injury reports Wednesday to Friday.</p>`);
   }
+  // weather: the forecast shows from the day before kickoff
+  const hrs = n.kick ? (new Date(n.kick) - Date.now()) / 3.6e6 : null;
+  let wx;
+  if (sl.dome) wx = "Indoors (dome or closed roof), so weather is not a factor.";
+  else if (n.neutral) wx = "Neutral site game.";
+  else if (g.state === "post") wx = sl.temp != null ? `Kickoff forecast: ${Math.round(sl.temp)}°F, wind ${Math.round(sl.wind)} mph${sl.precip ? ", rain or snow" : ""}.` : "No forecast on file.";
+  else if (hrs != null && hrs > 36) wx = `Outdoors${sl.roof === "open" ? " (open roof)" : ""}. The kickoff forecast posts the day before the game.`;
+  else if (sl.temp == null && n.kick && !n.neutral && STADIUM[g.home]) {
+    const f = WX[key]; if (!f) getForecast(key, g.home, n.kick, id);
+    wx = !f || f.loading ? "Loading the kickoff forecast…" : f.err ? "The kickoff forecast did not load. Try Refresh now." :
+      `Kickoff forecast: ${Math.round(f.temp)}°F, wind ${Math.round(f.wind)} mph (gusts ${Math.round(f.gust)}), ${f.pop}% chance of rain or snow. From Open-Meteo, checked ${f.at.toLocaleTimeString("en-US", {hour: "numeric", minute: "2-digit"})}.` +
+      (f.wind >= 15 ? " Wind of 15+ mph has leaned games under the total; see the calculator's weather table." : "");
+  }
+  else if (sl.temp != null) wx = `Kickoff forecast: ${Math.round(sl.temp)}°F, wind ${Math.round(sl.wind)} mph${sl.precip ? ", rain or snow expected" : ", dry"}${sl.fcAsOf ? ` (as of ${esc(sl.fcAsOf)})` : ""}.` +
+    (sl.wind >= 15 ? " Wind of 15+ mph has leaned games under the total; see the calculator's weather table." : "");
+  else wx = "Outdoors. No kickoff forecast on file yet.";
+  sec("Weather", `<p>${wx}</p>`);
   // history since 1999
   if (n.h2h) {
     const r = n.h2h.rec, lead = r.w > r.l ? `${g.away} leads ${r.w}\u2013${r.l}` : r.l > r.w ? `${g.home} leads ${r.l}\u2013${r.w}` : `Tied ${r.w}\u2013${r.l}`;
