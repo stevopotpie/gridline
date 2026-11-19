@@ -15,3 +15,4 @@ __pycache__/
 .DS_Store
 # odds repo clone and the assembled Pages site
 _site/
+!site/bartop.json
