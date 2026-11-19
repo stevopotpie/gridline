@@ -106,7 +106,7 @@ def meta(f):
              "model.html": "NFL Matchup Calculator: Spread, Total & Live Win Probability | Gridline",
              "bet-log.html": "Sports Bet Tracker with Win Probability Meter | Gridline Bet Log",
              "about.html": "About Gridline: Built by Steven Sutcliffe"}[f]
-    desc = {"index.html": "The Ultimate Sports Betting Sandbox: every NFL game this week with the spread and total, live scores, Gridline's chance that each team wins, and game notes on injuries, weather, history, QBs and coaches.",
+    desc = {"index.html": "The Ultimate Sports Betting Sandbox: every NFL game this week with the spread and total, live scores, Gridline's chance that each team wins, and game notes on injuries, history, QBs and coaches.",
             "how-it-works.html": "Free NFL predictions for every game: projected scores, spread and over/under picks and player props from public play by play data, graded honestly against the betting market.",
             "season.html": "Every 2026 NFL game projected or graded: Gridline vs Vegas spreads and totals, the best odds at the books, player props, anytime touchdown odds and playoff chances.",
             "model.html": "Set any NFL matchup, line, weather, quarterbacks and injuries and see the projected spread, total and score, plus a live in-game win probability model.",
