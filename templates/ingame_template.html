@@ -49,6 +49,17 @@ button:focus-visible,input:focus-visible{outline:2px solid var(--accent);outline
 .row .tm .ball{color:var(--amber);font-size:.8rem;margin-left:4px}
 .row .sc{font:600 1.6rem var(--f-mono);font-variant-numeric:tabular-nums;text-align:right}
 .row .ch{font:600 1rem var(--f-mono);font-variant-numeric:tabular-nums;text-align:right;min-width:4.2rem}
+.row.r5{grid-template-columns:minmax(0,1fr) auto auto auto auto;gap:2px 11px}
+.row.hd{font:600 .66rem var(--f-body);letter-spacing:.08em;text-transform:uppercase;color:var(--muted)}
+.row.hd span{text-align:right}
+.row .cv{font:500 .9rem var(--f-mono);font-variant-numeric:tabular-nums;text-align:right;color:var(--muted);white-space:nowrap}
+.sub a,.notes a{color:var(--accent)}
+details.notes{border-top:1px solid var(--line);padding-top:8px}
+details.notes summary{cursor:pointer;font:600 .85rem var(--f-body);color:var(--accent);list-style-position:inside}
+details.notes .nb{display:grid;gap:10px;margin-top:8px;font-size:.88rem}
+details.notes h4{font:700 .8rem var(--f-display);text-transform:uppercase;letter-spacing:.06em;margin:0 0 3px;color:var(--muted)}
+details.notes p{margin:0}
+details.notes ul{margin:2px 0 0;padding-left:1.1rem}
 .bar{display:flex;height:8px;border-radius:999px;overflow:hidden;background:var(--chip)}
 .bar span{display:block;height:100%;transition:width .4s ease}
 .bar .a{background:var(--muted)}.bar .h{background:var(--accent)}
@@ -62,9 +73,9 @@ button:focus-visible,input:focus-visible{outline:2px solid var(--accent);outline
 </style>
 <div class="wrap">
   <header>
-    <div class="label">In-game · live</div>
-    <h1>Live win chances</h1>
-    <p class="sub">This week's NFL games with live scores and game situation from ESPN, Gridline's chance that each team wins from here, and a check for any live moneyline you are looking at.</p>
+    <div class="label">Gridline · The Ultimate Sports Betting Sandbox</div>
+    <h1>This week's games</h1>
+    <p class="sub">Every NFL game this week with the line, live scores and game situation from ESPN, Gridline's chance that each team wins from here, and game notes: injuries, weather, history, QB vs QB and coach vs coach. Type a live price to see whether it is worth it. New here? <a href="how-it-works.html">How it works</a>.</p>
   </header>
   <div class="status"><span class="dot" id="dot" aria-hidden="true"></span><span class="note" id="status">Loading live scores…</span>
     <button type="button" class="btn" id="refresh">Refresh now</button><span class="note">Prices as</span>
@@ -73,6 +84,7 @@ button:focus-visible,input:focus-visible{outline:2px solid var(--accent);outline
   <section class="panel">
     <h2>How the live chance works</h2>
     <p class="note" id="how"></p>
+    <p class="note"><strong>Reading a card.</strong> <em>To win</em> is Gridline's chance that the team wins the game outright, the same bet as the moneyline. It is not the chance to cover. <em>Spread</em> is the pregame line and <em>Spread odds</em> is its price from the nflverse schedule (&minus;110 when none is posted), shown in the format you pick above. Spreads are set so each side is close to a coin flip, which is why a team can be 85% to win and still only an even bet against the spread. After the final, the odds column shows whether each side covered.</p>
     <p class="note">Live scores, possession, down and distance, field position and timeouts come from ESPN's public scoreboard, read by your browser every 30 seconds; the model runs right here on the page. Between plays it uses the last known situation. For a live spread or total, or to set any game state by hand, use the live panel on the <a href="model.html">calculator</a>.</p>
   </section>
 </div>
@@ -173,26 +185,106 @@ function stateOf(g){
 }
 function cardHTML(id){
   return `<article class="g" id="g-${id}"><div class="g-top"><span class="g-state"></span><span class="note g-pre"></span></div>
-    <div class="row"><span class="tm g-an"></span><span class="sc g-as"></span><span class="ch g-ac"></span></div>
-    <div class="row"><span class="tm g-hn"></span><span class="sc g-hs"></span><span class="ch g-hc"></span></div>
+    <div class="row r5 hd"><span></span><span></span><span>To win</span><span>Spread</span><span>Spread odds</span></div>
+    <div class="row r5"><span class="tm g-an"></span><span class="sc g-as"></span><span class="ch g-ac"></span><span class="cv g-asp"></span><span class="cv g-aod"></span></div>
+    <div class="row r5"><span class="tm g-hn"></span><span class="sc g-hs"></span><span class="ch g-hc"></span><span class="cv g-hsp"></span><span class="cv g-hod"></span></div>
     <div class="bar" aria-hidden="true"><span class="a"></span><span class="h"></span></div>
     <div class="sit"></div><div class="note g-fair"></div>
     <div class="prices"><input type="number" step="any" inputmode="decimal" class="pa" aria-label="Away live moneyline"><input type="number" step="any" inputmode="decimal" class="ph" aria-label="Home live moneyline"></div>
-    <div class="v"></div></article>`;
+    <div class="v"></div>
+    <details class="notes"><summary>Game notes</summary><div class="nb g-notes"></div></details></article>`;
 }
 const qq = (c, cls) => c.querySelector("." + cls);
+// ---------- spread columns and game notes ----------
+const NOTES = D.notes || {};
+// Home stadiums, for the day-before kickoff forecast (Open-Meteo, free, read by the browser). Neutral site games are skipped.
+const STADIUM = {ARI: [33.528, -112.263], ATL: [33.755, -84.401], BAL: [39.278, -76.623], BUF: [42.774, -78.787], CAR: [35.226, -80.853],
+  CHI: [41.862, -87.617], CIN: [39.096, -84.516], CLE: [41.506, -81.700], DAL: [32.747, -97.095], DEN: [39.744, -105.020], DET: [42.340, -83.046],
+  GB: [44.501, -88.062], HOU: [29.685, -95.411], IND: [39.760, -86.164], JAX: [30.324, -81.637], KC: [39.049, -94.484], LV: [36.091, -115.183],
+  LA: [33.954, -118.339], LAC: [33.954, -118.339], MIA: [25.958, -80.239], MIN: [44.974, -93.258], NE: [42.091, -71.264], NO: [29.951, -90.081],
+  NYG: [40.814, -74.075], NYJ: [40.814, -74.075], PHI: [39.901, -75.168], PIT: [40.447, -80.016], SF: [37.403, -121.970], SEA: [47.595, -122.332],
+  TB: [27.976, -82.503], TEN: [36.167, -86.771], WAS: [38.908, -76.865]};
+const WX = {};
+function getForecast(key, home, kick, id){
+  if (WX[key]) return; WX[key] = {loading: true};
+  const ll = STADIUM[home]; if (!ll) { WX[key] = {err: true}; return; }
+  const u = `https://api.open-meteo.com/v1/forecast?latitude=${ll[0]}&longitude=${ll[1]}&hourly=temperature_2m,wind_speed_10m,wind_gusts_10m,precipitation_probability` +
+    `&temperature_unit=fahrenheit&wind_speed_unit=mph&timezone=GMT&forecast_days=4`;
+  fetch(u).then(r => r.json()).then(j => {
+    const want = new Date(kick).getTime(), H = j.hourly; let best = 0, gap = Infinity;
+    H.time.forEach((t, i) => { const d = Math.abs(new Date(t + "Z").getTime() - want); if (d < gap) { gap = d; best = i; } });
+    if (gap > 2 * 3.6e6) throw new Error("no hour");
+    WX[key] = {temp: H.temperature_2m[best], wind: H.wind_speed_10m[best], gust: H.wind_gusts_10m[best], pop: H.precipitation_probability[best], at: new Date()};
+  }).catch(() => { WX[key] = {err: true}; }).then(() => { const c = cards[id]; if (c) { qq(c, "g-notes").dataset.k = ""; paint(id); } });
+}
+const spTxt = x => x > 0 ? "+" + x : x < 0 ? "\u2212" + Math.abs(x) : "PK";
+const wl = r => `${r.w}\u2013${r.l}${r.t ? "\u2013" + r.t : ""}`;
+const ats = r => `${r.aw}\u2013${r.al}${r.ap ? "\u2013" + r.ap : ""} ATS`;
+function notesHTML(g, id){
+  const key = g.away + "@" + g.home, n = NOTES[key] || {}, sl = SL[key] || {}, out = [];
+  const sec = (h, body) => out.push(`<section><h4>${h}</h4>${body}</section>`);
+  // injuries
+  if (n.inj) {
+    const team = (t, x) => { const parts = ["Out", "Doubtful", "Questionable"].filter(k => x[k] && x[k].length).map(k => {
+        const l = x[k], shown = l.slice(0, 8).map(esc).join(", "); return `${k}: ${shown}${l.length > 8 ? ` (+${l.length - 8} more)` : ""}`; });
+      return `<li><b>${esc(t)}</b>: ${parts.length ? parts.join(". ") : "nobody listed"}</li>`; };
+    const any = ["a", "h"].some(s => ["Out", "Doubtful", "Questionable"].some(k => (n.inj[s][k] || []).length));
+    sec("Injuries", any ? `<ul>${team(g.away, n.inj.a)}${team(g.home, n.inj.h)}</ul>` : `<p>Nobody listed yet. Teams post this week's injury reports Wednesday to Friday.</p>`);
+  }
+  // weather: the forecast shows from the day before kickoff
+  const hrs = n.kick ? (new Date(n.kick) - Date.now()) / 3.6e6 : null;
+  let wx;
+  if (sl.dome) wx = "Indoors (dome or closed roof), so weather is not a factor.";
+  else if (n.neutral) wx = "Neutral site game.";
+  else if (g.state === "post") wx = sl.temp != null ? `Kickoff forecast: ${Math.round(sl.temp)}°F, wind ${Math.round(sl.wind)} mph${sl.precip ? ", rain or snow" : ""}.` : "No forecast on file.";
+  else if (hrs != null && hrs > 36) wx = `Outdoors${sl.roof === "open" ? " (open roof)" : ""}. The kickoff forecast posts the day before the game.`;
+  else if (sl.temp == null && n.kick && !n.neutral && STADIUM[g.home]) {
+    const f = WX[key]; if (!f) getForecast(key, g.home, n.kick, id);
+    wx = !f || f.loading ? "Loading the kickoff forecast…" : f.err ? "The kickoff forecast did not load. Try Refresh now." :
+      `Kickoff forecast: ${Math.round(f.temp)}°F, wind ${Math.round(f.wind)} mph (gusts ${Math.round(f.gust)}), ${f.pop}% chance of rain or snow. From Open-Meteo, checked ${f.at.toLocaleTimeString("en-US", {hour: "numeric", minute: "2-digit"})}.` +
+      (f.wind >= 15 ? " Wind of 15+ mph has leaned games under the total; see the calculator's weather table." : "");
+  }
+  else if (sl.temp != null) wx = `Kickoff forecast: ${Math.round(sl.temp)}°F, wind ${Math.round(sl.wind)} mph${sl.precip ? ", rain or snow expected" : ", dry"}${sl.fcAsOf ? ` (as of ${esc(sl.fcAsOf)})` : ""}.` +
+    (sl.wind >= 15 ? " Wind of 15+ mph has leaned games under the total; see the calculator's weather table." : "");
+  else wx = "Outdoors. No kickoff forecast on file yet.";
+  sec("Weather", `<p>${wx}</p>`);
+  // history since 1999
+  if (n.h2h) {
+    const r = n.h2h.rec, lead = r.w > r.l ? `${g.away} leads ${r.w}\u2013${r.l}` : r.l > r.w ? `${g.home} leads ${r.l}\u2013${r.w}` : `Tied ${r.w}\u2013${r.l}`;
+    const li = n.h2h.last.map(x => { const fav = x.line == null ? "" : x.line > 0 ? `${x.h} \u2212${x.line}` : x.line < 0 ? `${x.a} \u2212${-x.line}` : "pick'em";
+      const cv = x.cov === "home" ? `${x.h} covered` : x.cov === "away" ? `${x.a} covered` : x.cov === "push" ? "push" : "";
+      return `<li>${x.s} ${x.post ? "playoffs" : "Wk " + x.wk}: ${esc(x.a)} ${x.as}, ${esc(x.h)} ${x.hs}${fav ? ` · line ${fav}, ${cv}` : ""}</li>`; }).join("");
+    sec("History", `<p>Since 1999: ${lead}${r.t ? `\u2013${r.t}` : ""} in ${r.n} games. Last ${n.h2h.last.length}:</p><ul>${li}</ul>`);
+  } else sec("History", "<p>No meetings since 1999.</p>");
+  // QB vs QB and coach vs coach
+  [["qb", "QB vs QB", "as a starter"], ["coach", "Coach vs coach", "as head coach"]].forEach(([k, h, as]) => {
+    const x = n[k]; if (!x) return;
+    const one = (t, p) => `<li><b>${esc(p.name)}</b> (${esc(t)}): ${wl(p.car)} ${as} since 1999, ${ats(p.car)}; this season ${wl(p.now)}, ${ats(p.now)}</li>`;
+    const v = x.vs, vt = v.n ? `Head to head: ${esc(x.a.name)} ${v.w}\u2013${v.l}${v.t ? "\u2013" + v.t : ""} against ${esc(x.h.name)}.` : "First meeting in the data.";
+    sec(h, `<ul>${one(g.away, x.a)}${one(g.home, x.h)}</ul><p>${vt}</p>`);
+  });
+  return out.join("") + `<p class="note">Records come from nflverse schedules since 1999 (regular season and playoffs); ATS is against the closing spread.</p>`;
+}
 function paint(id){
   const g = games[id], c = cards[id]; if (!g || !c) return;
   const st = stateOf(g), done = g.state === "post";
   const w = done ? {p: g.hs > g.as_ ? 1 : g.hs < g.as_ ? 0 : 0.5, pNoTie: 0.5, pTie: 0} : winNow(st);
   c.classList.toggle("live", g.state === "in");
   qq(c, "g-state").textContent = g.detail;
-  qq(c, "g-pre").textContent = done ? "" : g.pre.line == null ? "No pregame line" : `Pregame: ${g.pre.line === 0 ? "Pick'em" : (g.pre.line < 0 ? g.home + " −" + Math.abs(g.pre.line) : g.away + " −" + g.pre.line)}, total ${g.pre.total}`;
+  qq(c, "g-pre").textContent = g.pre.line == null ? (done ? "" : "No pregame line") : `Pregame spread: ${g.pre.line === 0 ? "Pick'em" : (g.pre.line < 0 ? g.home + " −" + Math.abs(g.pre.line) : g.away + " −" + g.pre.line)}, total ${g.pre.total}`;
   const ball = side => !done && g.state === "in" && st.homeBall != null && (side === "home" ? st.homeBall === 1 : st.homeBall === 0) ? ' <span class="ball" title="Has the ball">●</span>' : "";
   qq(c, "g-an").innerHTML = esc(g.an) + ball("away"); qq(c, "g-hn").innerHTML = esc(g.hn) + ball("home");
   qq(c, "g-as").textContent = g.state === "pre" ? "" : g.as_; qq(c, "g-hs").textContent = g.state === "pre" ? "" : g.hs;
   const pa = done ? 1 - w.p : 1 - w.p - w.pTie;
   qq(c, "g-ac").textContent = pc(pa); qq(c, "g-hc").textContent = pc(w.p);
+  const ln = g.pre.line, hasLn = ln != null, od = (NOTES[g.away + "@" + g.home] || {}).odds || {};
+  const odd = side => { if (!hasLn) return "";
+    if (!done) return fmt(od[side] != null ? od[side] : -110);
+    const m = (side === "h" ? 1 : -1) * (g.hs - g.as_ + ln); return m > 0 ? "Covered" : m < 0 ? "Missed" : "Push"; };
+  qq(c, "g-asp").textContent = hasLn ? spTxt(-ln) : "\u2013"; qq(c, "g-hsp").textContent = hasLn ? spTxt(ln) : "\u2013";
+  qq(c, "g-aod").textContent = odd("a"); qq(c, "g-hod").textContent = odd("h");
+  const nb = qq(c, "g-notes"), nk = g.state + (Math.floor(Date.now() / 3.6e6));   // refresh notes at most hourly or when the game state changes
+  if (nb.dataset.k !== nk) { nb.dataset.k = nk; nb.innerHTML = notesHTML(g, id); }
   qq(c, "a").style.width = (100 * pa).toFixed(1) + "%"; qq(c, "h").style.width = (100 * w.p).toFixed(1) + "%";
   qq(c, "sit").textContent = g.state === "in" ? (g.sit && g.sit.text ? g.sit.text : "Between plays") + (st.homeBall == null ? " · possession unknown, averaged" : "") : "";
   qq(c, "prices").hidden = done;

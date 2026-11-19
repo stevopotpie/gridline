@@ -1,8 +1,8 @@
 // Gridline service worker: lets the installed app open fast and still show the last pages it loaded when offline.
 // Pages are fetched fresh from the network first (projections change often) and fall back to the saved copy;
 // icons and other files show the saved copy while a fresh one downloads. Other sites (fonts, live scores) are left alone.
-const CACHE = "gridline-v1";
-const CORE = ["./", "season.html", "in-game.html", "model.html", "bet-log.html", "about.html", "icon-192.png", "manifest.webmanifest"];
+const CACHE = "gridline-v2";
+const CORE = ["./", "season.html", "how-it-works.html", "model.html", "bet-log.html", "about.html", "icon-192.png", "manifest.webmanifest"];
 
 self.addEventListener("install", e => {
   e.waitUntil(caches.open(CACHE).then(c => Promise.allSettled(CORE.map(u => c.add(u)))).then(() => self.skipWaiting()));

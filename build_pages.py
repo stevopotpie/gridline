@@ -22,6 +22,70 @@ def forecasts():
     f = J("forecasts.csv")
     return pd.read_csv(f).set_index("game_id") if os.path.exists(f) else pd.DataFrame()
 
+def game_notes(slate_rows, data_dir, season):
+    """Game notes for this week's board (Nov 18 2026), keyed by "AWAY@HOME": injury report, kickoff time for the weather
+    note, the teams' history since 1999, starting QB vs QB and head coach vs head coach, plus each side's spread price.
+    Uses nflverse games.csv and injuries_<season>.csv from the data folder; any piece that is missing is left out."""
+    gp = os.path.join(data_dir, "games.csv")
+    if not os.path.exists(gp): return {}
+    G = pd.read_csv(gp, low_memory=False)
+    done = G[G.home_score.notna()].copy()
+    ip = os.path.join(data_dir, f"injuries_{season}.csv")
+    inj = pd.read_csv(ip, low_memory=False) if os.path.exists(ip) else pd.DataFrame()
+    def rec(df, col_key, key):
+        """W-L-T and against the spread W-L-P for whoever matches key in home_/away_ col_key."""
+        w = l = t = aw = al = ap = 0
+        for side, sg in (("home", 1), ("away", -1)):
+            x = df[df[f"{side}_{col_key}"] == key]
+            m = sg * x.result
+            w += int((m > 0).sum()); l += int((m < 0).sum()); t += int((m == 0).sum())
+            y = x[x.spread_line.notna()]; c = sg * (y.result - y.spread_line)
+            aw += int((c > 0).sum()); al += int((c < 0).sum()); ap += int((c == 0).sum())
+        return {"w": w, "l": l, "t": t, "aw": aw, "al": al, "ap": ap}
+    def vs(df, col_key, a, h):
+        """a's record against h where a and h are both in col_key (either venue)."""
+        x = df[((df[f"home_{col_key}"] == a) & (df[f"away_{col_key}"] == h)) | ((df[f"home_{col_key}"] == h) & (df[f"away_{col_key}"] == a))]
+        m = np.where(x[f"home_{col_key}"] == a, x.result, -x.result)
+        return {"w": int((m > 0).sum()), "l": int((m < 0).sum()), "t": int((m == 0).sum()), "n": int(len(x))}
+    out = {}
+    for r in slate_rows:
+        a, h = r.away_team, r.home_team
+        row = G[G.game_id == r.game_id]
+        row = row.iloc[0] if len(row) else None
+        n = {}
+        if row is not None:
+            num = lambda v: None if pd.isna(v) else float(v)
+            n["odds"] = {"a": num(row.away_spread_odds), "h": num(row.home_spread_odds)}
+            gt = row.gametime if isinstance(row.gametime, str) else "13:00"
+            n["kick"] = pd.Timestamp(f"{row.gameday} {gt}", tz="America/New_York").isoformat()
+            n["neutral"] = int(row.location == "Neutral")
+        # injury report for this game's week
+        if len(inj):
+            x = inj[(inj.season == season) & (inj.week == r.week) & inj.report_status.isin(["Out", "Doubtful", "Questionable"])]
+            n["inj"] = {s: {st: [f"{p.full_name} ({p.position})" for p in x[(x.team == t) & (x.report_status == st)].itertuples()]
+                            for st in ("Out", "Doubtful", "Questionable")} for s, t in (("a", a), ("h", h))}
+        # history between the teams, since 1999
+        m = done[((done.home_team == a) & (done.away_team == h)) | ((done.home_team == h) & (done.away_team == a))].sort_values("gameday")
+        if len(m):
+            last = []
+            for x in list(m.tail(5).itertuples())[::-1]:
+                cov = None if pd.isna(x.spread_line) else ("home" if x.result > x.spread_line else "away" if x.result < x.spread_line else "push")
+                last.append({"s": int(x.season), "wk": int(x.week), "post": int(x.game_type != "REG"), "h": x.home_team, "a": x.away_team,
+                             "hs": int(x.home_score), "as": int(x.away_score),
+                             "line": None if pd.isna(x.spread_line) else float(x.spread_line), "cov": cov})
+            n["h2h"] = {"rec": vs(done, "team", a, h), "last": last}
+        # starting quarterbacks and head coaches
+        if row is not None:
+            for key, col, nm in (("qb", "qb_id", "qb_name"), ("coach", "coach", "coach")):
+                ak, hk = row[f"away_{col}"], row[f"home_{col}"]
+                if not (isinstance(ak, str) and isinstance(hk, str)): continue
+                cur = done[done.season == season]
+                n[key] = {"a": {"name": row[f"away_{nm}"], "car": rec(done, col, ak), "now": rec(cur, col, ak)},
+                          "h": {"name": row[f"home_{nm}"], "car": rec(done, col, hk), "now": rec(cur, col, hk)},
+                          "vs": vs(done, col, ak, hk)}
+        out[f"{a}@{h}"] = n
+    return out
+
 def odds():
     """Live book lines from odds.py: middle line, best number per side with its book, and closing lines."""
     f = J("odds_games.json")
@@ -274,7 +338,13 @@ if MODE == "calc":
     if data.get("live"):
         num = lambda v: None if v is None or (isinstance(v, float) and v != v) else float(v)
         ig = {"live": data["live"], "week": wk,
-              "slate": [dict(away=e["away"], home=e["home"], homeLine=num(e["homeLine"]), total=num(e["total"]), when=e["when"]) for e in slate]}
+              "slate": [dict(away=e["away"], home=e["home"], homeLine=num(e["homeLine"]), total=num(e["total"]), when=e["when"],
+                             dome=e.get("dome"), roof=e.get("roof"), temp=e.get("temp"), wind=e.get("wind"), precip=e.get("precip"), fcAsOf=e.get("fcAsOf"))
+                        for e in slate]}
+        try:
+            ig["notes"] = game_notes(list(open_[open_.week == wk].itertuples()) if wk else [], J("data"), SEASON)
+        except Exception as err:                      # notes are extra; never let them stop the page
+            print("game notes skipped:", err); ig["notes"] = {}
         open(J("gridline_ingame.html"), "w").write(open(template("ingame_template.html")).read().replace("__DATA__", json.dumps(ig)))
         print("in-game page built:", len(slate), "games with pregame lines")
 

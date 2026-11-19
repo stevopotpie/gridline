@@ -34,9 +34,9 @@
  ],
  "shortcuts": [
   {
-   "name": "In-game",
-   "short_name": "In-game",
-   "url": "/gridline/in-game.html",
+   "name": "This week's games",
+   "short_name": "This week",
+   "url": "/gridline/",
    "icons": [
     {
      "src": "icon-192.png",

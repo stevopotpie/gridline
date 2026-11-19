@@ -52,7 +52,7 @@ def line_txt(team, pts):
 
 def page_style(repo):
     """The home page's design tokens and base styles, plus a few rules for article pages."""
-    src = open(os.path.join(repo, "site", "index.html"), encoding="utf-8").read()
+    src = open(os.path.join(repo, "site", "how-it-works.html"), encoding="utf-8").read()
     m = re.search(r"<style>(.*?)</style>", src, re.S)
     extra = """
 table.t{width:100%;border-collapse:collapse;font:400 .86rem var(--f-mono);font-variant-numeric:tabular-nums}

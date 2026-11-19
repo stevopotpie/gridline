@@ -17,13 +17,15 @@ GH = "https://github.com/stevopotpie/gridline"
 
 # (file on the site, built source, nav label, site map label, one line description)
 PAGES = [
-    ("index.html",    None,                    "Home",       "Home",                "What Gridline is and how it has done"),
+    ("index.html",    "gridline_ingame.html",  "This week",  "This week's games",   "Every game this week with the line, live scores, win chances and game notes"),
     ("season.html",   "gridline_2026.html",    "Season",     "2026 Season Board",   "Every game graded or projected, book odds, props, playoff odds"),
-    ("in-game.html",  "gridline_ingame.html",  "In-game",    "In-game",             "Live scores, Gridline's live win chance for each team, and a live moneyline check"),
     ("model.html",    "gridline_model.html",   "Calculator", "Matchup Calculator",  "Set any matchup, line, weather, QBs and injuries"),
     ("bet-log.html",  "gridline_bet_log.html", "Bet log",    "Bet Log",             "Red to green risk meter, a ledger saved in your browser, retro bets and strategy replays"),
+    ("how-it-works.html", None,                "How it works", "How it works",      "What Gridline is, how it is built and how it has done"),
     ("about.html",    None,                    "About",      "About Gridline",      "Who built Gridline, why, and what it is and isn't"),
 ]
+# The home page is this week's games (the live board, Nov 18 2026). The old landing page is how-it-works.html, and
+# in-game.html (the board's old address) redirects home.
 ABOUT = [
     ("About the builder", BASE + "about.html"),
     ("Results and method", f"{GH}#results-at-a-glance"),
@@ -68,8 +70,9 @@ THIS_WEEK = []      # (path, label) for the current week's game pages, filled by
 
 def nav(current, up=""):
     here = ' aria-current="page"'
-    items = [(f, label) for f, _, label, _, _ in PAGES[1:2]] + [(f, label) for f, label, _, _ in HUBS] + [(f, label) for f, _, label, _, _ in PAGES[2:]]
-    links = "".join(f'<a href="{up}{f}"{here if f == current else ""}>{label}</a>' for f, label in items)
+    items = [(f, label) for f, _, label, _, _ in PAGES[:2]] + [(f, label) for f, label, _, _ in HUBS] + [(f, label) for f, _, label, _, _ in PAGES[2:]]
+    links = "".join(f'<a href="{up}{"" if f == "index.html" else f}"{here if f == current else ""}>{label}</a>' for f, label in items).replace('href=""', 'href="./"')
+    links += '<a href="https://claude.ai/artifact/PnwqjUsuYKyyWzaPuQuHyL">The Bartop</a>'   # shared NFL and NBA question board
     links += '<a href="https://stevopotpie.github.io/courtline/">Courtline (NBA)</a>'
     links += f'<a href="{GH}">GitHub</a>'
     return (f'<nav class="gl-nav" aria-label="Gridline pages"><div class="gl-in">'
@@ -97,17 +100,17 @@ def sitemap_footer(current, up=""):
 
 def meta(f):
     """Link preview (LinkedIn, Slack, texts), search snippet and browser tab icon for one page."""
-    title = {"index.html": "Gridline: NFL Predictions, Spread & Over/Under Picks Tested Against Vegas",
+    title = {"index.html": "Gridline: This Week's NFL Games, Lines and Live Win Chances | The Ultimate Sports Betting Sandbox",
+             "how-it-works.html": "Gridline: NFL Predictions, Spread & Over/Under Picks Tested Against Vegas",
              "season.html": "NFL 2026 Season Predictions, Odds & Player Props | Gridline Season Board",
              "model.html": "NFL Matchup Calculator: Spread, Total & Live Win Probability | Gridline",
              "bet-log.html": "Sports Bet Tracker with Win Probability Meter | Gridline Bet Log",
-             "in-game.html": "Live NFL Win Probability and Live Moneyline Check | Gridline In-game",
              "about.html": "About Gridline: Built by Steven Sutcliffe"}[f]
-    desc = {"index.html": "Free NFL predictions for every game: projected scores, spread and over/under picks and player props from public play by play data, graded honestly against the betting market.",
+    desc = {"index.html": "The Ultimate Sports Betting Sandbox: every NFL game this week with the spread and total, live scores, Gridline's chance that each team wins, and game notes on injuries, weather, history, QBs and coaches.",
+            "how-it-works.html": "Free NFL predictions for every game: projected scores, spread and over/under picks and player props from public play by play data, graded honestly against the betting market.",
             "season.html": "Every 2026 NFL game projected or graded: Gridline vs Vegas spreads and totals, the best odds at the books, player props, anytime touchdown odds and playoff chances.",
             "model.html": "Set any NFL matchup, line, weather, quarterbacks and injuries and see the projected spread, total and score, plus a live in-game win probability model.",
             "bet-log.html": "Log your NFL bets and see each one's chance to win on a red to green meter, whether the model beats the price, and your closing line value.",
-            "in-game.html": "Live NFL scores with Gridline's live win probability from the score, clock, possession, field position and down and distance, plus a check for any live moneyline.",
             "about.html": "Gridline is built by Steven Sutcliffe, a former bartender turned data analyst who puts game day football theories to an honest test against every NFL game since 2015."}[f]
     url = BASE + ("" if f == "index.html" else f)
     ld = ""
@@ -128,7 +131,7 @@ def meta(f):
         ld = ('<script type="application/ld+json">' + json.dumps({"@context": "https://schema.org", "@type": "WebApplication", "name": title,
               "url": BASE + f, "applicationCategory": "SportsApplication", "operatingSystem": "Any", "description": desc,
               "offers": {"@type": "Offer", "price": "0", "priceCurrency": "USD"}}) + "</script>\n")
-    return ld + (f'<title>{title}</title>\n' if f not in ("index.html", "about.html") else "") + f'<meta name="description" content="{desc}">\n' + (
+    return ld + (f'<title>{title}</title>\n' if f not in ("how-it-works.html", "about.html") else "") + f'<meta name="description" content="{desc}">\n' + (
         f'<meta property="og:type" content="website">\n<meta property="og:site_name" content="Gridline">\n'
         f'<meta property="og:title" content="{title}">\n<meta property="og:description" content="{desc}">\n'
         f'<meta property="og:url" content="{url}">\n<meta property="og:image" content="{BASE}og.png?v=2">\n'
@@ -155,9 +158,12 @@ SEO_HEAD = ('<!doctype html>\n<html lang="en">\n<head>\n<meta charset="utf-8">\n
 extra_pages = []
 if os.path.exists(os.path.join(REPO, "season_data.json")):
     extra_pages, cur_wk, THIS_WEEK[:] = seo.build(REPO, OUT, BASE, SEO_HEAD, lambda up: nav("", up), lambda up: sitemap_footer("", up), GH)
+_v = re.search(r'<meta name="google-site-verification"[^>]*>\n?', open(os.path.join(REPO, "site", "how-it-works.html"), encoding="utf-8").read())
+VERIFY = _v.group(0) if _v else ""
 for f, src, *_ in PAGES:
     if src is None:
         html = open(os.path.join(REPO, "site", f), encoding="utf-8").read()
+        html = html.replace(VERIFY, "", 1) if f != "index.html" and VERIFY else html
         html = html.replace("</head>", meta(f) + STYLE + "\n</head>", 1)
         html = html.replace("<!-- gridline:nav -->", nav(f), 1).replace("<!-- gridline:sitemap -->", sitemap_footer(f), 1)
     else:
@@ -167,8 +173,13 @@ for f, src, *_ in PAGES:
         if i < 0 or j < i:
             sys.exit(f"assemble: could not find the page layout in {src}")
         # nav goes right before the page content; the site map after it and before the page's script
-        html = HEAD + meta(f) + STYLE + "\n" + frag[:i] + nav(f) + "\n" + frag[i:j] + sitemap_footer(f) + "\n" + frag[j:]
+        html = HEAD + (VERIFY if f == "index.html" else "") + meta(f) + STYLE + "\n" + frag[:i] + nav(f) + "\n" + frag[i:j] + sitemap_footer(f) + "\n" + frag[j:]
     open(os.path.join(OUT, f), "w", encoding="utf-8").write(html)
+
+# the board's old address sends visitors home
+open(os.path.join(OUT, "in-game.html"), "w", encoding="utf-8").write(
+    f'<!doctype html>\n<html lang="en">\n<meta charset="utf-8">\n<title>Gridline: this week\'s games</title>\n<link rel="canonical" href="{BASE}">\n'
+    '<meta http-equiv="refresh" content="0; url=./">\n<meta name="robots" content="noindex">\n<p>The live board moved to the <a href="./">Gridline home page</a>.</p>\n')
 
 today = datetime.now(timezone.utc).strftime("%Y-%m-%d")
 urls = "".join(f"  <url><loc>{BASE}{'' if f == 'index.html' else f}</loc><lastmod>{today}</lastmod></url>\n" for f, *_ in PAGES)
