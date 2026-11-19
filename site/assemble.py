@@ -44,7 +44,8 @@ body{margin:0}
 .gl-nav{background:var(--board,#141a16);color:var(--board-ink,#f1f5f2);font-family:var(--f-body,system-ui,sans-serif)}
 .gl-nav .gl-in{max-width:760px;margin:0 auto;padding:10px 16px;display:flex;align-items:center;gap:6px 16px;flex-wrap:wrap}
 .gl-nav a{color:inherit;text-decoration:none}
-.gl-brand{font:700 1.3rem/1 var(--f-display,"Arial Narrow",sans-serif);text-transform:uppercase;letter-spacing:.03em}
+.gl-brand{font:700 1.3rem/1 var(--f-display,"Arial Narrow",sans-serif);text-transform:uppercase;letter-spacing:.03em;display:inline-flex;align-items:center;gap:8px}
+.gl-brand img{width:26px;height:26px;border-radius:6px;display:block}
 .sb-sw{display:inline-flex;border:1px solid rgba(255,255,255,.18);border-radius:999px;padding:2px;margin-right:auto;flex:none}
 .sb-sw a{font:700 .74rem var(--f-body,system-ui,sans-serif);letter-spacing:.06em;opacity:.7;border-radius:999px;padding:3px 9px}
 .sb-sw a:hover{opacity:1}
@@ -79,7 +80,7 @@ def nav(current, up=""):
     links = "".join(f'<a href="{up}{"" if f == "index.html" else f}"{here if f == current else ""}>{label}</a>' for f, label in items).replace('href=""', 'href="./"')
     links += f'<a href="{GH}">GitHub</a>'
     return (f'<nav class="gl-nav" aria-label="Gridline pages"><div class="gl-in">'
-            f'<a class="gl-brand" href="{up or "./"}"{here if current == "index.html" else ""}>Gridline</a>'
+            f'<a class="gl-brand" href="{up or "./"}"{here if current == "index.html" else ""}><img src="{up}icon.png?v=2" alt="" width="26" height="26">Gridline</a>'
             f'<span class="sb-sw" role="group" aria-label="Switch sport"><a class="on" href="{up or "./"}" aria-current="true" title="Gridline, the NFL model">NFL</a>'
             '<a href="https://stevopotpie.github.io/courtline/" title="Courtline, the NBA model">NBA</a></span>'
             f'<div class="gl-links">{links}</div></div></nav>')
