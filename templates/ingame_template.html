@@ -49,6 +49,7 @@ button:focus-visible,input:focus-visible{outline:2px solid var(--accent);outline
 .row .tm .ball{color:var(--amber);font-size:.8rem;margin-left:4px}
 .row .sc{font:600 1.6rem var(--f-mono);font-variant-numeric:tabular-nums;text-align:right}
 .row .ch{font:600 1rem var(--f-mono);font-variant-numeric:tabular-nums;text-align:right;min-width:4.2rem}
+.row .ch small{display:block;font:500 .78rem var(--f-mono);color:var(--muted);margin-top:1px}
 .row.r5{grid-template-columns:minmax(0,1fr) auto auto auto auto;gap:2px 11px}
 .row.hd{font:600 .66rem var(--f-body);letter-spacing:.08em;text-transform:uppercase;color:var(--muted)}
 .row.hd span{text-align:right}
@@ -84,7 +85,7 @@ details.notes ul{margin:2px 0 0;padding-left:1.1rem}
   <section class="panel">
     <h2>How the live chance works</h2>
     <p class="note" id="how"></p>
-    <p class="note"><strong>Reading a card.</strong> <em>To win</em> is Gridline's chance that the team wins the game outright, the same bet as the moneyline. It is not the chance to cover. <em>Spread</em> is the pregame line and <em>Spread odds</em> is its price from the nflverse schedule (&minus;110 when none is posted), shown in the format you pick above. Spreads are set so each side is close to a coin flip, which is why a team can be 85% to win and still only an even bet against the spread. After the final, the odds column shows whether each side covered.</p>
+    <p class="note"><strong>Reading a card.</strong> <em>To win</em> is Gridline's chance that the team wins the game outright, the same bet as the moneyline. It is not the chance to cover. The price under it is that chance as straight moneyline odds with no book cut, so a book paying more than that is offering value. <em>Spread</em> is the pregame line and <em>Odds</em> is the spread's price from the nflverse schedule (&minus;110 when none is posted), shown in the format you pick above. Spreads are set so each side is close to a coin flip, which is why a team can be 85% to win and still only an even bet against the spread. After the final, the odds column shows whether each side covered.</p>
     <p class="note">Live scores, possession, down and distance, field position and timeouts come from ESPN's public scoreboard, read by your browser every 30 seconds; the model runs right here on the page. Between plays it uses the last known situation. For a live spread or total, or to set any game state by hand, use the live panel on the <a href="model.html">calculator</a>.</p>
   </section>
 </div>
@@ -185,7 +186,7 @@ function stateOf(g){
 }
 function cardHTML(id){
   return `<article class="g" id="g-${id}"><div class="g-top"><span class="g-state"></span><span class="note g-pre"></span></div>
-    <div class="row r5 hd"><span></span><span></span><span>To win</span><span>Spread</span><span>Spread odds</span></div>
+    <div class="row r5 hd"><span></span><span></span><span>To win</span><span>Spread</span><span>Odds</span></div>
     <div class="row r5"><span class="tm g-an"></span><span class="sc g-as"></span><span class="ch g-ac"></span><span class="cv g-asp"></span><span class="cv g-aod"></span></div>
     <div class="row r5"><span class="tm g-hn"></span><span class="sc g-hs"></span><span class="ch g-hc"></span><span class="cv g-hsp"></span><span class="cv g-hod"></span></div>
     <div class="bar" aria-hidden="true"><span class="a"></span><span class="h"></span></div>
@@ -276,7 +277,8 @@ function paint(id){
   qq(c, "g-an").innerHTML = esc(g.an) + ball("away"); qq(c, "g-hn").innerHTML = esc(g.hn) + ball("home");
   qq(c, "g-as").textContent = g.state === "pre" ? "" : g.as_; qq(c, "g-hs").textContent = g.state === "pre" ? "" : g.hs;
   const pa = done ? 1 - w.p : 1 - w.p - w.pTie;
-  qq(c, "g-ac").textContent = pc(pa); qq(c, "g-hc").textContent = pc(w.p);
+  const straight = p => done ? "" : `<small>${fmt(fair(p))}</small>`;   // the win chance as straight moneyline odds, no book cut
+  qq(c, "g-ac").innerHTML = pc(pa) + straight(1 - w.pNoTie); qq(c, "g-hc").innerHTML = pc(w.p) + straight(w.pNoTie);
   const ln = g.pre.line, hasLn = ln != null, od = (NOTES[g.away + "@" + g.home] || {}).odds || {};
   const odd = side => { if (!hasLn) return "";
     if (!done) return fmt(od[side] != null ? od[side] : -110);
@@ -289,9 +291,8 @@ function paint(id){
   qq(c, "sit").textContent = g.state === "in" ? (g.sit && g.sit.text ? g.sit.text : "Between plays") + (st.homeBall == null ? " · possession unknown, averaged" : "") : "";
   qq(c, "prices").hidden = done;
   qq(c, "pa").placeholder = g.away + " price"; qq(c, "ph").placeholder = g.home + " price";
-  qq(c, "g-fair").textContent = done ? "Final." : `Fair price now: ${g.away} ${fmt(fair(1 - w.pNoTie))} · ${g.home} ${fmt(fair(w.pNoTie))}` +
-    (w.m != null && g.state === "in" ? ` · projected final ${Math.max(g.as_, Math.round((g.hs + g.as_ + w.t - (g.hs - g.as_ + w.m)) / 2))}–${Math.max(g.hs, Math.round((g.hs + g.as_ + w.t + g.hs - g.as_ + w.m) / 2))}` : "") +
-    (g.state === "pre" ? ". Before kickoff this is the chance from the pregame line." : "");
+  qq(c, "g-fair").textContent = done ? "Final." : (w.m != null && g.state === "in" ? `Projected final ${Math.max(g.as_, Math.round((g.hs + g.as_ + w.t - (g.hs - g.as_ + w.m)) / 2))}–${Math.max(g.hs, Math.round((g.hs + g.as_ + w.t + g.hs - g.as_ + w.m) / 2))}` : "") +
+    (g.state === "pre" ? "Before kickoff the chances come from the pregame line." : "");
   qq(c, "v").innerHTML = done ? "" : verdict(g.away, g.home, w, readPrice(qq(c, "pa")), readPrice(qq(c, "ph")));
 }
 function situation(comp, home, away){
