@@ -1,0 +1,2819 @@
+{
+ "pulled_utc": "2026-11-22T22:29:16Z",
+ "games": [
+  {
+   "id": "4b20b742b6168aaca4f25d87f11b1526",
+   "sport_key": "americanfootball_nfl",
+   "sport_title": "NFL",
+   "commence_time": "2026-11-22T21:05:16Z",
+   "home_team": "Los Angeles Chargers",
+   "away_team": "New York Jets",
+   "bookmakers": [
+    {
+     "key": "draftkings",
+     "title": "DraftKings",
+     "last_update": "2026-11-22T22:29:02Z",
+     "markets": [
+      {
+       "key": "h2h",
+       "last_update": "2026-11-22T22:29:02Z",
+       "outcomes": [
+        {
+         "name": "Los Angeles Chargers",
+         "price": 161
+        },
+        {
+         "name": "New York Jets",
+         "price": -217
+        }
+       ]
+      },
+      {
+       "key": "spreads",
+       "last_update": "2026-11-22T22:29:02Z",
+       "outcomes": [
+        {
+         "name": "Los Angeles Chargers",
+         "price": -127,
+         "point": 3.5
+        },
+        {
+         "name": "New York Jets",
+         "price": -104,
+         "point": -3.5
+        }
+       ]
+      },
+      {
+       "key": "totals",
+       "last_update": "2026-11-22T22:29:02Z",
+       "outcomes": [
+        {
+         "name": "Over",
+         "price": -116,
+         "point": 48.5
+        },
+        {
+         "name": "Under",
+         "price": -114,
+         "point": 48.5
+        }
+       ]
+      }
+     ]
+    },
+    {
+     "key": "fanduel",
+     "title": "FanDuel",
+     "last_update": "2026-11-22T22:29:04Z",
+     "markets": [
+      {
+       "key": "h2h",
+       "last_update": "2026-11-22T22:29:04Z",
+       "outcomes": [
+        {
+         "name": "Los Angeles Chargers",
+         "price": 172
+        },
+        {
+         "name": "New York Jets",
+         "price": -225
+        }
+       ]
+      },
+      {
+       "key": "spreads",
+       "last_update": "2026-11-22T22:29:04Z",
+       "outcomes": [
+        {
+         "name": "Los Angeles Chargers",
+         "price": -125,
+         "point": 3.5
+        },
+        {
+         "name": "New York Jets",
+         "price": -106,
+         "point": -3.5
+        }
+       ]
+      },
+      {
+       "key": "totals",
+       "last_update": "2026-11-22T22:29:04Z",
+       "outcomes": [
+        {
+         "name": "Over",
+         "price": -125,
+         "point": 47.5
+        },
+        {
+         "name": "Under",
+         "price": -106,
+         "point": 47.5
+        }
+       ]
+      }
+     ]
+    },
+    {
+     "key": "betrivers",
+     "title": "BetRivers",
+     "last_update": "2026-11-22T22:28:32Z",
+     "markets": [
+      {
+       "key": "h2h",
+       "last_update": "2026-11-22T22:28:32Z",
+       "outcomes": [
+        {
+         "name": "Los Angeles Chargers",
+         "price": 163
+        },
+        {
+         "name": "New York Jets",
+         "price": -215
+        }
+       ]
+      },
+      {
+       "key": "spreads",
+       "last_update": "2026-11-22T22:28:32Z",
+       "outcomes": [
+        {
+         "name": "Los Angeles Chargers",
+         "price": -143,
+         "point": 3.5
+        },
+        {
+         "name": "New York Jets",
+         "price": 110,
+         "point": -3.5
+        }
+       ]
+      },
+      {
+       "key": "totals",
+       "last_update": "2026-11-22T22:28:32Z",
+       "outcomes": [
+        {
+         "name": "Over",
+         "price": -124,
+         "point": 48.5
+        },
+        {
+         "name": "Under",
+         "price": -107,
+         "point": 48.5
+        }
+       ]
+      }
+     ]
+    },
+    {
+     "key": "mybookieag",
+     "title": "MyBookie.ag",
+     "last_update": "2026-11-22T22:29:03Z",
+     "markets": [
+      {
+       "key": "h2h",
+       "last_update": "2026-11-22T22:29:03Z",
+       "outcomes": [
+        {
+         "name": "Los Angeles Chargers",
+         "price": 160
+        },
+        {
+         "name": "New York Jets",
+         "price": -222
+        }
+       ]
+      },
+      {
+       "key": "totals",
+       "last_update": "2026-11-22T22:29:03Z",
+       "outcomes": [
+        {
+         "name": "Over",
+         "price": -111,
+         "point": 48.5
+        },
+        {
+         "name": "Under",
+         "price": -125,
+         "point": 48.5
+        }
+       ]
+      }
+     ]
+    },
+    {
+     "key": "betmgm",
+     "title": "BetMGM",
+     "last_update": "2026-11-22T22:28:33Z",
+     "markets": [
+      {
+       "key": "h2h",
+       "last_update": "2026-11-22T22:28:33Z",
+       "outcomes": [
+        {
+         "name": "Los Angeles Chargers",
+         "price": 165
+        },
+        {
+         "name": "New York Jets",
+         "price": -220
+        }
+       ]
+      },
+      {
+       "key": "spreads",
+       "last_update": "2026-11-22T22:28:33Z",
+       "outcomes": [
+        {
+         "name": "Los Angeles Chargers",
+         "price": -120,
+         "point": 3.5
+        },
+        {
+         "name": "New York Jets",
+         "price": -108,
+         "point": -3.5
+        }
+       ]
+      },
+      {
+       "key": "totals",
+       "last_update": "2026-11-22T22:28:33Z",
+       "outcomes": [
+        {
+         "name": "Over",
+         "price": -120,
+         "point": 48.5
+        },
+        {
+         "name": "Under",
+         "price": -108,
+         "point": 48.5
+        }
+       ]
+      }
+     ]
+    },
+    {
+     "key": "bovada",
+     "title": "Bovada",
+     "last_update": "2026-11-22T22:28:21Z",
+     "markets": [
+      {
+       "key": "h2h",
+       "last_update": "2026-11-22T22:28:21Z",
+       "outcomes": [
+        {
+         "name": "Los Angeles Chargers",
+         "price": 165
+        },
+        {
+         "name": "New York Jets",
+         "price": -220
+        }
+       ]
+      },
+      {
+       "key": "spreads",
+       "last_update": "2026-11-22T22:28:21Z",
+       "outcomes": [
+        {
+         "name": "Los Angeles Chargers",
+         "price": -130,
+         "point": 3.5
+        },
+        {
+         "name": "New York Jets",
+         "price": 100,
+         "point": -3.5
+        }
+       ]
+      },
+      {
+       "key": "totals",
+       "last_update": "2026-11-22T22:28:21Z",
+       "outcomes": [
+        {
+         "name": "Over",
+         "price": -115,
+         "point": 49.0
+        },
+        {
+         "name": "Under",
+         "price": -115,
+         "point": 49.0
+        }
+       ]
+      }
+     ]
+    }
+   ]
+  },
+  {
+   "id": "1940706a79cbcbafacdcbf231069716b",
+   "sport_key": "americanfootball_nfl",
+   "sport_title": "NFL",
+   "commence_time": "2026-11-22T21:25:20Z",
+   "home_team": "Denver Broncos",
+   "away_team": "Las Vegas Raiders",
+   "bookmakers": [
+    {
+     "key": "draftkings",
+     "title": "DraftKings",
+     "last_update": "2026-11-22T22:29:02Z",
+     "markets": [
+      {
+       "key": "spreads",
+       "last_update": "2026-11-22T22:29:02Z",
+       "outcomes": [
+        {
+         "name": "Denver Broncos",
+         "price": -112,
+         "point": -21.5
+        },
+        {
+         "name": "Las Vegas Raiders",
+         "price": -118,
+         "point": 21.5
+        }
+       ]
+      },
+      {
+       "key": "totals",
+       "last_update": "2026-11-22T22:29:02Z",
+       "outcomes": [
+        {
+         "name": "Over",
+         "price": -109,
+         "point": 44.5
+        },
+        {
+         "name": "Under",
+         "price": -121,
+         "point": 44.5
+        }
+       ]
+      }
+     ]
+    },
+    {
+     "key": "fanduel",
+     "title": "FanDuel",
+     "last_update": "2026-11-22T22:29:04Z",
+     "markets": [
+      {
+       "key": "spreads",
+       "last_update": "2026-11-22T22:29:04Z",
+       "outcomes": [
+        {
+         "name": "Denver Broncos",
+         "price": -120,
+         "point": -21.5
+        },
+        {
+         "name": "Las Vegas Raiders",
+         "price": -110,
+         "point": 21.5
+        }
+       ]
+      },
+      {
+       "key": "totals",
+       "last_update": "2026-11-22T22:29:04Z",
+       "outcomes": [
+        {
+         "name": "Over",
+         "price": 100,
+         "point": 44.5
+        },
+        {
+         "name": "Under",
+         "price": -132,
+         "point": 44.5
+        }
+       ]
+      }
+     ]
+    },
+    {
+     "key": "betrivers",
+     "title": "BetRivers",
+     "last_update": "2026-11-22T22:28:32Z",
+     "markets": [
+      {
+       "key": "spreads",
+       "last_update": "2026-11-22T22:28:32Z",
+       "outcomes": [
+        {
+         "name": "Denver Broncos",
+         "price": -103,
+         "point": -21.5
+        },
+        {
+         "name": "Las Vegas Raiders",
+         "price": -129,
+         "point": 21.5
+        }
+       ]
+      },
+      {
+       "key": "totals",
+       "last_update": "2026-11-22T22:28:32Z",
+       "outcomes": [
+        {
+         "name": "Over",
+         "price": -112,
+         "point": 44.5
+        },
+        {
+         "name": "Under",
+         "price": -120,
+         "point": 44.5
+        }
+       ]
+      }
+     ]
+    },
+    {
+     "key": "mybookieag",
+     "title": "MyBookie.ag",
+     "last_update": "2026-11-22T22:29:03Z",
+     "markets": [
+      {
+       "key": "totals",
+       "last_update": "2026-11-22T22:29:03Z",
+       "outcomes": [
+        {
+         "name": "Over",
+         "price": -111,
+         "point": 46.5
+        },
+        {
+         "name": "Under",
+         "price": -111,
+         "point": 46.5
+        }
+       ]
+      }
+     ]
+    },
+    {
+     "key": "betmgm",
+     "title": "BetMGM",
+     "last_update": "2026-11-22T22:28:33Z",
+     "markets": [
+      {
+       "key": "h2h",
+       "last_update": "2026-11-22T22:28:33Z",
+       "outcomes": [
+        {
+         "name": "Denver Broncos",
+         "price": -20000
+        },
+        {
+         "name": "Las Vegas Raiders",
+         "price": 3000
+        }
+       ]
+      },
+      {
+       "key": "spreads",
+       "last_update": "2026-11-22T22:28:33Z",
+       "outcomes": [
+        {
+         "name": "Denver Broncos",
+         "price": -115,
+         "point": -21.5
+        },
+        {
+         "name": "Las Vegas Raiders",
+         "price": -115,
+         "point": 21.5
+        }
+       ]
+      },
+      {
+       "key": "totals",
+       "last_update": "2026-11-22T22:28:33Z",
+       "outcomes": [
+        {
+         "name": "Over",
+         "price": -102,
+         "point": 44.5
+        },
+        {
+         "name": "Under",
+         "price": -115,
+         "point": 44.5
+        }
+       ]
+      }
+     ]
+    },
+    {
+     "key": "bovada",
+     "title": "Bovada",
+     "last_update": "2026-11-22T22:26:09Z",
+     "markets": [
+      {
+       "key": "spreads",
+       "last_update": "2026-11-22T22:26:09Z",
+       "outcomes": [
+        {
+         "name": "Denver Broncos",
+         "price": -120,
+         "point": -23.5
+        },
+        {
+         "name": "Las Vegas Raiders",
+         "price": -110,
+         "point": 23.5
+        }
+       ]
+      },
+      {
+       "key": "totals",
+       "last_update": "2026-11-22T22:26:09Z",
+       "outcomes": [
+        {
+         "name": "Over",
+         "price": -115,
+         "point": 43.5
+        },
+        {
+         "name": "Under",
+         "price": -115,
+         "point": 43.5
+        }
+       ]
+      }
+     ]
+    }
+   ]
+  },
+  {
+   "id": "8ba112fabf4e87639338a5f437c5abfe",
+   "sport_key": "americanfootball_nfl",
+   "sport_title": "NFL",
+   "commence_time": "2026-11-22T21:25:20Z",
+   "home_team": "New York Giants",
+   "away_team": "Jacksonville Jaguars",
+   "bookmakers": [
+    {
+     "key": "draftkings",
+     "title": "DraftKings",
+     "last_update": "2026-11-22T22:29:02Z",
+     "markets": [
+      {
+       "key": "h2h",
+       "last_update": "2026-11-22T22:29:02Z",
+       "outcomes": [
+        {
+         "name": "Jacksonville Jaguars",
+         "price": -145
+        },
+        {
+         "name": "New York Giants",
+         "price": 109
+        }
+       ]
+      },
+      {
+       "key": "spreads",
+       "last_update": "2026-11-22T22:29:02Z",
+       "outcomes": [
+        {
+         "name": "Jacksonville Jaguars",
+         "price": -114,
+         "point": -2.5
+        },
+        {
+         "name": "New York Giants",
+         "price": -115,
+         "point": 2.5
+        }
+       ]
+      },
+      {
+       "key": "totals",
+       "last_update": "2026-11-22T22:29:02Z",
+       "outcomes": [
+        {
+         "name": "Over",
+         "price": -114,
+         "point": 48.5
+        },
+        {
+         "name": "Under",
+         "price": -115,
+         "point": 48.5
+        }
+       ]
+      }
+     ]
+    },
+    {
+     "key": "fanduel",
+     "title": "FanDuel",
+     "last_update": "2026-11-22T22:29:04Z",
+     "markets": [
+      {
+       "key": "h2h",
+       "last_update": "2026-11-22T22:29:04Z",
+       "outcomes": [
+        {
+         "name": "Jacksonville Jaguars",
+         "price": -140
+        },
+        {
+         "name": "New York Giants",
+         "price": 110
+        }
+       ]
+      },
+      {
+       "key": "spreads",
+       "last_update": "2026-11-22T22:29:04Z",
+       "outcomes": [
+        {
+         "name": "Jacksonville Jaguars",
+         "price": -102,
+         "point": -2.5
+        },
+        {
+         "name": "New York Giants",
+         "price": -130,
+         "point": 2.5
+        }
+       ]
+      },
+      {
+       "key": "totals",
+       "last_update": "2026-11-22T22:29:04Z",
+       "outcomes": [
+        {
+         "name": "Over",
+         "price": -114,
+         "point": 46.5
+        },
+        {
+         "name": "Under",
+         "price": -114,
+         "point": 46.5
+        }
+       ]
+      }
+     ]
+    },
+    {
+     "key": "betrivers",
+     "title": "BetRivers",
+     "last_update": "2026-11-22T22:28:32Z",
+     "markets": [
+      {
+       "key": "h2h",
+       "last_update": "2026-11-22T22:28:32Z",
+       "outcomes": [
+        {
+         "name": "Jacksonville Jaguars",
+         "price": -139
+        },
+        {
+         "name": "New York Giants",
+         "price": 110
+        }
+       ]
+      },
+      {
+       "key": "spreads",
+       "last_update": "2026-11-22T22:28:32Z",
+       "outcomes": [
+        {
+         "name": "Jacksonville Jaguars",
+         "price": -113,
+         "point": -2.0
+        },
+        {
+         "name": "New York Giants",
+         "price": -115,
+         "point": 2.0
+        }
+       ]
+      },
+      {
+       "key": "totals",
+       "last_update": "2026-11-22T22:28:32Z",
+       "outcomes": [
+        {
+         "name": "Over",
+         "price": -115,
+         "point": 48.5
+        },
+        {
+         "name": "Under",
+         "price": -112,
+         "point": 48.5
+        }
+       ]
+      }
+     ]
+    },
+    {
+     "key": "mybookieag",
+     "title": "MyBookie.ag",
+     "last_update": "2026-11-22T22:29:03Z",
+     "markets": [
+      {
+       "key": "h2h",
+       "last_update": "2026-11-22T22:29:03Z",
+       "outcomes": [
+        {
+         "name": "Jacksonville Jaguars",
+         "price": -167
+        },
+        {
+         "name": "New York Giants",
+         "price": 130
+        }
+       ]
+      },
+      {
+       "key": "spreads",
+       "last_update": "2026-11-22T22:29:03Z",
+       "outcomes": [
+        {
+         "name": "Jacksonville Jaguars",
+         "price": -125,
+         "point": -2.5
+        },
+        {
+         "name": "New York Giants",
+         "price": 100,
+         "point": 2.5
+        }
+       ]
+      },
+      {
+       "key": "totals",
+       "last_update": "2026-11-22T22:29:03Z",
+       "outcomes": [
+        {
+         "name": "Over",
+         "price": -118,
+         "point": 48.5
+        },
+        {
+         "name": "Under",
+         "price": -111,
+         "point": 48.5
+        }
+       ]
+      }
+     ]
+    },
+    {
+     "key": "betmgm",
+     "title": "BetMGM",
+     "last_update": "2026-11-22T22:28:33Z",
+     "markets": [
+      {
+       "key": "h2h",
+       "last_update": "2026-11-22T22:28:33Z",
+       "outcomes": [
+        {
+         "name": "Jacksonville Jaguars",
+         "price": -145
+        },
+        {
+         "name": "New York Giants",
+         "price": 115
+        }
+       ]
+      },
+      {
+       "key": "spreads",
+       "last_update": "2026-11-22T22:28:33Z",
+       "outcomes": [
+        {
+         "name": "Jacksonville Jaguars",
+         "price": -110,
+         "point": -2.5
+        },
+        {
+         "name": "New York Giants",
+         "price": -108,
+         "point": 2.5
+        }
+       ]
+      },
+      {
+       "key": "totals",
+       "last_update": "2026-11-22T22:28:33Z",
+       "outcomes": [
+        {
+         "name": "Over",
+         "price": -112,
+         "point": 47.5
+        },
+        {
+         "name": "Under",
+         "price": -105,
+         "point": 47.5
+        }
+       ]
+      }
+     ]
+    },
+    {
+     "key": "bovada",
+     "title": "Bovada",
+     "last_update": "2026-11-22T22:28:21Z",
+     "markets": [
+      {
+       "key": "h2h",
+       "last_update": "2026-11-22T22:28:21Z",
+       "outcomes": [
+        {
+         "name": "Jacksonville Jaguars",
+         "price": -135
+        },
+        {
+         "name": "New York Giants",
+         "price": 105
+        }
+       ]
+      },
+      {
+       "key": "spreads",
+       "last_update": "2026-11-22T22:28:21Z",
+       "outcomes": [
+        {
+         "name": "Jacksonville Jaguars",
+         "price": -115,
+         "point": -1.5
+        },
+        {
+         "name": "New York Giants",
+         "price": -115,
+         "point": 1.5
+        }
+       ]
+      },
+      {
+       "key": "totals",
+       "last_update": "2026-11-22T22:28:21Z",
+       "outcomes": [
+        {
+         "name": "Over",
+         "price": -115,
+         "point": 47.0
+        },
+        {
+         "name": "Under",
+         "price": -115,
+         "point": 47.0
+        }
+       ]
+      }
+     ]
+    }
+   ]
+  },
+  {
+   "id": "60e1d27b083a335b722c2c852ea85612",
+   "sport_key": "americanfootball_nfl",
+   "sport_title": "NFL",
+   "commence_time": "2026-11-23T01:20:00Z",
+   "home_team": "San Francisco 49ers",
+   "away_team": "Minnesota Vikings",
+   "bookmakers": [
+    {
+     "key": "draftkings",
+     "title": "DraftKings",
+     "last_update": "2026-11-22T22:29:02Z",
+     "markets": [
+      {
+       "key": "h2h",
+       "last_update": "2026-11-22T22:29:02Z",
+       "outcomes": [
+        {
+         "name": "Minnesota Vikings",
+         "price": 159
+        },
+        {
+         "name": "San Francisco 49ers",
+         "price": -190
+        }
+       ]
+      },
+      {
+       "key": "spreads",
+       "last_update": "2026-11-22T22:29:02Z",
+       "outcomes": [
+        {
+         "name": "Minnesota Vikings",
+         "price": -107,
+         "point": 3.5
+        },
+        {
+         "name": "San Francisco 49ers",
+         "price": -112,
+         "point": -3.5
+        }
+       ]
+      },
+      {
+       "key": "totals",
+       "last_update": "2026-11-22T22:29:02Z",
+       "outcomes": [
+        {
+         "name": "Over",
+         "price": -105,
+         "point": 46.5
+        },
+        {
+         "name": "Under",
+         "price": -114,
+         "point": 46.5
+        }
+       ]
+      }
+     ]
+    },
+    {
+     "key": "fanduel",
+     "title": "FanDuel",
+     "last_update": "2026-11-22T22:29:04Z",
+     "markets": [
+      {
+       "key": "h2h",
+       "last_update": "2026-11-22T22:29:04Z",
+       "outcomes": [
+        {
+         "name": "Minnesota Vikings",
+         "price": 176
+        },
+        {
+         "name": "San Francisco 49ers",
+         "price": -210
+        }
+       ]
+      },
+      {
+       "key": "spreads",
+       "last_update": "2026-11-22T22:29:04Z",
+       "outcomes": [
+        {
+         "name": "Minnesota Vikings",
+         "price": 100,
+         "point": 3.5
+        },
+        {
+         "name": "San Francisco 49ers",
+         "price": -120,
+         "point": -3.5
+        }
+       ]
+      },
+      {
+       "key": "totals",
+       "last_update": "2026-11-22T22:29:04Z",
+       "outcomes": [
+        {
+         "name": "Over",
+         "price": -110,
+         "point": 45.5
+        },
+        {
+         "name": "Under",
+         "price": -110,
+         "point": 45.5
+        }
+       ]
+      }
+     ]
+    },
+    {
+     "key": "betmgm",
+     "title": "BetMGM",
+     "last_update": "2026-11-22T22:28:33Z",
+     "markets": [
+      {
+       "key": "h2h",
+       "last_update": "2026-11-22T22:28:33Z",
+       "outcomes": [
+        {
+         "name": "Minnesota Vikings",
+         "price": 170
+        },
+        {
+         "name": "San Francisco 49ers",
+         "price": -210
+        }
+       ]
+      },
+      {
+       "key": "spreads",
+       "last_update": "2026-11-22T22:28:33Z",
+       "outcomes": [
+        {
+         "name": "Minnesota Vikings",
+         "price": -110,
+         "point": 4.0
+        },
+        {
+         "name": "San Francisco 49ers",
+         "price": -108,
+         "point": -4.0
+        }
+       ]
+      },
+      {
+       "key": "totals",
+       "last_update": "2026-11-22T22:28:33Z",
+       "outcomes": [
+        {
+         "name": "Over",
+         "price": -110,
+         "point": 45.5
+        },
+        {
+         "name": "Under",
+         "price": -108,
+         "point": 45.5
+        }
+       ]
+      }
+     ]
+    },
+    {
+     "key": "betus",
+     "title": "BetUS",
+     "last_update": "2026-11-22T22:28:47Z",
+     "markets": [
+      {
+       "key": "h2h",
+       "last_update": "2026-11-22T22:28:47Z",
+       "outcomes": [
+        {
+         "name": "Minnesota Vikings",
+         "price": 175
+        },
+        {
+         "name": "San Francisco 49ers",
+         "price": -205
+        }
+       ]
+      },
+      {
+       "key": "spreads",
+       "last_update": "2026-11-22T22:28:47Z",
+       "outcomes": [
+        {
+         "name": "Minnesota Vikings",
+         "price": -110,
+         "point": 4.0
+        },
+        {
+         "name": "San Francisco 49ers",
+         "price": -110,
+         "point": -4.0
+        }
+       ]
+      },
+      {
+       "key": "totals",
+       "last_update": "2026-11-22T22:28:47Z",
+       "outcomes": [
+        {
+         "name": "Over",
+         "price": -110,
+         "point": 45.5
+        },
+        {
+         "name": "Under",
+         "price": -110,
+         "point": 45.5
+        }
+       ]
+      }
+     ]
+    },
+    {
+     "key": "mybookieag",
+     "title": "MyBookie.ag",
+     "last_update": "2026-11-22T22:29:03Z",
+     "markets": [
+      {
+       "key": "h2h",
+       "last_update": "2026-11-22T22:29:03Z",
+       "outcomes": [
+        {
+         "name": "Minnesota Vikings",
+         "price": 171
+        },
+        {
+         "name": "San Francisco 49ers",
+         "price": -204
+        }
+       ]
+      },
+      {
+       "key": "spreads",
+       "last_update": "2026-11-22T22:29:03Z",
+       "outcomes": [
+        {
+         "name": "Minnesota Vikings",
+         "price": -110,
+         "point": 4.0
+        },
+        {
+         "name": "San Francisco 49ers",
+         "price": -110,
+         "point": -4.0
+        }
+       ]
+      },
+      {
+       "key": "totals",
+       "last_update": "2026-11-22T22:29:03Z",
+       "outcomes": [
+        {
+         "name": "Over",
+         "price": -110,
+         "point": 45.5
+        },
+        {
+         "name": "Under",
+         "price": -110,
+         "point": 45.5
+        }
+       ]
+      }
+     ]
+    },
+    {
+     "key": "lowvig",
+     "title": "LowVig.ag",
+     "last_update": "2026-11-22T22:28:03Z",
+     "markets": [
+      {
+       "key": "h2h",
+       "last_update": "2026-11-22T22:28:03Z",
+       "outcomes": [
+        {
+         "name": "Minnesota Vikings",
+         "price": 177
+        },
+        {
+         "name": "San Francisco 49ers",
+         "price": -205
+        }
+       ]
+      },
+      {
+       "key": "spreads",
+       "last_update": "2026-11-22T22:28:03Z",
+       "outcomes": [
+        {
+         "name": "Minnesota Vikings",
+         "price": -105,
+         "point": 4.0
+        },
+        {
+         "name": "San Francisco 49ers",
+         "price": -105,
+         "point": -4.0
+        }
+       ]
+      },
+      {
+       "key": "totals",
+       "last_update": "2026-11-22T22:28:03Z",
+       "outcomes": [
+        {
+         "name": "Over",
+         "price": -105,
+         "point": 45.5
+        },
+        {
+         "name": "Under",
+         "price": -109,
+         "point": 45.5
+        }
+       ]
+      }
+     ]
+    },
+    {
+     "key": "betonlineag",
+     "title": "BetOnline.ag",
+     "last_update": "2026-11-22T22:28:48Z",
+     "markets": [
+      {
+       "key": "h2h",
+       "last_update": "2026-11-22T22:28:48Z",
+       "outcomes": [
+        {
+         "name": "Minnesota Vikings",
+         "price": 177
+        },
+        {
+         "name": "San Francisco 49ers",
+         "price": -205
+        }
+       ]
+      },
+      {
+       "key": "spreads",
+       "last_update": "2026-11-22T22:28:48Z",
+       "outcomes": [
+        {
+         "name": "Minnesota Vikings",
+         "price": -110,
+         "point": 4.0
+        },
+        {
+         "name": "San Francisco 49ers",
+         "price": -110,
+         "point": -4.0
+        }
+       ]
+      },
+      {
+       "key": "totals",
+       "last_update": "2026-11-22T22:28:48Z",
+       "outcomes": [
+        {
+         "name": "Over",
+         "price": -108,
+         "point": 45.5
+        },
+        {
+         "name": "Under",
+         "price": -112,
+         "point": 45.5
+        }
+       ]
+      }
+     ]
+    },
+    {
+     "key": "betrivers",
+     "title": "BetRivers",
+     "last_update": "2026-11-22T22:28:32Z",
+     "markets": [
+      {
+       "key": "h2h",
+       "last_update": "2026-11-22T22:28:32Z",
+       "outcomes": [
+        {
+         "name": "Minnesota Vikings",
+         "price": 155
+        },
+        {
+         "name": "San Francisco 49ers",
+         "price": -190
+        }
+       ]
+      },
+      {
+       "key": "spreads",
+       "last_update": "2026-11-22T22:28:32Z",
+       "outcomes": [
+        {
+         "name": "Minnesota Vikings",
+         "price": -110,
+         "point": 4.0
+        },
+        {
+         "name": "San Francisco 49ers",
+         "price": -110,
+         "point": -4.0
+        }
+       ]
+      },
+      {
+       "key": "totals",
+       "last_update": "2026-11-22T22:28:32Z",
+       "outcomes": [
+        {
+         "name": "Over",
+         "price": -110,
+         "point": 45.5
+        },
+        {
+         "name": "Under",
+         "price": -110,
+         "point": 45.5
+        }
+       ]
+      }
+     ]
+    },
+    {
+     "key": "bovada",
+     "title": "Bovada",
+     "last_update": "2026-11-22T22:28:21Z",
+     "markets": [
+      {
+       "key": "h2h",
+       "last_update": "2026-11-22T22:28:21Z",
+       "outcomes": [
+        {
+         "name": "Minnesota Vikings",
+         "price": 175
+        },
+        {
+         "name": "San Francisco 49ers",
+         "price": -210
+        }
+       ]
+      },
+      {
+       "key": "spreads",
+       "last_update": "2026-11-22T22:28:21Z",
+       "outcomes": [
+        {
+         "name": "Minnesota Vikings",
+         "price": -108,
+         "point": 4.0
+        },
+        {
+         "name": "San Francisco 49ers",
+         "price": -112,
+         "point": -4.0
+        }
+       ]
+      },
+      {
+       "key": "totals",
+       "last_update": "2026-11-22T22:28:21Z",
+       "outcomes": [
+        {
+         "name": "Over",
+         "price": -108,
+         "point": 45.5
+        },
+        {
+         "name": "Under",
+         "price": -112,
+         "point": 45.5
+        }
+       ]
+      }
+     ]
+    }
+   ]
+  },
+  {
+   "id": "3a60ed1d20004aa4d4772b2c1a2272e7",
+   "sport_key": "americanfootball_nfl",
+   "sport_title": "NFL",
+   "commence_time": "2026-11-24T01:15:00Z",
+   "home_team": "Washington Commanders",
+   "away_team": "Cincinnati Bengals",
+   "bookmakers": [
+    {
+     "key": "draftkings",
+     "title": "DraftKings",
+     "last_update": "2026-11-22T22:29:02Z",
+     "markets": [
+      {
+       "key": "h2h",
+       "last_update": "2026-11-22T22:29:02Z",
+       "outcomes": [
+        {
+         "name": "Cincinnati Bengals",
+         "price": -296
+        },
+        {
+         "name": "Washington Commanders",
+         "price": 241
+        }
+       ]
+      },
+      {
+       "key": "spreads",
+       "last_update": "2026-11-22T22:29:02Z",
+       "outcomes": [
+        {
+         "name": "Cincinnati Bengals",
+         "price": -112,
+         "point": -6.0
+        },
+        {
+         "name": "Washington Commanders",
+         "price": -107,
+         "point": 6.0
+        }
+       ]
+      },
+      {
+       "key": "totals",
+       "last_update": "2026-11-22T22:29:02Z",
+       "outcomes": [
+        {
+         "name": "Over",
+         "price": -116,
+         "point": 54.5
+        },
+        {
+         "name": "Under",
+         "price": -103,
+         "point": 54.5
+        }
+       ]
+      }
+     ]
+    },
+    {
+     "key": "betus",
+     "title": "BetUS",
+     "last_update": "2026-11-22T22:28:47Z",
+     "markets": [
+      {
+       "key": "h2h",
+       "last_update": "2026-11-22T22:28:47Z",
+       "outcomes": [
+        {
+         "name": "Cincinnati Bengals",
+         "price": -285
+        },
+        {
+         "name": "Washington Commanders",
+         "price": 238
+        }
+       ]
+      },
+      {
+       "key": "spreads",
+       "last_update": "2026-11-22T22:28:47Z",
+       "outcomes": [
+        {
+         "name": "Cincinnati Bengals",
+         "price": -110,
+         "point": -6.0
+        },
+        {
+         "name": "Washington Commanders",
+         "price": -110,
+         "point": 6.0
+        }
+       ]
+      },
+      {
+       "key": "totals",
+       "last_update": "2026-11-22T22:28:47Z",
+       "outcomes": [
+        {
+         "name": "Over",
+         "price": -110,
+         "point": 55.0
+        },
+        {
+         "name": "Under",
+         "price": -110,
+         "point": 55.0
+        }
+       ]
+      }
+     ]
+    },
+    {
+     "key": "fanduel",
+     "title": "FanDuel",
+     "last_update": "2026-11-22T22:29:04Z",
+     "markets": [
+      {
+       "key": "h2h",
+       "last_update": "2026-11-22T22:29:04Z",
+       "outcomes": [
+        {
+         "name": "Cincinnati Bengals",
+         "price": -290
+        },
+        {
+         "name": "Washington Commanders",
+         "price": 235
+        }
+       ]
+      },
+      {
+       "key": "spreads",
+       "last_update": "2026-11-22T22:29:04Z",
+       "outcomes": [
+        {
+         "name": "Cincinnati Bengals",
+         "price": -120,
+         "point": -5.5
+        },
+        {
+         "name": "Washington Commanders",
+         "price": 100,
+         "point": 5.5
+        }
+       ]
+      },
+      {
+       "key": "totals",
+       "last_update": "2026-11-22T22:29:04Z",
+       "outcomes": [
+        {
+         "name": "Over",
+         "price": -110,
+         "point": 54.5
+        },
+        {
+         "name": "Under",
+         "price": -110,
+         "point": 54.5
+        }
+       ]
+      }
+     ]
+    },
+    {
+     "key": "betonlineag",
+     "title": "BetOnline.ag",
+     "last_update": "2026-11-22T22:28:48Z",
+     "markets": [
+      {
+       "key": "h2h",
+       "last_update": "2026-11-22T22:28:48Z",
+       "outcomes": [
+        {
+         "name": "Cincinnati Bengals",
+         "price": -292
+        },
+        {
+         "name": "Washington Commanders",
+         "price": 239
+        }
+       ]
+      },
+      {
+       "key": "spreads",
+       "last_update": "2026-11-22T22:28:48Z",
+       "outcomes": [
+        {
+         "name": "Cincinnati Bengals",
+         "price": -110,
+         "point": -6.0
+        },
+        {
+         "name": "Washington Commanders",
+         "price": -110,
+         "point": 6.0
+        }
+       ]
+      },
+      {
+       "key": "totals",
+       "last_update": "2026-11-22T22:28:48Z",
+       "outcomes": [
+        {
+         "name": "Over",
+         "price": -110,
+         "point": 55.0
+        },
+        {
+         "name": "Under",
+         "price": -110,
+         "point": 55.0
+        }
+       ]
+      }
+     ]
+    },
+    {
+     "key": "lowvig",
+     "title": "LowVig.ag",
+     "last_update": "2026-11-22T22:28:03Z",
+     "markets": [
+      {
+       "key": "h2h",
+       "last_update": "2026-11-22T22:28:03Z",
+       "outcomes": [
+        {
+         "name": "Cincinnati Bengals",
+         "price": -292
+        },
+        {
+         "name": "Washington Commanders",
+         "price": 239
+        }
+       ]
+      },
+      {
+       "key": "spreads",
+       "last_update": "2026-11-22T22:28:03Z",
+       "outcomes": [
+        {
+         "name": "Cincinnati Bengals",
+         "price": -105,
+         "point": -6.0
+        },
+        {
+         "name": "Washington Commanders",
+         "price": -105,
+         "point": 6.0
+        }
+       ]
+      },
+      {
+       "key": "totals",
+       "last_update": "2026-11-22T22:28:03Z",
+       "outcomes": [
+        {
+         "name": "Over",
+         "price": 100,
+         "point": 55.0
+        },
+        {
+         "name": "Under",
+         "price": -115,
+         "point": 55.0
+        }
+       ]
+      }
+     ]
+    },
+    {
+     "key": "betrivers",
+     "title": "BetRivers",
+     "last_update": "2026-11-22T22:28:32Z",
+     "markets": [
+      {
+       "key": "h2h",
+       "last_update": "2026-11-22T22:28:32Z",
+       "outcomes": [
+        {
+         "name": "Cincinnati Bengals",
+         "price": -295
+        },
+        {
+         "name": "Washington Commanders",
+         "price": 230
+        }
+       ]
+      },
+      {
+       "key": "spreads",
+       "last_update": "2026-11-22T22:28:32Z",
+       "outcomes": [
+        {
+         "name": "Cincinnati Bengals",
+         "price": -112,
+         "point": -6.0
+        },
+        {
+         "name": "Washington Commanders",
+         "price": -109,
+         "point": 6.0
+        }
+       ]
+      },
+      {
+       "key": "totals",
+       "last_update": "2026-11-22T22:28:32Z",
+       "outcomes": [
+        {
+         "name": "Over",
+         "price": -109,
+         "point": 54.5
+        },
+        {
+         "name": "Under",
+         "price": -112,
+         "point": 54.5
+        }
+       ]
+      }
+     ]
+    },
+    {
+     "key": "mybookieag",
+     "title": "MyBookie.ag",
+     "last_update": "2026-11-22T22:29:03Z",
+     "markets": [
+      {
+       "key": "h2h",
+       "last_update": "2026-11-22T22:29:03Z",
+       "outcomes": [
+        {
+         "name": "Cincinnati Bengals",
+         "price": -318
+        },
+        {
+         "name": "Washington Commanders",
+         "price": 244
+        }
+       ]
+      },
+      {
+       "key": "spreads",
+       "last_update": "2026-11-22T22:29:03Z",
+       "outcomes": [
+        {
+         "name": "Cincinnati Bengals",
+         "price": -110,
+         "point": -6.0
+        },
+        {
+         "name": "Washington Commanders",
+         "price": -110,
+         "point": 6.0
+        }
+       ]
+      },
+      {
+       "key": "totals",
+       "last_update": "2026-11-22T22:29:03Z",
+       "outcomes": [
+        {
+         "name": "Over",
+         "price": -110,
+         "point": 55.0
+        },
+        {
+         "name": "Under",
+         "price": -110,
+         "point": 55.0
+        }
+       ]
+      }
+     ]
+    },
+    {
+     "key": "betmgm",
+     "title": "BetMGM",
+     "last_update": "2026-11-22T22:28:33Z",
+     "markets": [
+      {
+       "key": "h2h",
+       "last_update": "2026-11-22T22:28:33Z",
+       "outcomes": [
+        {
+         "name": "Cincinnati Bengals",
+         "price": -295
+        },
+        {
+         "name": "Washington Commanders",
+         "price": 240
+        }
+       ]
+      },
+      {
+       "key": "spreads",
+       "last_update": "2026-11-22T22:28:33Z",
+       "outcomes": [
+        {
+         "name": "Cincinnati Bengals",
+         "price": -108,
+         "point": -6.0
+        },
+        {
+         "name": "Washington Commanders",
+         "price": -110,
+         "point": 6.0
+        }
+       ]
+      },
+      {
+       "key": "totals",
+       "last_update": "2026-11-22T22:28:33Z",
+       "outcomes": [
+        {
+         "name": "Over",
+         "price": -105,
+         "point": 55.0
+        },
+        {
+         "name": "Under",
+         "price": -112,
+         "point": 55.0
+        }
+       ]
+      }
+     ]
+    },
+    {
+     "key": "bovada",
+     "title": "Bovada",
+     "last_update": "2026-11-22T22:28:21Z",
+     "markets": [
+      {
+       "key": "h2h",
+       "last_update": "2026-11-22T22:28:21Z",
+       "outcomes": [
+        {
+         "name": "Cincinnati Bengals",
+         "price": -285
+        },
+        {
+         "name": "Washington Commanders",
+         "price": 235
+        }
+       ]
+      },
+      {
+       "key": "spreads",
+       "last_update": "2026-11-22T22:28:21Z",
+       "outcomes": [
+        {
+         "name": "Cincinnati Bengals",
+         "price": -112,
+         "point": -6.0
+        },
+        {
+         "name": "Washington Commanders",
+         "price": -108,
+         "point": 6.0
+        }
+       ]
+      },
+      {
+       "key": "totals",
+       "last_update": "2026-11-22T22:28:21Z",
+       "outcomes": [
+        {
+         "name": "Over",
+         "price": -110,
+         "point": 54.5
+        },
+        {
+         "name": "Under",
+         "price": -110,
+         "point": 54.5
+        }
+       ]
+      }
+     ]
+    }
+   ]
+  },
+  {
+   "id": "5b612899d6dcdf998107f2c6c6e49a58",
+   "sport_key": "americanfootball_nfl",
+   "sport_title": "NFL",
+   "commence_time": "2026-11-26T01:00:00Z",
+   "home_team": "Los Angeles Rams",
+   "away_team": "Green Bay Packers",
+   "bookmakers": [
+    {
+     "key": "draftkings",
+     "title": "DraftKings",
+     "last_update": "2026-11-22T22:29:02Z",
+     "markets": [
+      {
+       "key": "h2h",
+       "last_update": "2026-11-22T22:29:02Z",
+       "outcomes": [
+        {
+         "name": "Green Bay Packers",
+         "price": 135
+        },
+        {
+         "name": "Los Angeles Rams",
+         "price": -160
+        }
+       ]
+      },
+      {
+       "key": "spreads",
+       "last_update": "2026-11-22T22:29:02Z",
+       "outcomes": [
+        {
+         "name": "Green Bay Packers",
+         "price": -106,
+         "point": 3.0
+        },
+        {
+         "name": "Los Angeles Rams",
+         "price": -113,
+         "point": -3.0
+        }
+       ]
+      },
+      {
+       "key": "totals",
+       "last_update": "2026-11-22T22:29:02Z",
+       "outcomes": [
+        {
+         "name": "Over",
+         "price": -114,
+         "point": 45.5
+        },
+        {
+         "name": "Under",
+         "price": -105,
+         "point": 45.5
+        }
+       ]
+      }
+     ]
+    },
+    {
+     "key": "betmgm",
+     "title": "BetMGM",
+     "last_update": "2026-11-22T22:28:33Z",
+     "markets": [
+      {
+       "key": "h2h",
+       "last_update": "2026-11-22T22:28:33Z",
+       "outcomes": [
+        {
+         "name": "Green Bay Packers",
+         "price": 135
+        },
+        {
+         "name": "Los Angeles Rams",
+         "price": -160
+        }
+       ]
+      },
+      {
+       "key": "spreads",
+       "last_update": "2026-11-22T22:28:33Z",
+       "outcomes": [
+        {
+         "name": "Green Bay Packers",
+         "price": -110,
+         "point": 3.0
+        },
+        {
+         "name": "Los Angeles Rams",
+         "price": -108,
+         "point": -3.0
+        }
+       ]
+      },
+      {
+       "key": "totals",
+       "last_update": "2026-11-22T22:28:33Z",
+       "outcomes": [
+        {
+         "name": "Over",
+         "price": -108,
+         "point": 45.5
+        },
+        {
+         "name": "Under",
+         "price": -110,
+         "point": 45.5
+        }
+       ]
+      }
+     ]
+    },
+    {
+     "key": "mybookieag",
+     "title": "MyBookie.ag",
+     "last_update": "2026-11-22T22:29:03Z",
+     "markets": [
+      {
+       "key": "totals",
+       "last_update": "2026-11-22T22:29:03Z",
+       "outcomes": [
+        {
+         "name": "Over",
+         "price": -110,
+         "point": 45.5
+        },
+        {
+         "name": "Under",
+         "price": -110,
+         "point": 45.5
+        }
+       ]
+      }
+     ]
+    },
+    {
+     "key": "betrivers",
+     "title": "BetRivers",
+     "last_update": "2026-11-22T22:28:32Z",
+     "markets": [
+      {
+       "key": "h2h",
+       "last_update": "2026-11-22T22:28:32Z",
+       "outcomes": [
+        {
+         "name": "Green Bay Packers",
+         "price": 140
+        },
+        {
+         "name": "Los Angeles Rams",
+         "price": -175
+        }
+       ]
+      },
+      {
+       "key": "spreads",
+       "last_update": "2026-11-22T22:28:32Z",
+       "outcomes": [
+        {
+         "name": "Green Bay Packers",
+         "price": -106,
+         "point": 3.0
+        },
+        {
+         "name": "Los Angeles Rams",
+         "price": -115,
+         "point": -3.0
+        }
+       ]
+      },
+      {
+       "key": "totals",
+       "last_update": "2026-11-22T22:28:32Z",
+       "outcomes": [
+        {
+         "name": "Over",
+         "price": -108,
+         "point": 45.5
+        },
+        {
+         "name": "Under",
+         "price": -113,
+         "point": 45.5
+        }
+       ]
+      }
+     ]
+    },
+    {
+     "key": "lowvig",
+     "title": "LowVig.ag",
+     "last_update": "2026-11-22T22:28:03Z",
+     "markets": [
+      {
+       "key": "spreads",
+       "last_update": "2026-11-22T22:28:03Z",
+       "outcomes": [
+        {
+         "name": "Green Bay Packers",
+         "price": -109,
+         "point": 3.0
+        },
+        {
+         "name": "Los Angeles Rams",
+         "price": -101,
+         "point": -3.0
+        }
+       ]
+      },
+      {
+       "key": "totals",
+       "last_update": "2026-11-22T22:28:03Z",
+       "outcomes": [
+        {
+         "name": "Over",
+         "price": -102,
+         "point": 45.5
+        },
+        {
+         "name": "Under",
+         "price": -113,
+         "point": 45.5
+        }
+       ]
+      }
+     ]
+    },
+    {
+     "key": "betonlineag",
+     "title": "BetOnline.ag",
+     "last_update": "2026-11-22T22:28:48Z",
+     "markets": [
+      {
+       "key": "spreads",
+       "last_update": "2026-11-22T22:28:48Z",
+       "outcomes": [
+        {
+         "name": "Green Bay Packers",
+         "price": -114,
+         "point": 3.0
+        },
+        {
+         "name": "Los Angeles Rams",
+         "price": -106,
+         "point": -3.0
+        }
+       ]
+      },
+      {
+       "key": "totals",
+       "last_update": "2026-11-22T22:28:48Z",
+       "outcomes": [
+        {
+         "name": "Over",
+         "price": -105,
+         "point": 45.5
+        },
+        {
+         "name": "Under",
+         "price": -115,
+         "point": 45.5
+        }
+       ]
+      }
+     ]
+    }
+   ]
+  },
+  {
+   "id": "9b825e6518156008da499be041975fdd",
+   "sport_key": "americanfootball_nfl",
+   "sport_title": "NFL",
+   "commence_time": "2026-11-26T18:00:00Z",
+   "home_team": "Detroit Lions",
+   "away_team": "Chicago Bears",
+   "bookmakers": [
+    {
+     "key": "draftkings",
+     "title": "DraftKings",
+     "last_update": "2026-11-22T22:29:02Z",
+     "markets": [
+      {
+       "key": "h2h",
+       "last_update": "2026-11-22T22:29:02Z",
+       "outcomes": [
+        {
+         "name": "Chicago Bears",
+         "price": -140
+        },
+        {
+         "name": "Detroit Lions",
+         "price": 119
+        }
+       ]
+      },
+      {
+       "key": "spreads",
+       "last_update": "2026-11-22T22:29:02Z",
+       "outcomes": [
+        {
+         "name": "Chicago Bears",
+         "price": -110,
+         "point": -2.5
+        },
+        {
+         "name": "Detroit Lions",
+         "price": -110,
+         "point": 2.5
+        }
+       ]
+      },
+      {
+       "key": "totals",
+       "last_update": "2026-11-22T22:29:02Z",
+       "outcomes": [
+        {
+         "name": "Over",
+         "price": -110,
+         "point": 55.5
+        },
+        {
+         "name": "Under",
+         "price": -110,
+         "point": 55.5
+        }
+       ]
+      }
+     ]
+    },
+    {
+     "key": "betmgm",
+     "title": "BetMGM",
+     "last_update": "2026-11-22T22:28:33Z",
+     "markets": [
+      {
+       "key": "h2h",
+       "last_update": "2026-11-22T22:28:33Z",
+       "outcomes": [
+        {
+         "name": "Chicago Bears",
+         "price": -140
+        },
+        {
+         "name": "Detroit Lions",
+         "price": 115
+        }
+       ]
+      },
+      {
+       "key": "spreads",
+       "last_update": "2026-11-22T22:28:33Z",
+       "outcomes": [
+        {
+         "name": "Chicago Bears",
+         "price": -108,
+         "point": -2.5
+        },
+        {
+         "name": "Detroit Lions",
+         "price": -110,
+         "point": 2.5
+        }
+       ]
+      },
+      {
+       "key": "totals",
+       "last_update": "2026-11-22T22:28:33Z",
+       "outcomes": [
+        {
+         "name": "Over",
+         "price": -110,
+         "point": 55.5
+        },
+        {
+         "name": "Under",
+         "price": -108,
+         "point": 55.5
+        }
+       ]
+      }
+     ]
+    },
+    {
+     "key": "betrivers",
+     "title": "BetRivers",
+     "last_update": "2026-11-22T22:28:32Z",
+     "markets": [
+      {
+       "key": "h2h",
+       "last_update": "2026-11-22T22:28:32Z",
+       "outcomes": [
+        {
+         "name": "Chicago Bears",
+         "price": -143
+        },
+        {
+         "name": "Detroit Lions",
+         "price": 115
+        }
+       ]
+      },
+      {
+       "key": "spreads",
+       "last_update": "2026-11-22T22:28:32Z",
+       "outcomes": [
+        {
+         "name": "Chicago Bears",
+         "price": -109,
+         "point": -2.5
+        },
+        {
+         "name": "Detroit Lions",
+         "price": -112,
+         "point": 2.5
+        }
+       ]
+      },
+      {
+       "key": "totals",
+       "last_update": "2026-11-22T22:28:32Z",
+       "outcomes": [
+        {
+         "name": "Over",
+         "price": -114,
+         "point": 55.0
+        },
+        {
+         "name": "Under",
+         "price": -107,
+         "point": 55.0
+        }
+       ]
+      }
+     ]
+    },
+    {
+     "key": "betonlineag",
+     "title": "BetOnline.ag",
+     "last_update": "2026-11-22T22:28:48Z",
+     "markets": [
+      {
+       "key": "spreads",
+       "last_update": "2026-11-22T22:28:48Z",
+       "outcomes": [
+        {
+         "name": "Chicago Bears",
+         "price": -110,
+         "point": -2.5
+        },
+        {
+         "name": "Detroit Lions",
+         "price": -110,
+         "point": 2.5
+        }
+       ]
+      },
+      {
+       "key": "totals",
+       "last_update": "2026-11-22T22:28:48Z",
+       "outcomes": [
+        {
+         "name": "Over",
+         "price": -110,
+         "point": 55.5
+        },
+        {
+         "name": "Under",
+         "price": -110,
+         "point": 55.5
+        }
+       ]
+      }
+     ]
+    },
+    {
+     "key": "lowvig",
+     "title": "LowVig.ag",
+     "last_update": "2026-11-22T22:28:03Z",
+     "markets": [
+      {
+       "key": "spreads",
+       "last_update": "2026-11-22T22:28:03Z",
+       "outcomes": [
+        {
+         "name": "Chicago Bears",
+         "price": -105,
+         "point": -2.5
+        },
+        {
+         "name": "Detroit Lions",
+         "price": -105,
+         "point": 2.5
+        }
+       ]
+      },
+      {
+       "key": "totals",
+       "last_update": "2026-11-22T22:28:03Z",
+       "outcomes": [
+        {
+         "name": "Over",
+         "price": -107,
+         "point": 55.5
+        },
+        {
+         "name": "Under",
+         "price": -107,
+         "point": 55.5
+        }
+       ]
+      }
+     ]
+    }
+   ]
+  },
+  {
+   "id": "ffaa06af56a7137d4b078c5c46c0b730",
+   "sport_key": "americanfootball_nfl",
+   "sport_title": "NFL",
+   "commence_time": "2026-11-26T21:30:00Z",
+   "home_team": "Dallas Cowboys",
+   "away_team": "Philadelphia Eagles",
+   "bookmakers": [
+    {
+     "key": "draftkings",
+     "title": "DraftKings",
+     "last_update": "2026-11-22T22:29:02Z",
+     "markets": [
+      {
+       "key": "h2h",
+       "last_update": "2026-11-22T22:29:02Z",
+       "outcomes": [
+        {
+         "name": "Dallas Cowboys",
+         "price": -451
+        },
+        {
+         "name": "Philadelphia Eagles",
+         "price": 351
+        }
+       ]
+      },
+      {
+       "key": "spreads",
+       "last_update": "2026-11-22T22:29:02Z",
+       "outcomes": [
+        {
+         "name": "Dallas Cowboys",
+         "price": -110,
+         "point": -8.5
+        },
+        {
+         "name": "Philadelphia Eagles",
+         "price": -110,
+         "point": 8.5
+        }
+       ]
+      },
+      {
+       "key": "totals",
+       "last_update": "2026-11-22T22:29:02Z",
+       "outcomes": [
+        {
+         "name": "Over",
+         "price": -110,
+         "point": 48.5
+        },
+        {
+         "name": "Under",
+         "price": -109,
+         "point": 48.5
+        }
+       ]
+      }
+     ]
+    },
+    {
+     "key": "betonlineag",
+     "title": "BetOnline.ag",
+     "last_update": "2026-11-22T22:28:48Z",
+     "markets": [
+      {
+       "key": "spreads",
+       "last_update": "2026-11-22T22:28:48Z",
+       "outcomes": [
+        {
+         "name": "Dallas Cowboys",
+         "price": -105,
+         "point": -8.5
+        },
+        {
+         "name": "Philadelphia Eagles",
+         "price": -115,
+         "point": 8.5
+        }
+       ]
+      },
+      {
+       "key": "totals",
+       "last_update": "2026-11-22T22:28:48Z",
+       "outcomes": [
+        {
+         "name": "Over",
+         "price": -105,
+         "point": 48.0
+        },
+        {
+         "name": "Under",
+         "price": -115,
+         "point": 48.0
+        }
+       ]
+      }
+     ]
+    },
+    {
+     "key": "lowvig",
+     "title": "LowVig.ag",
+     "last_update": "2026-11-22T22:28:03Z",
+     "markets": [
+      {
+       "key": "spreads",
+       "last_update": "2026-11-22T22:28:03Z",
+       "outcomes": [
+        {
+         "name": "Dallas Cowboys",
+         "price": 100,
+         "point": -8.5
+        },
+        {
+         "name": "Philadelphia Eagles",
+         "price": -110,
+         "point": 8.5
+        }
+       ]
+      },
+      {
+       "key": "totals",
+       "last_update": "2026-11-22T22:28:03Z",
+       "outcomes": [
+        {
+         "name": "Over",
+         "price": -102,
+         "point": 48.0
+        },
+        {
+         "name": "Under",
+         "price": -113,
+         "point": 48.0
+        }
+       ]
+      }
+     ]
+    },
+    {
+     "key": "betrivers",
+     "title": "BetRivers",
+     "last_update": "2026-11-22T22:28:32Z",
+     "markets": [
+      {
+       "key": "h2h",
+       "last_update": "2026-11-22T22:28:32Z",
+       "outcomes": [
+        {
+         "name": "Dallas Cowboys",
+         "price": -500
+        },
+        {
+         "name": "Philadelphia Eagles",
+         "price": 370
+        }
+       ]
+      },
+      {
+       "key": "spreads",
+       "last_update": "2026-11-22T22:28:32Z",
+       "outcomes": [
+        {
+         "name": "Dallas Cowboys",
+         "price": -109,
+         "point": -8.5
+        },
+        {
+         "name": "Philadelphia Eagles",
+         "price": -112,
+         "point": 8.5
+        }
+       ]
+      },
+      {
+       "key": "totals",
+       "last_update": "2026-11-22T22:28:32Z",
+       "outcomes": [
+        {
+         "name": "Over",
+         "price": -108,
+         "point": 47.5
+        },
+        {
+         "name": "Under",
+         "price": -113,
+         "point": 47.5
+        }
+       ]
+      }
+     ]
+    }
+   ]
+  },
+  {
+   "id": "f36f518585aec40e8cb40e071c0844aa",
+   "sport_key": "americanfootball_nfl",
+   "sport_title": "NFL",
+   "commence_time": "2026-11-27T01:20:00Z",
+   "home_team": "Buffalo Bills",
+   "away_team": "Kansas City Chiefs",
+   "bookmakers": [
+    {
+     "key": "draftkings",
+     "title": "DraftKings",
+     "last_update": "2026-11-22T22:29:02Z",
+     "markets": [
+      {
+       "key": "h2h",
+       "last_update": "2026-11-22T22:29:02Z",
+       "outcomes": [
+        {
+         "name": "Buffalo Bills",
+         "price": -154
+        },
+        {
+         "name": "Kansas City Chiefs",
+         "price": 130
+        }
+       ]
+      },
+      {
+       "key": "spreads",
+       "last_update": "2026-11-22T22:29:02Z",
+       "outcomes": [
+        {
+         "name": "Buffalo Bills",
+         "price": 100,
+         "point": -3.0
+        },
+        {
+         "name": "Kansas City Chiefs",
+         "price": -120,
+         "point": 3.0
+        }
+       ]
+      },
+      {
+       "key": "totals",
+       "last_update": "2026-11-22T22:29:02Z",
+       "outcomes": [
+        {
+         "name": "Over",
+         "price": -115,
+         "point": 50.5
+        },
+        {
+         "name": "Under",
+         "price": -104,
+         "point": 50.5
+        }
+       ]
+      }
+     ]
+    },
+    {
+     "key": "betmgm",
+     "title": "BetMGM",
+     "last_update": "2026-11-22T22:28:33Z",
+     "markets": [
+      {
+       "key": "h2h",
+       "last_update": "2026-11-22T22:28:33Z",
+       "outcomes": [
+        {
+         "name": "Buffalo Bills",
+         "price": -145
+        },
+        {
+         "name": "Kansas City Chiefs",
+         "price": 120
+        }
+       ]
+      },
+      {
+       "key": "spreads",
+       "last_update": "2026-11-22T22:28:33Z",
+       "outcomes": [
+        {
+         "name": "Buffalo Bills",
+         "price": -110,
+         "point": -2.5
+        },
+        {
+         "name": "Kansas City Chiefs",
+         "price": -108,
+         "point": 2.5
+        }
+       ]
+      },
+      {
+       "key": "totals",
+       "last_update": "2026-11-22T22:28:33Z",
+       "outcomes": [
+        {
+         "name": "Over",
+         "price": -110,
+         "point": 50.0
+        },
+        {
+         "name": "Under",
+         "price": -108,
+         "point": 50.0
+        }
+       ]
+      }
+     ]
+    },
+    {
+     "key": "betrivers",
+     "title": "BetRivers",
+     "last_update": "2026-11-22T22:28:32Z",
+     "markets": [
+      {
+       "key": "h2h",
+       "last_update": "2026-11-22T22:28:32Z",
+       "outcomes": [
+        {
+         "name": "Buffalo Bills",
+         "price": -155
+        },
+        {
+         "name": "Kansas City Chiefs",
+         "price": 128
+        }
+       ]
+      },
+      {
+       "key": "spreads",
+       "last_update": "2026-11-22T22:28:32Z",
+       "outcomes": [
+        {
+         "name": "Buffalo Bills",
+         "price": -118,
+         "point": -2.5
+        },
+        {
+         "name": "Kansas City Chiefs",
+         "price": -104,
+         "point": 2.5
+        }
+       ]
+      },
+      {
+       "key": "totals",
+       "last_update": "2026-11-22T22:28:32Z",
+       "outcomes": [
+        {
+         "name": "Over",
+         "price": -110,
+         "point": 50.5
+        },
+        {
+         "name": "Under",
+         "price": -110,
+         "point": 50.5
+        }
+       ]
+      }
+     ]
+    },
+    {
+     "key": "betonlineag",
+     "title": "BetOnline.ag",
+     "last_update": "2026-11-22T22:28:48Z",
+     "markets": [
+      {
+       "key": "spreads",
+       "last_update": "2026-11-22T22:28:48Z",
+       "outcomes": [
+        {
+         "name": "Buffalo Bills",
+         "price": -110,
+         "point": -2.5
+        },
+        {
+         "name": "Kansas City Chiefs",
+         "price": -110,
+         "point": 2.5
+        }
+       ]
+      },
+      {
+       "key": "totals",
+       "last_update": "2026-11-22T22:28:48Z",
+       "outcomes": [
+        {
+         "name": "Over",
+         "price": -110,
+         "point": 50.0
+        },
+        {
+         "name": "Under",
+         "price": -110,
+         "point": 50.0
+        }
+       ]
+      }
+     ]
+    },
+    {
+     "key": "lowvig",
+     "title": "LowVig.ag",
+     "last_update": "2026-11-22T22:28:03Z",
+     "markets": [
+      {
+       "key": "spreads",
+       "last_update": "2026-11-22T22:28:03Z",
+       "outcomes": [
+        {
+         "name": "Buffalo Bills",
+         "price": -105,
+         "point": -2.5
+        },
+        {
+         "name": "Kansas City Chiefs",
+         "price": -105,
+         "point": 2.5
+        }
+       ]
+      },
+      {
+       "key": "totals",
+       "last_update": "2026-11-22T22:28:03Z",
+       "outcomes": [
+        {
+         "name": "Over",
+         "price": -107,
+         "point": 50.0
+        },
+        {
+         "name": "Under",
+         "price": -107,
+         "point": 50.0
+        }
+       ]
+      }
+     ]
+    }
+   ]
+  }
+ ]
+}
